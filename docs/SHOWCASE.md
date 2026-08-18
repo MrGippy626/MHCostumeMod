@@ -71,24 +71,22 @@ Screenshots show the tools. These show the thing that actually matters: **custom
 content coexisting in one live game**, and each custom costume's effects belonging only to the
 player wearing it.
 
-### Two clients, Gambit — [`final_jubilee.mp4`](media/final_jubilee.mp4) · 43s
+### Two clients, Gambit · 43s
 
-<video src="https://github.com/MrGippy626/MHCostumeMod/raw/main/docs/media/final_jubilee.mp4" controls muted playsinline width="100%">
-  Your browser will not play this inline &mdash; <a href="media/final_jubilee.mp4">download final_jubilee.mp4</a>.
-</video>
+https://github.com/user-attachments/assets/37449eb1-4d2f-4c1d-af54-79fc8c24115b
 
 Two game clients side by side. Swaps to the custom costume (Jubilee), and each costume's skill 
 effects change with it — the custom costume's effects render for the player wearing it and 
 for nobody else.
 
-### Two clients, Magneto / Polaris — [`final_polaris.mp4`](media/final_polaris.mp4) · 1m 17s
+### Two clients, Magneto / Polaris · 1m 17s
 
-<video src="https://github.com/MrGippy626/MHCostumeMod/raw/main/docs/media/final_polaris.mp4" controls muted playsinline width="100%">
-  Your browser will not play this inline &mdash; <a href="media/final_polaris.mp4">download final_polaris.mp4</a>.
-</video>
+https://github.com/user-attachments/assets/3485ad29-e87e-439c-95ac-3531fcaf3cef
 
 The same demonstration on a second hero, with a longer look at the effects. Magneto MarvelNow (Donor) and
 custom Magneto Polaris cast right after another and displaying the custom skill vfx.
+
+The clips are in [`docs/media/`](media/) as well, if you would rather have the files.
 
 ### ⚑ Why these two are the whole proof
 
@@ -103,11 +101,9 @@ So what is on screen is three claims at once:
 - **scoping** — a custom costume's effects apply to its wearer, not to everyone in the region
 - **live swapping** — donor to custom and back, in a running session, with no restart
 
-### Buying and wearing a costume — [`final_shop_tokens.mp4`](media/final_shop_tokens.mp4) · 1m 13s
+### Buying and wearing a costume · 1m 13s
 
-<video src="https://github.com/MrGippy626/MHCostumeMod/raw/main/docs/media/final_shop_tokens.mp4" controls muted playsinline width="100%">
-  Your browser will not play this inline &mdash; <a href="media/final_shop_tokens.mp4">download final_shop_tokens.mp4</a>.
-</video>
+https://github.com/user-attachments/assets/fcc8ce81-0778-4c14-9beb-cbb11111e7b2
 
 A custom costume bought from the in-game store and equipped from the inventory. This is the
 part that shows custom content is a first-class item — it has a store entry, a price, an icon
