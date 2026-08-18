@@ -71,19 +71,24 @@ Screenshots show the tools. These show the thing that actually matters: **custom
 content coexisting in one live game**, and each custom costume's effects belonging only to the
 player wearing it.
 
-All three are 1080p. GitHub renders a repository `.mp4` as a link rather than an inline player,
-so download them, or attach them to a Release where they play in the browser.
-
 ### Two clients, Gambit — [`final_jubilee.mp4`](media/final_jubilee.mp4) · 43s
 
-Two game clients side by side. Each starts on the **donor** costume and swaps to the custom
-one, and each client's skill effects change with it — the custom costume's effects render for
-the player wearing it and for nobody else.
+<video src="https://github.com/MrGippy626/MHCostumeMod/raw/main/docs/media/final_jubilee.mp4" controls muted playsinline width="100%">
+  Your browser will not play this inline &mdash; <a href="media/final_jubilee.mp4">download final_jubilee.mp4</a>.
+</video>
+
+Two game clients side by side. Swaps to the custom costume (Jubilee), and each costume's skill 
+effects change with it — the custom costume's effects render for the player wearing it and 
+for nobody else.
 
 ### Two clients, Magneto / Polaris — [`final_polaris.mp4`](media/final_polaris.mp4) · 1m 17s
 
-The same demonstration on a second hero, with a longer look at the effects. Stock Magneto and
-custom Polaris cast side by side and each renders its own art.
+<video src="https://github.com/MrGippy626/MHCostumeMod/raw/main/docs/media/final_polaris.mp4" controls muted playsinline width="100%">
+  Your browser will not play this inline &mdash; <a href="media/final_polaris.mp4">download final_polaris.mp4</a>.
+</video>
+
+The same demonstration on a second hero, with a longer look at the effects. Magneto MarvelNow (Donor) and
+custom Magneto Polaris cast right after another and displaying the custom skill vfx.
 
 ### ⚑ Why these two are the whole proof
 
@@ -91,10 +96,6 @@ custom Polaris cast side by side and each renders its own art.
 the world changes "the caster's costume" and "the only custom costume in the process" at the
 same instant, so a one-client clip confirms both explanations equally and settles nothing.
 
-That is not a hypothetical. This project shipped a redirect that was **client-wide** — it made
-*every* player's effects follow whoever happened to be wearing a custom costume — and it passed
-a single-client test perfectly. Two clients is what caught it, and two clients is what these
-clips show.
 
 So what is on screen is three claims at once:
 
@@ -104,20 +105,12 @@ So what is on screen is three claims at once:
 
 ### Buying and wearing a costume — [`final_shop_tokens.mp4`](media/final_shop_tokens.mp4) · 1m 13s
 
+<video src="https://github.com/MrGippy626/MHCostumeMod/raw/main/docs/media/final_shop_tokens.mp4" controls muted playsinline width="100%">
+  Your browser will not play this inline &mdash; <a href="media/final_shop_tokens.mp4">download final_shop_tokens.mp4</a>.
+</video>
+
 A custom costume bought from the in-game store and equipped from the inventory. This is the
 part that shows custom content is a first-class item — it has a store entry, a price, an icon
 and a name, and it arrives as a token you equip like any other costume, not as a chat command.
 
 ---
-
-## Regenerating the screenshots
-
-```
-powershell -ExecutionPolicy Bypass -File tools\release\screenshots.ps1
-powershell -ExecutionPolicy Bypass -File tools\release\screenshots.ps1 -Only launcher
-```
-
-It launches each app, drives the navigation through UI Automation and captures each window.
-The desktop must be interactive and unlocked, and nothing may cover the windows while it runs —
-WinUI composes through DirectComposition, so `PrintWindow` returns black and the capture has to
-come from the screen.
