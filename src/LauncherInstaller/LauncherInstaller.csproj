@@ -1,0 +1,172 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+    <RootNamespace>LauncherInstaller</RootNamespace>
+    <AssemblyName>MHLauncher</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+
+    <!-- The EXE's own icon - Explorer, shortcuts, a pinned taskbar button.
+         ⛔ THIS IS ONLY HALF THE JOB. The TITLE BAR and the running taskbar button come from
+         AppWindow.SetIcon at runtime (WindowIcon.Apply), so the .ico is ALSO copied to the
+         output as Content below. Set one without the other and the app still shows WinUI's
+         default feather while it is open. -->
+    <ApplicationIcon>Assets\icon.ico</ApplicationIcon>
+
+    <!-- ⛔ x64 ONLY, unlike the Manager. The template offers x86/ARM64 too, and carrying them
+         here would be a lie: this tool edits a sealed 2017 x64 game's install and is only ever
+         run beside it. Fewer RIDs also means the publish output cannot pick up the wrong one. -->
+    <Platforms>x64</Platforms>
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+    <PublishProfile>win-$(Platform).pubxml</PublishProfile>
+
+    <UseWinUI>true</UseWinUI>
+    <EnableMsixTooling>true</EnableMsixTooling>
+
+    <!-- ⛔ UNPACKAGED, exactly like the WinUI Manager and the WPF installer this replaces.
+         MSIX needs signing and sideloading; this is a tool a player downloads and
+         double-clicks. Package.appxmanifest is kept in case that ever changes. -->
+    <WindowsPackageType>None</WindowsPackageType>
+
+    <!-- Match the rest of the codebase - core, the Manager and the WPF installer are all
+         `disable`. Flipping it here produces hundreds of warnings on code being moved, not
+         written, which is the worst possible time to introduce them. -->
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+
+    <!-- ⛔ STR.Common (transitive) ships an over-strict ConfigureAwaitEnforcer that ERRORS on
+         every await. In a UI project its advice is not merely noisy, it is WRONG:
+         ConfigureAwait(false) resumes on a threadpool thread and every await here continues by
+         touching UI controls - the exact cross-thread bug uicheck.py exists to catch. -->
+    <RunAnalyzersDuringBuild>false</RunAnalyzersDuringBuild>
+    <!-- CS0675 is a PRE-EXISTING warning in core\IconPack.Roles.cs (AssetIdFor's bit assembly),
+         not something this project introduced. tools\probes\hstest suppresses it for the same
+         reason. Silencing it here keeps a real new warning visible instead of buried. -->
+    <NoWarn>$(NoWarn);CA2007;CS8618;CS8604;CS1998;CS0168;CS0675</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="Assets\SplashScreen.scale-200.png" />
+    <Content Include="Assets\LockScreenLogo.scale-200.png" />
+    <Content Include="Assets\Square150x150Logo.scale-200.png" />
+    <Content Include="Assets\Square44x44Logo.scale-200.png" />
+    <Content Include="Assets\Square44x44Logo.targetsize-24_altform-unplated.png" />
+    <Content Include="Assets\StoreLogo.png" />
+    <Content Include="Assets\Wide310x150Logo.scale-200.png" />
+
+    <!-- The launcher background. Bundled as the default look; a server owner can still drop
+         their own background.png or .jpg beside the exe to override it without rebuilding. -->
+    <Content Include="Assets\background.jpg" />
+    <!-- ⚑ Generated from Assets\icon.png at 16/24/32/48/64/128/256. A single 256 left for the
+         shell to downscale is what makes a small icon look soft. Copied to the output because
+         AppWindow.SetIcon reads it from disk at runtime. -->
+    <Content Include="Assets\icon.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Manifest Include="$(ApplicationManifest)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- ⛔⛔ NO ProjectReference. NONE. THIS IS THE DEFINING CONSTRAINT OF THIS APP AND IT
+         SURVIVED THE PORT DELIBERATELY.
+
+         The player installer LINKS the dependency-light sources instead of referencing
+         MHCostume.Core, which would drag in UpkManager, DDSLib, MHTexLib, ImageSharp and Pfim.
+         It can do that because a player NEVER changes an enum: the server owns both the costume
+         enum and the hotspot enums and sends them on the wire, so the author's prebuilt icon
+         package and renamed UPKs are already correct byte-for-byte and nothing needs rebuilding.
+
+         ⚑ Every file below is pure BCL. If something added here needs an image or UPK library,
+         that is the signal it was put in the wrong file - split the file, do not add the
+         reference. IconPack.Roles.cs exists precisely because of that rule. -->
+    <Compile Include="..\core\CostumeShare.Core.cs" Link="Shared\CostumeShare.Core.cs" />
+    <Compile Include="..\core\TfcAlias.Core.cs"     Link="Shared\TfcAlias.Core.cs" />
+    <Compile Include="..\core\InstallLedger.cs"     Link="Shared\InstallLedger.cs" />
+    <Compile Include="..\core\IconPack.Roles.cs"    Link="Shared\IconPack.Roles.cs" />
+
+    <!-- FX pack support. All three are pure BCL: the registry owns a JSON file, the pack format
+         copies UPKs byte-for-byte, and install/remove edits config. Nothing here opens a UPK,
+         because an FX rename is derived from the pack TOKEN and never from a costume enum - so
+         the author's packages are already correct on every machine. -->
+    <Compile Include="..\core\FxPackRegistry.cs"    Link="Shared\FxPackRegistry.cs" />
+    <Compile Include="..\core\FxPackFile.cs"        Link="Shared\FxPackFile.cs" />
+    <Compile Include="..\core\FxPackInstall.cs"     Link="Shared\FxPackInstall.cs" />
+
+    <!-- Bulk import. ⛔ BulkPack.Export.cs is deliberately NOT here - it calls
+         Installer.ExportPack, which needs UpkManager. Import is enumerate-then-loop over the two
+         importers above, so it stays pure BCL. -->
+    <Compile Include="..\core\BulkPack.cs"          Link="Shared\BulkPack.cs" />
+
+    <!-- Launcher settings + suspended-start injection. Pure BCL: the Win32 calls are
+         DllImport, which needs no package, so the zero-dependency rule still holds. -->
+    <Compile Include="..\core\LauncherCore.cs"     Link="Shared\LauncherCore.cs" />
+
+    <!-- "Check content": compares what the server publishes against what is installed. Pure
+         comparison plus one HTTP GET - it never installs, deletes or rewrites anything. -->
+    <Compile Include="..\core\CatalogCompare.cs"   Link="Shared\CatalogCompare.cs" />
+
+    <!-- The dialog, LINKED from the WinUI Manager exactly as the WPF installer linked the WPF
+         one. It takes its host window through AppDialog.Host rather than reaching for the
+         Manager's App, which is what makes it shareable. -->
+    <Compile Include="..\CostumeManager\AppDialog.cs" Link="Shared\AppDialog.cs" />
+    <Compile Include="..\CostumeManager\WindowIcon.cs" Link="Shared\WindowIcon.cs" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(DisableMsixProjectCapabilityAddedByProject)'!='true' and '$(EnableMsixTooling)'=='true'">
+    <ProjectCapability Include="Msix" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.2526" />
+
+    <!-- ⛔⛔ THE Microsoft.WindowsAppSDK METAPACKAGE IS DELIBERATELY *NOT* REFERENCED, AND THAT
+         IS THE WHOLE PRUNE. This app publishes SELF-CONTAINED (players must not have to install
+         runtimes), so every byte the metapackage drags in ships to every player.
+
+         Measured from obj\project.assets.json, the metapackage pulls TEN sub-packages, and the
+         dependency graph shows WinUI needs only three of them (Base, Foundation,
+         InteractiveExperiences - all transitive). AI, ML, Search and Widgets are referenced by
+         NOTHING in this app:
+
+             Microsoft.WindowsAppSDK.ML -> Microsoft.Windows.AI.MachineLearning
+                 onnxruntime.dll   20.7 MB
+                 DirectML.dll      17.8 MB
+             Microsoft.WindowsAppSDK.Search -> AI          ~3.2 MB
+             Microsoft.WindowsAppSDK.Widgets
+
+         A costume installer does not do machine learning. Referencing the leaf packages
+         directly is the supported way to say so - there is no "exclude" switch.
+
+         ⚠ VERIFY BY RUNNING, NOT BY BUILDING. A WindowsAppSDK component missing at runtime does
+         not fail the build: it takes the process down with 0xC000027B, no managed stack, before
+         any window appears - the exact failure mode already recorded for this codebase. Launch
+         the published exe and confirm it stays alive after any change here.
+
+         DWrite is KEPT even though nothing references it: Microsoft.ui.xaml.dll loads
+         DWriteCore for text, and 3 MB is not worth finding that out the 0xC000027B way. -->
+    <PackageReference Include="Microsoft.WindowsAppSDK.WinUI" Version="2.3.6" />
+    <PackageReference Include="Microsoft.WindowsAppSDK.Runtime" Version="2.4.0" />
+    <PackageReference Include="Microsoft.WindowsAppSDK.DWrite" Version="2.1.0" />
+  </ItemGroup>
+
+  <PropertyGroup Condition="'$(DisableHasPackageAndPublishMenuAddedByProject)'!='true' and '$(EnableMsixTooling)'=='true'">
+    <HasPackageAndPublishMenu>true</HasPackageAndPublishMenu>
+  </PropertyGroup>
+
+  <!-- Publish Properties -->
+  <PropertyGroup>
+    <PublishReadyToRun Condition="'$(Configuration)' == 'Debug'">False</PublishReadyToRun>
+    <PublishReadyToRun Condition="'$(Configuration)' != 'Debug'">True</PublishReadyToRun>
+
+    <!-- ⛔⛔ TRIMMING IS OFF ON PURPOSE - DO NOT RE-ENABLE IT.
+         The template turns it on for Release. Every config, ledger and pack-manifest path in
+         this app is reflection-based System.Text.Json. A trimmer removes types nothing
+         references statically, so the failure is NOT a build error - it is a JSON round-trip
+         that silently starts losing fields at runtime, in Release only. This project has
+         already lost sessions to silent config corruption; do not add a second mechanism for
+         it. See .claude/rules/interop.md. -->
+    <PublishTrimmed>false</PublishTrimmed>
+  </PropertyGroup>
+</Project>

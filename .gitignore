@@ -1,0 +1,53 @@
+# Build output
+[Bb]in/
+[Oo]bj/
+x64/
+x86/
+[Dd]ebug/
+[Rr]elease/
+*.user
+*.suo
+*.cache
+*.pdb
+*.ilk
+*.exp
+*.tlog
+*.lastbuildstate
+
+# IDE
+.vs/
+.vscode/
+.idea/
+*.VC.db
+*.VC.VC.opendb
+
+# NuGet
+packages/
+*.nupkg
+
+# ⛔ NO BLANKET *.dll / *.ico / *.lib RULE HERE, DELIBERATELY.
+# The parent development repository has one, and it silently excluded nine files this
+# release cannot build without: the seven vendored server dependencies under
+# MHServerEmu/dep/, both WinUI ApplicationIcons, and MinHook's static library. They had to
+# be copied back by hand. Do not reintroduce those patterns - the build breaks in ways that
+# look like missing code rather than missing binaries.
+
+# Server runtime state - never source
+MHServerEmu/build/
+**/Account.db
+**/Account.db.bak*
+
+# The mod's own runtime output
+CostumeMod.log
+CostumeMod.*.log
+CostumeMod.arming
+CostumeMod.quarantine
+
+# Backups made by the installer
+*.bak
+*.bak[0-9]
+*.prebatch.bak
+*.preuniq.bak
+*.prehex.bak
+*.replaced
+*.tmp

@@ -1,0 +1,152 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+    <RootNamespace>CostumeManager</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+
+    <!-- The EXE's own icon - Explorer, shortcuts, a pinned taskbar button.
+         ⛔ ONLY HALF THE JOB: the TITLE BAR and the running taskbar button come from
+         AppWindow.SetIcon at runtime (WindowIcon.Apply), so the .ico is ALSO copied to the
+         output as Content below. Set one without the other and the window keeps WinUI's
+         default feather while the app is open. -->
+    <ApplicationIcon>Assets\icon.ico</ApplicationIcon>
+    <Platforms>x86;x64;ARM64</Platforms>
+    <RuntimeIdentifiers>win-x86;win-x64;win-arm64</RuntimeIdentifiers>
+
+    <!-- ⚑ FRAMEWORK-DEPENDENT for .NET. ⛔ THE VALUE LIVES IN
+         Properties\PublishProfiles\win-*.pubxml, NOT HERE - <PublishProfile> below imports
+         that profile and its SelfContained OVERRIDES anything set in this file, so a value
+         here is silently ignored. See the comment in win-x64.pubxml for the measurement and
+         the .NET 8 Desktop Runtime prerequisite. -->
+    <PublishProfile>win-$(Platform).pubxml</PublishProfile>
+    <UseWinUI>true</UseWinUI>
+    <EnableMsixTooling>true</EnableMsixTooling>
+
+    <!-- ⛔ UNPACKAGED, like the WPF Manager it replaces. The template defaults to MSIX
+         (Package.appxmanifest is still here if that is ever wanted), but this tool is
+         downloaded and double-clicked by modders - an MSIX needs signing and sideloading,
+         which is friction the WPF version never had. -->
+    <WindowsPackageType>None</WindowsPackageType>
+
+    <!-- Match the rest of the codebase. The template ships Nullable=enable; core, the WPF
+         Manager and the installer are all `disable`, and flipping it here produces hundreds
+         of warnings on code that is not being changed. -->
+    <Nullable>disable</Nullable>
+
+    <!-- ⛔ STR.Common (transitive, via MHCostume.Core) ships an over-strict
+         ConfigureAwaitEnforcer that ERRORS on every await. CLAUDE.md already records it as a
+         project-wide style setting inconsistent with the existing code, and the WPF Manager
+         disables analyzers for exactly this reason.
+         ⚑ Here it is not merely noisy, it is WRONG: ConfigureAwait(false) resumes on a
+         threadpool thread, and every await in this file continues by touching UI controls.
+         Taking the analyzer's advice would reintroduce the cross-thread bug uicheck.py
+         exists to catch. -->
+    <RunAnalyzersDuringBuild>false</RunAnalyzersDuringBuild>
+    <NoWarn>$(NoWarn);CA2007;CS8618;CS8604;CS1998;CS0168</NoWarn>
+    <ImplicitUsings>disable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="Assets\SplashScreen.scale-200.png" />
+    <Content Include="Assets\LockScreenLogo.scale-200.png" />
+    <Content Include="Assets\Square150x150Logo.scale-200.png" />
+    <Content Include="Assets\Square44x44Logo.scale-200.png" />
+    <Content Include="Assets\Square44x44Logo.targetsize-24_altform-unplated.png" />
+    <Content Include="Assets\StoreLogo.png" />
+    <Content Include="Assets\Wide310x150Logo.scale-200.png" />
+    <!-- ⚑ Generated from Assets\icon.png at 16/24/32/48/64/128/256. A single 256 left for the
+         shell to downscale is what makes a small icon look soft. Copied to the output because
+         AppWindow.SetIcon reads it from disk at runtime. -->
+    <Content Include="Assets\icon.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Manifest Include="$(ApplicationManifest)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- ⚑ The whole point of the restructure: ONE reference, and no WPF in it.
+         MHCostume.Core is plain net8.0 (install, rename, TFC, FX, icons) and links into
+         WinUI completely unchanged. -->
+    <ProjectReference Include="..\core\MHCostume.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Same data files the WPF Manager copies. `Include`, NOT `Update` - see the note in
+         CostumeManager.csproj (WPF) about copies that silently never applied. -->
+    <None Include="..\..\data\Costumes.json"        Link="Costumes.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\..\data\Effects.json"         Link="Effects.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\..\data\effect_reference.db"  Link="effect_reference.db">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\..\data\costume_reference.db" Link="costume_reference.db">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <!--
+    Defining the "Msix" ProjectCapability here allows the Single-project MSIX Packaging
+    Tools extension to be activated for this project even if the Windows App SDK Nuget
+    package has not yet been restored.
+  -->
+  <ItemGroup Condition="'$(DisableMsixProjectCapabilityAddedByProject)'!='true' and '$(EnableMsixTooling)'=='true'">
+    <ProjectCapability Include="Msix" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.2526" />
+
+    <!-- ⛔ LEAF PACKAGES, NOT THE Microsoft.WindowsAppSDK METAPACKAGE. The metapackage pulls
+         in the Windows AI stack, and none of it is reachable from this app: measured in a
+         real publish it added onnxruntime.dll (20.7 MB), DirectML.dll (17.8 MB),
+         Microsoft.Windows.AI.MachineLearning.dll, Microsoft.ML.OnnxRuntime.dll and
+         System.Numerics.Tensors.dll - about 41 MB of machine-learning runtime in a tool that
+         renames UPK files.
+         The launcher has always referenced the leaves for exactly this reason and ships none
+         of it. Same three here.
+         ⚑ If a WindowsAppSDK type ever goes missing after a change, add the specific leaf
+         package that provides it - do NOT go back to the metapackage. -->
+    <PackageReference Include="Microsoft.WindowsAppSDK.WinUI" Version="2.3.6" />
+    <PackageReference Include="Microsoft.WindowsAppSDK.Runtime" Version="2.4.0" />
+    <PackageReference Include="Microsoft.WindowsAppSDK.DWrite" Version="2.1.0" />
+
+    <!-- ⚑ PINNED BECAUSE THIS PROJECT IS FRAMEWORK-DEPENDENT. WinUI 2.3.6 brings
+         InteractiveExperiences 2.1.3 transitively, while Runtime 2.4.0 expects 2.1.6, and the
+         SDK's own ComponentReference check fails the build over the mismatch. The launcher
+         carries the same three leaves without this line only because its publish profile sets
+         WindowsAppSDKSelfContained=true, which switches that check off. -->
+    <PackageReference Include="Microsoft.WindowsAppSDK.InteractiveExperiences" Version="2.1.6" />
+    <!-- DDS decoding for the Textures/Icons previews (DdsPreview.cs). Same library the WPF
+         Manager used; display only, never part of the install pipeline. -->
+    <PackageReference Include="Pfim" Version="0.11.2" />
+  </ItemGroup>
+
+  <!--
+    Defining the "HasPackageAndPublishMenuAddedByProject" property here allows the Solution
+    Explorer "Package and Publish" context menu entry to be enabled for this project even if
+    the Windows App SDK Nuget package has not yet been restored.
+  -->
+  <PropertyGroup Condition="'$(DisableHasPackageAndPublishMenuAddedByProject)'!='true' and '$(EnableMsixTooling)'=='true'">
+    <HasPackageAndPublishMenu>true</HasPackageAndPublishMenu>
+  </PropertyGroup>
+
+  <!-- Publish Properties -->
+  <PropertyGroup>
+    <PublishReadyToRun Condition="'$(Configuration)' == 'Debug'">False</PublishReadyToRun>
+    <PublishReadyToRun Condition="'$(Configuration)' != 'Debug'">True</PublishReadyToRun>
+    <!-- ⛔⛔ TRIMMING IS OFF ON PURPOSE - DO NOT RE-ENABLE IT.
+         The template turns it on for Release. This codebase's entire config, ledger and
+         scan-cache layer is reflection-based System.Text.Json (InstallLedger,
+         CostumeConfig, FxScanCache, FxTables). A trimmer removes types nothing references
+         statically, so the failure is not a build error - it is a JSON round-trip that
+         silently starts losing fields at runtime, in Release only.
+         This project has already lost sessions to silent config corruption
+         (see .claude/rules/interop.md); do not add a mechanism that causes it. -->
+    <PublishTrimmed>false</PublishTrimmed>
+  </PropertyGroup>
+</Project>

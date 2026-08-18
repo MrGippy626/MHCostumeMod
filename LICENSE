@@ -1,0 +1,75 @@
+SOURCE-AVAILABLE LICENCE
+========================
+
+Copyright (c) 2026 the Marvel Heroes Omega custom costume project.
+All rights reserved, except as granted below.
+
+This is a source-available licence. It is NOT an open-source licence.
+
+
+WHAT YOU MAY DO
+---------------
+
+You may:
+
+  * read, study and learn from this source code;
+  * build it and run the resulting programs;
+  * modify it for your own use, including running a modified version on a
+    server you operate;
+  * quote portions of it in discussion, documentation or bug reports.
+
+
+WHAT YOU MAY NOT DO
+-------------------
+
+You may not redistribute this source code, or binaries built from it, in
+whole or in substantial part, without written permission. That includes
+mirroring the repository, publishing builds, and bundling it into another
+distribution or mod pack.
+
+Reporting a problem, or sending someone a link to the original repository,
+is always fine.
+
+
+NO WARRANTY
+-----------
+
+Provided "as is", without warranty of any kind. This software modifies a
+game client by injecting code into it. You run it at your own risk.
+
+
+PARTS THIS LICENCE DOES NOT COVER
+---------------------------------
+
+Two categories of code in this repository are governed by other terms, and
+those terms take precedence over everything above.
+
+1. THE SERVER - "MHServerEmu/"
+
+   A modified copy of MHServerEmu (https://github.com/Crypto137/MHServerEmu),
+   licensed under the GNU Affero General Public License, version 3.
+
+   The AGPL governs that directory. It grants rights this notice cannot take
+   away: you may redistribute and modify it under the AGPL's terms, and if
+   you run a modified version as a network service, the AGPL requires you to
+   offer its source to the users of that service.
+
+   Its licence text is in MHServerEmu/LICENSE, and the statement of
+   modifications the AGPL requires is docs/SERVER-CHANGES.md.
+
+2. BUNDLED THIRD-PARTY CODE
+
+   nlohmann/json, MinHook, libsquish, the Paint.NET DDS plugin, UpkManager
+   and the LZO library each keep their own licence. They are listed, with
+   their terms and where their notices live, in THIRD-PARTY.md.
+
+   Note in particular that LZO (lib/UpkManager/Compression/lib64/lzo2_64.dll)
+   is GPL-2.0-or-later and is linked at runtime by the costume tools. See
+   THIRD-PARTY.md before distributing any binary built from this tree.
+
+
+CONTACT
+-------
+
+For permission to redistribute, or anything else, open an issue on the
+original repository.

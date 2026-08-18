@@ -1,0 +1,2084 @@
+{
+  "costumes": {
+    "MarvelItem_Loot_Costume": {
+      "assetId": "0xEDC9EF310EA112B6",
+      "protoId": "0xEED0D60784A516BF"
+    },
+    "MarvelPlayer_Angela": {
+      "assetId": "0x000C5E011405133B",
+      "protoId": "0xBE3A637745C619F5"
+    },
+    "MarvelPlayer_Angela_1602": {
+      "assetId": "0xECE176700DA312BA",
+      "protoId": "0xE36423FED66B176E"
+    },
+    "MarvelPlayer_AntMan_HP_Classic": {
+      "assetId": "0x08FA2EF70A4712AF",
+      "protoId": "0xD976A429CA7117EF"
+    },
+    "MarvelPlayer_AntMan_SL_AvengersNOW": {
+      "assetId": "0x6FD6F7D40EC012EB",
+      "protoId": "0xCE1DC68430A719C3"
+    },
+    "MarvelPlayer_AntMan_SL_CivilWarMovie": {
+      "assetId": "0xDDF99F2703571222",
+      "protoId": "0x3710C16D656F1A95"
+    },
+    "MarvelPlayer_AntMan_SL_Movie": {
+      "assetId": "0x6CCF5D1C0A9A12E3",
+      "protoId": "0x36F676C39CA01734"
+    },
+    "MarvelPlayer_Beast_Astonishing": {
+      "assetId": "0x1E5C584E0495123B",
+      "protoId": "0xC89B0195E36F186C"
+    },
+    "MarvelPlayer_Beast_UncannyInhumans": {
+      "assetId": "0x62FF8BB81DF013A5",
+      "protoId": "0xB293BF8D49CA1A24"
+    },
+    "MarvelPlayer_BlackBolt_ANAD": {
+      "assetId": "0xE46FEAD202EC1230",
+      "protoId": "0x2DB0589F994D16F8"
+    },
+    "MarvelPlayer_BlackBolt_Classic": {
+      "assetId": "0x6784933E0E5F12E0",
+      "protoId": "0xA0C3221FE1711846"
+    },
+    "MarvelPlayer_BlackCat": {
+      "assetId": "0xDE0A4C9D08151263",
+      "protoId": "0xC9517EEDC7DC17CD"
+    },
+    "MarvelPlayer_BlackCat_ANAD": {
+      "assetId": "0xDBC6F8AB094A1291",
+      "protoId": "0x159AB2818123167F"
+    },
+    "MarvelPlayer_BlackCat_SpiderGwen": {
+      "assetId": "0x9442D4340FF7130F",
+      "protoId": "0xB8F2ACB513331923"
+    },
+    "MarvelPlayer_BlackPanther": {
+      "assetId": "0xADB8B9A60D9112B1",
+      "protoId": "0xD18B0B902DA41987"
+    },
+    "MarvelPlayer_BlackPanther_Armored": {
+      "assetId": "0xF93951E10A7F12B9",
+      "protoId": "0xE1CC5725ECDD1C81"
+    },
+    "MarvelPlayer_BlackPanther_CivilWarMovie": {
+      "assetId": "0x6BA2771908B5124D",
+      "protoId": "0x072CCB03D1701C26"
+    },
+    "MarvelPlayer_BlackPanther_ClassicVU": {
+      "assetId": "0x7DC3249B11951310",
+      "protoId": "0xC29CFAB262D91A72"
+    },
+    "MarvelPlayer_BlackPanther_DoomWar": {
+      "assetId": "0x742AE88F105E131B",
+      "protoId": "0x3146B5D32EDC199E"
+    },
+    "MarvelPlayer_BlackPanther_ManWOFearGold": {
+      "assetId": "0xF018C96BFBCB1256",
+      "protoId": "0x5378A072CFEA1C0B"
+    },
+    "MarvelPlayer_BlackPanther_ManWOFearGold_Variant": {
+      "assetId": "0xD4E1ED40106E12DE",
+      "protoId": "0xED8CF92943431DA4"
+    },
+    "MarvelPlayer_BlackPanther_ManWithoutFear": {
+      "assetId": "0x6A6C068C02CD1234",
+      "protoId": "0x738D9742EE531C93"
+    },
+    "MarvelPlayer_BlackPanther_Shuri": {
+      "assetId": "0x5B7AFE1415F71373",
+      "protoId": "0xFE2750FCFC9C18D0"
+    },
+    "MarvelPlayer_BlackPanther_Tribal": {
+      "assetId": "0xB5EF0A850A1612B7",
+      "protoId": "0xEDA4F6B914B91923"
+    },
+    "MarvelPlayer_BlackPanther_VibraniumArmor": {
+      "assetId": "0x8AEC85A20576124C",
+      "protoId": "0xF9D339F2EDF31C93"
+    },
+    "MarvelPlayer_BlackPanther_WakandanTech": {
+      "assetId": "0xFAFCB3290DB712DD",
+      "protoId": "0x803E1D0AB2BE1B8E"
+    },
+    "MarvelPlayer_BlackWidow_AOUComic": {
+      "assetId": "0xDD2F82000C7612B8",
+      "protoId": "0x51832BCBEDE61C8E"
+    },
+    "MarvelPlayer_BlackWidow_AgeOfUltron": {
+      "assetId": "0x940E48B60467125B",
+      "protoId": "0x078BE084EF071CA3"
+    },
+    "MarvelPlayer_BlackWidow_Avengers": {
+      "assetId": "0xB77BA9A00F7012ED",
+      "protoId": "0xF422AF0115791938"
+    },
+    "MarvelPlayer_BlackWidow_AvengersMH2013": {
+      "assetId": "0x5777C7930E7E12E7",
+      "protoId": "0x4BCDD7C0AA221AD3"
+    },
+    "MarvelPlayer_BlackWidow_CivilWar": {
+      "assetId": "0x891EF6AB08C012AA",
+      "protoId": "0x55A023EC15DE193E"
+    },
+    "MarvelPlayer_BlackWidow_Classic": {
+      "assetId": "0x461AB3190F7C1318",
+      "protoId": "0xF65F1E9DFB9B18BF"
+    },
+    "MarvelPlayer_BlackWidow_ClassicMH2013": {
+      "assetId": "0x0B0BAEA8089D125C",
+      "protoId": "0x961F8C738D7D1A5A"
+    },
+    "MarvelPlayer_BlackWidow_FearItself": {
+      "assetId": "0xBE419CA20AF512AD",
+      "protoId": "0x2601B38148691A02"
+    },
+    "MarvelPlayer_BlackWidow_Grey": {
+      "assetId": "0x3DA4F17B11A11310",
+      "protoId": "0x088F9F4480271B03"
+    },
+    "MarvelPlayer_BlackWidow_Original": {
+      "assetId": "0xB9E5D4D009FB12B9",
+      "protoId": "0x258DBBC215801932"
+    },
+    "MarvelPlayer_BlackWidow_Thunderbolts": {
+      "assetId": "0xA43E4B22FD841279",
+      "protoId": "0x32AC676A7FFF1AFB"
+    },
+    "MarvelPlayer_BlackWidow_White": {
+      "assetId": "0xEBCDC9D10DBF12DF",
+      "protoId": "0x3DA75B247E261AE0"
+    },
+    "MarvelPlayer_Blade_Modern": {
+      "assetId": "0xE921AA3A0B8E12C0",
+      "protoId": "0xEE7A1DBA6B6E1633"
+    },
+    "MarvelPlayer_Blade_Original": {
+      "assetId": "0x53C3FD9814BB1348",
+      "protoId": "0x7C65E7A298E31703"
+    },
+    "MarvelPlayer_Blade_SF": {
+      "assetId": "0x7F80914C092F127C",
+      "protoId": "0x3EA03CCE15501487"
+    },
+    "MarvelPlayer_Cable_Bjorn": {
+      "assetId": "0x322888D00582125D",
+      "protoId": "0x533B988C551315C8"
+    },
+    "MarvelPlayer_Cable_BlackOps": {
+      "assetId": "0xE755B36D0BB412B3",
+      "protoId": "0xB0A6F64897DA16FC"
+    },
+    "MarvelPlayer_Cable_Cyborg": {
+      "assetId": "0x6917965BF9A61281",
+      "protoId": "0xF6D8BFBA120A191D"
+    },
+    "MarvelPlayer_Cable_MarvelNOW": {
+      "assetId": "0x329F78FB0BC112AF",
+      "protoId": "0x32896BA1B14D1788"
+    },
+    "MarvelPlayer_Cable_Modern": {
+      "assetId": "0xC4A12BF20FD61312",
+      "protoId": "0xF78BA7666B491632"
+    },
+    "MarvelPlayer_Cable_Original": {
+      "assetId": "0xE13AFA3B0E4912DC",
+      "protoId": "0x7A5C2ED298BC1702"
+    },
+    "MarvelPlayer_Cable_Technovirus": {
+      "assetId": "0x0C18B2E30B6A12A3",
+      "protoId": "0x6813EAF2E1D81867"
+    },
+    "MarvelPlayer_Cable_Xmen": {
+      "assetId": "0x5763D73B0ABA1294",
+      "protoId": "0xB16FA3D411981916"
+    },
+    "MarvelPlayer_Cable_XmenReformed": {
+      "assetId": "0x463F70990E451319",
+      "protoId": "0xE6B7983A455419EF"
+    },
+    "MarvelPlayer_CapnAmerica_AmericanDream": {
+      "assetId": "0x2816F45B09481289",
+      "protoId": "0x50B9F18306021CB1"
+    },
+    "MarvelPlayer_CaptainAmerica_ANAD": {
+      "assetId": "0xF8C731200F0412E4",
+      "protoId": "0x8F4E0E7F43621DB5"
+    },
+    "MarvelPlayer_CaptainAmerica_AgeOfUltron": {
+      "assetId": "0x1FB4306C0A361284",
+      "protoId": "0x52231352628E1E2E"
+    },
+    "MarvelPlayer_CaptainAmerica_AgeOfUltron_NoHelmet": {
+      "assetId": "0xBA0DF0BA09BC128C",
+      "protoId": "0x6D70222E631C218A"
+    },
+    "MarvelPlayer_CaptainAmerica_Arctic": {
+      "assetId": "0x9D996B120ED81311",
+      "protoId": "0xB5EB2EB846F419DE"
+    },
+    "MarvelPlayer_CaptainAmerica_Avengers": {
+      "assetId": "0xE24675AB0AF812BE",
+      "protoId": "0x57FC332C7C991AC3"
+    },
+    "MarvelPlayer_CaptainAmerica_CivilWarMovie": {
+      "assetId": "0xA6EF4B960A6A1258",
+      "protoId": "0x4B7CFC3D09AC1CE9"
+    },
+    "MarvelPlayer_CaptainAmerica_Classic": {
+      "assetId": "0x70F5D13F00A211F2",
+      "protoId": "0xB3087A28A7C81F3A"
+    },
+    "MarvelPlayer_CaptainAmerica_ClassicMH2013": {
+      "assetId": "0x608F5A7009F31247",
+      "protoId": "0x5AE5CECAFC541BE5"
+    },
+    "MarvelPlayer_CaptainAmerica_EarthX": {
+      "assetId": "0x1BD086C20F4F12E6",
+      "protoId": "0xD90A45F347E219F4"
+    },
+    "MarvelPlayer_CaptainAmerica_MarvelNOW": {
+      "assetId": "0xD4EA492D0C6712E2",
+      "protoId": "0x6A1D28B998EC1B43"
+    },
+    "MarvelPlayer_CaptainAmerica_ModernSoldier": {
+      "assetId": "0x95A02A0F064B125A",
+      "protoId": "0x3204AAAC092B1CDF"
+    },
+    "MarvelPlayer_CaptainAmerica_Nomad": {
+      "assetId": "0x394142D415E81347",
+      "protoId": "0xBF53B5C82D6C1977"
+    },
+    "MarvelPlayer_CaptainAmerica_Original": {
+      "assetId": "0x4CE2852A06B91265",
+      "protoId": "0x865327EF7CA01ABD"
+    },
+    "MarvelPlayer_CaptainAmerica_OriginalMH2013": {
+      "assetId": "0x9C4A3170029111F3",
+      "protoId": "0x62E32DA61A761C58"
+    },
+    "MarvelPlayer_CaptainAmerica_Reborn": {
+      "assetId": "0x2ED0BE8F0E7612DF",
+      "protoId": "0xDDB8C87B47D719F0"
+    },
+    "MarvelPlayer_CaptainAmerica_Skrull": {
+      "assetId": "0x2086E0FF04461236",
+      "protoId": "0xCB0C3A2C49111A05"
+    },
+    "MarvelPlayer_CaptainAmerica_SuperSoldier": {
+      "assetId": "0xE9CAE6E40F8412DF",
+      "protoId": "0x5588FEE5EE071C89"
+    },
+    "MarvelPlayer_CaptainAmerica_TheCaptainVU": {
+      "assetId": "0xDE9F56480A291285",
+      "protoId": "0x0795F15EB28B1B89"
+    },
+    "MarvelPlayer_CaptainAmerica_WWII": {
+      "assetId": "0xD90382551217131C",
+      "protoId": "0x8D5ACE1F97151B0C"
+    },
+    "MarvelPlayer_CaptainAmerica_WinterSoldier": {
+      "assetId": "0x0AF39354FDDB11E6",
+      "protoId": "0x8319EB940ADC1CF3"
+    },
+    "MarvelPlayer_CaptainAmerica_WinterSoldier_RedShield": {
+      "assetId": "0xE2D5759E0D35127E",
+      "protoId": "0x75B77427215920A7"
+    },
+    "MarvelPlayer_CaptainWhiteBalance": {
+      "assetId": "0x666A4BB00D8A12E1",
+      "protoId": "0x3C4FA064CD391BDD"
+    },
+    "MarvelPlayer_Carnage_Classic": {
+      "assetId": "0xFB178CBD0CB312B9",
+      "protoId": "0xBD454BC1B07F1769"
+    },
+    "MarvelPlayer_Carnage_SpiderCarnage": {
+      "assetId": "0xD4756D930F0C1321",
+      "protoId": "0x74D6DE62458219DF"
+    },
+    "MarvelPlayer_Colossus_Acolyte": {
+      "assetId": "0x094702030C2B12BC",
+      "protoId": "0xD488A3279E951B80"
+    },
+    "MarvelPlayer_Colossus_AgeOfApocalypse": {
+      "assetId": "0xB5C841AB158A1319",
+      "protoId": "0xC89580A69C4F1B64"
+    },
+    "MarvelPlayer_Colossus_Classic": {
+      "assetId": "0x6980CB340BE612B3",
+      "protoId": "0x9E2FFEC0CDDA1813"
+    },
+    "MarvelPlayer_Colossus_Juggernaut": {
+      "assetId": "0x9AA18CFC145A1341",
+      "protoId": "0x92EBC8B31A03196D"
+    },
+    "MarvelPlayer_Colossus_MarvelNOW": {
+      "assetId": "0x5ACEADDF0A8212AE",
+      "protoId": "0x807E03410128190C"
+    },
+    "MarvelPlayer_Colossus_Modern": {
+      "assetId": "0x07BF52A10B0812AD",
+      "protoId": "0xFCF0D9D7B68917B6"
+    },
+    "MarvelPlayer_Colossus_ModernVU": {
+      "assetId": "0x409374780E621314",
+      "protoId": "0x0BCBF7D3B9441BDD"
+    },
+    "MarvelPlayer_Colossus_Origins": {
+      "assetId": "0x3F01B5800CF512AF",
+      "protoId": "0x2933CCECCF40182C"
+    },
+    "MarvelPlayer_Colossus_Outback": {
+      "assetId": "0xA9F168890B911297",
+      "protoId": "0x389C40BACE8B181A"
+    },
+    "MarvelPlayer_Colossus_PhoenixForce": {
+      "assetId": "0x6715E50E0A29128C",
+      "protoId": "0x157075E04DE31A3B"
+    },
+    "MarvelPlayer_Colossus_Ultimate": {
+      "assetId": "0x1393FDA311841311",
+      "protoId": "0x895884E2E7FE1896"
+    },
+    "MarvelPlayer_CowKing": {
+      "assetId": "0x882AADB10C491290",
+      "protoId": "0x43BE35D14D6A217D"
+    },
+    "MarvelPlayer_Cyclops_90sXmen": {
+      "assetId": "0x02A7B8C211C812EA",
+      "protoId": "0x27D0FA3CB09B1747"
+    },
+    "MarvelPlayer_Cyclops_90sXmenVU": {
+      "assetId": "0x7F1EE0AC0B9612BB",
+      "protoId": "0x0A943D86E1501832"
+    },
+    "MarvelPlayer_Cyclops_AgeOfApocalypse": {
+      "assetId": "0x80E7E321FFBF11F0",
+      "protoId": "0xFDAFA1917EA31AE6"
+    },
+    "MarvelPlayer_Cyclops_AllNewXmen": {
+      "assetId": "0x15973D8B074F1279",
+      "protoId": "0x3CC07DB9FEA118EE"
+    },
+    "MarvelPlayer_Cyclops_AstonishingXmenVU": {
+      "assetId": "0x7DF68C0BFDA911C7",
+      "protoId": "0x3203A2AB1869195A"
+    },
+    "MarvelPlayer_Cyclops_Classic": {
+      "assetId": "0x474ADF210D4712D0",
+      "protoId": "0xB85582211740194D"
+    },
+    "MarvelPlayer_Cyclops_MarvelNowVU": {
+      "assetId": "0x18D5F673FC60128C",
+      "protoId": "0xC461FFC419B31979"
+    },
+    "MarvelPlayer_Cyclops_Noir": {
+      "assetId": "0x04A90A110A921299",
+      "protoId": "0x61E78DC96FCA166B"
+    },
+    "MarvelPlayer_Cyclops_Original": {
+      "assetId": "0x3EFD815813211314",
+      "protoId": "0xAD8B1FA6CCCA1808"
+    },
+    "MarvelPlayer_Cyclops_PhoenixForce": {
+      "assetId": "0x9FEA347F14C21372",
+      "protoId": "0x25558F2131B119BD"
+    },
+    "MarvelPlayer_Cyclops_Skrull": {
+      "assetId": "0x9FDF0B5B0D3512E7",
+      "protoId": "0xAF426D789EA51750"
+    },
+    "MarvelPlayer_Cyclops_XForce": {
+      "assetId": "0xABD31D7512F212FB",
+      "protoId": "0x354D2FD1B53D17AA"
+    },
+    "MarvelPlayer_Daredevil_Armored": {
+      "assetId": "0x202D14ABFAFE1288",
+      "protoId": "0x600DF7CCE24A1850"
+    },
+    "MarvelPlayer_Daredevil_EarthX": {
+      "assetId": "0xC7D8EBB508F512AA",
+      "protoId": "0x9A95CE61CA6717F2"
+    },
+    "MarvelPlayer_Daredevil_ImNotDaredevil": {
+      "assetId": "0x2BF8EF010AA01289",
+      "protoId": "0x34DE550898311B3D"
+    },
+    "MarvelPlayer_Daredevil_ManWOFear": {
+      "assetId": "0xFC66375A0C9512B0",
+      "protoId": "0xCAFB8CFE14341926"
+    },
+    "MarvelPlayer_Daredevil_ManWOFear_BattleDamaged": {
+      "assetId": "0x79A53189FB261279",
+      "protoId": "0x9EE2CF287E0B1E65"
+    },
+    "MarvelPlayer_Daredevil_Modern": {
+      "assetId": "0xBBCB8643118712DF",
+      "protoId": "0x53784ACBCA3C17EB"
+    },
+    "MarvelPlayer_Daredevil_ModernMH2013": {
+      "assetId": "0x2785F97A08601280",
+      "protoId": "0x630D069E57261986"
+    },
+    "MarvelPlayer_Daredevil_Netflix": {
+      "assetId": "0x0291510309EA12B1",
+      "protoId": "0xC35470A197151B1A"
+    },
+    "MarvelPlayer_Daredevil_NetflixFinal": {
+      "assetId": "0x654E30820DE812BC",
+      "protoId": "0xF2A0FF2162691A6A"
+    },
+    "MarvelPlayer_Daredevil_NetflixMaskless": {
+      "assetId": "0x98AA42E0082D1288",
+      "protoId": "0x0C8F6DE8B55D1BC3"
+    },
+    "MarvelPlayer_Daredevil_Noir": {
+      "assetId": "0x9A11BF490ACC12B8",
+      "protoId": "0x2A7F07AE9B55171E"
+    },
+    "MarvelPlayer_Daredevil_Original": {
+      "assetId": "0x7A0ADD6AF87A1287",
+      "protoId": "0xBF4ED640FB2118BB"
+    },
+    "MarvelPlayer_Daredevil_SecretWar": {
+      "assetId": "0xE3CE5D2910D81309",
+      "protoId": "0x1A039E2614FB1936"
+    },
+    "MarvelPlayer_Daredevil_Shadowlands": {
+      "assetId": "0xEF05E5F911B1131C",
+      "protoId": "0x5691CDD12D73198B"
+    },
+    "MarvelPlayer_DeadPool_Classic": {
+      "assetId": "0xF2BBD6C5125D1342",
+      "protoId": "0x146A996FC96217E0"
+    },
+    "MarvelPlayer_DeadPool_Detective": {
+      "assetId": "0xAD0C4CBF09B312AA",
+      "protoId": "0xAA4EF0F1FA8918BB"
+    },
+    "MarvelPlayer_DeadPool_Unmasked": {
+      "assetId": "0x03181444F96F1254",
+      "protoId": "0x2E176265E2A41856"
+    },
+    "MarvelPlayer_DeadPool_XForce": {
+      "assetId": "0xCC5DFA670FD712E8",
+      "protoId": "0x0482D393B2991785"
+    },
+    "MarvelPlayer_DeadPool_XMen": {
+      "assetId": "0x0B8A91FB0E5812E9",
+      "protoId": "0x52A468DA844316B6"
+    },
+    "MarvelPlayer_Deadpool_BOTA": {
+      "assetId": "0x65F1F0460770127E",
+      "protoId": "0x82386E33834E16A4"
+    },
+    "MarvelPlayer_Deadpool_ClassicVU": {
+      "assetId": "0xE12FDC7411AB1324",
+      "protoId": "0x4FB93049FB4918CB"
+    },
+    "MarvelPlayer_Deadpool_LadyDeadpool": {
+      "assetId": "0x70DB29CE10C2131F",
+      "protoId": "0x6802597E465F19F0"
+    },
+    "MarvelPlayer_Deadpool_Pirate": {
+      "assetId": "0xE1852F090EFC12EE",
+      "protoId": "0x831C0D11B25F1783"
+    },
+    "MarvelPlayer_Deadpool_Sheriff": {
+      "assetId": "0xBC3F1C140F8F12C5",
+      "protoId": "0x4DE23B4FC9DB17E5"
+    },
+    "MarvelPlayer_Deadpool_TheKid": {
+      "assetId": "0x1B05A0C609B3127B",
+      "protoId": "0x206AAB147B201ABF"
+    },
+    "MarvelPlayer_Deadpool_Ultimate": {
+      "assetId": "0x1BDF0DD210A91318",
+      "protoId": "0xCFBB7FFCE3531863"
+    },
+    "MarvelPlayer_Deadpool_Zen": {
+      "assetId": "0x53EFFB7905D41254",
+      "protoId": "0xD8BE4B766D92164B"
+    },
+    "MarvelPlayer_Deadpool_ZenVariant": {
+      "assetId": "0x0B25A1C80AF812BB",
+      "protoId": "0xD56A579BEC091C88"
+    },
+    "MarvelPlayer_DoctorStrange_1602": {
+      "assetId": "0x19B777EB005C12E3",
+      "protoId": "0x2B0AF8C4263C18D0"
+    },
+    "MarvelPlayer_DoctorStrange_Classic": {
+      "assetId": "0x6FE8C7041B61137F",
+      "protoId": "0x90F5BC9EE4921862"
+    },
+    "MarvelPlayer_DoctorStrange_ClassicMH2013": {
+      "assetId": "0x696E1E9910161325",
+      "protoId": "0xBD8C00563F021928"
+    },
+    "MarvelPlayer_DoctorStrange_Defenders": {
+      "assetId": "0x5FEA10CC09A61279",
+      "protoId": "0x6AC3BB0315D91930"
+    },
+    "MarvelPlayer_DoctorStrange_FearItself": {
+      "assetId": "0x55BE8A930A66128A",
+      "protoId": "0x8E759923304919A5"
+    },
+    "MarvelPlayer_DoctorStrange_Movie": {
+      "assetId": "0x8E13D10713F41319",
+      "protoId": "0x5F95C976B56017A0"
+    },
+    "MarvelPlayer_Domino": {
+      "assetId": "0x999F408B05EE1269",
+      "protoId": "0xA66E3924FBB218C6"
+    },
+    "MarvelPlayer_DrDoom_2099": {
+      "assetId": "0xE51FEE60109E12E7",
+      "protoId": "0xE763DEE6A90616BE"
+    },
+    "MarvelPlayer_DrDoom_Classic": {
+      "assetId": "0x1DEACB48108512E8",
+      "protoId": "0xC3A68B389B4A171D"
+    },
+    "MarvelPlayer_DrDoom_FutureFoundation": {
+      "assetId": "0x305931AA0B6F1291",
+      "protoId": "0x98154DBA81D01B0D"
+    },
+    "MarvelPlayer_DrDoom_GodEmperor": {
+      "assetId": "0x96EDB7670FD312EF",
+      "protoId": "0x9A56273EE3DF186F"
+    },
+    "MarvelPlayer_Elektra": {
+      "assetId": "0xAFCF2B7E09961282",
+      "protoId": "0x3411EA92B26B1780"
+    },
+    "MarvelPlayer_Elektra_NetflixCostume": {
+      "assetId": "0xEDD76F0B0D0D12C3",
+      "protoId": "0xC1A713A5B1A81762"
+    },
+    "MarvelPlayer_Elektra_TV_Alternate": {
+      "assetId": "0xA857A3C6FC9B12B7",
+      "protoId": "0xF5DA3D57968A1B22"
+    },
+    "MarvelPlayer_Elektra_Ultimate": {
+      "assetId": "0xD9E52C680857128B",
+      "protoId": "0x0C978A2ECBFC1803"
+    },
+    "MarvelPlayer_EmmaFrost_MarvelNOW": {
+      "assetId": "0xE5A2BE2F10AD1322",
+      "protoId": "0x34DA1CFC1845195F"
+    },
+    "MarvelPlayer_EmmaFrost_Modern": {
+      "assetId": "0x36C3FE550C9912B4",
+      "protoId": "0xBC7D29F8CCAD1809"
+    },
+    "MarvelPlayer_EmmaFrost_Modern2013": {
+      "assetId": "0x353543F90AC212E4",
+      "protoId": "0x999BAC3225B918CF"
+    },
+    "MarvelPlayer_EmmaFrost_NewXmen": {
+      "assetId": "0x799569190DA412DB",
+      "protoId": "0x53A43919E6271886"
+    },
+    "MarvelPlayer_EmmaFrost_OldManLogan": {
+      "assetId": "0xE620C69407A6128E",
+      "protoId": "0x9A06F42B4A291A10"
+    },
+    "MarvelPlayer_EmmaFrost_PhoenixForce": {
+      "assetId": "0xB4F713200BB012DF",
+      "protoId": "0xC417717865F91A8E"
+    },
+    "MarvelPlayer_EmmaFrost_Punk": {
+      "assetId": "0x383438650D4012EA",
+      "protoId": "0xBB22099A9DE31742"
+    },
+    "MarvelPlayer_EmmaFrost_WhiteQueen": {
+      "assetId": "0xDA36E6D00E7F1313",
+      "protoId": "0xB098038D320619C3"
+    },
+    "MarvelPlayer_Gambit_Armored": {
+      "assetId": "0xE2D6AE9E0695125D",
+      "protoId": "0x493BB7209A551714"
+    },
+    "MarvelPlayer_Gambit_Classic": {
+      "assetId": "0x81C4E8A708081286",
+      "protoId": "0x13965E4F5B1719E9"
+    },
+    "MarvelPlayer_Gambit_Death": {
+      "assetId": "0xFBA562E0FEAA11F5",
+      "protoId": "0xA47608BE6BC81630"
+    },
+    "MarvelPlayer_Gambit_Shirtless": {
+      "assetId": "0x4E1BD0FE0F2F12E0",
+      "protoId": "0x0217831DCB85180B"
+    },
+    "MarvelPlayer_Gambit_ShirtlessTrench": {
+      "assetId": "0x5E08ADB511731316",
+      "protoId": "0x6F10C6A264C41A8F"
+    },
+    "MarvelPlayer_Gambit_SoloCoat": {
+      "assetId": "0x4B43BD400F0C1308",
+      "protoId": "0x7F4AFD55490F1A13"
+    },
+    "MarvelPlayer_Gambit_XFactor": {
+      "assetId": "0xB0496F81150D1346",
+      "protoId": "0x6E5BD9649AEC1721"
+    },
+    "MarvelPlayer_GhostRider_AlejandraBlaze": {
+      "assetId": "0xE5EADC940A6712C7",
+      "protoId": "0xA907511FB5151BA1"
+    },
+    "MarvelPlayer_GhostRider_AlejandraBlazeVU": {
+      "assetId": "0x146BE1300B7F1291",
+      "protoId": "0xF539BE50EE7E1C8C"
+    },
+    "MarvelPlayer_GhostRider_FantasticFour": {
+      "assetId": "0x13FCA4DB0DCB12C2",
+      "protoId": "0xFE630CB99CAB1B6A"
+    },
+    "MarvelPlayer_GhostRider_ModernVU": {
+      "assetId": "0x627F160E14281350",
+      "protoId": "0xFA033AAB4F421A5E"
+    },
+    "MarvelPlayer_GhostRider_Original": {
+      "assetId": "0xED222F9D1723136F",
+      "protoId": "0x7B694F6B17EE1946"
+    },
+    "MarvelPlayer_GhostRider_RobbieReyes": {
+      "assetId": "0x08F5F9900420124E",
+      "protoId": "0x80ECCBF82CA11D8A"
+    },
+    "MarvelPlayer_GhostRider_SecretWars": {
+      "assetId": "0x5D0ACCFBF8C41252",
+      "protoId": "0x6933AC574CC21A34"
+    },
+    "MarvelPlayer_GhostRider_TrailOfTears": {
+      "assetId": "0x0681525B113A131F",
+      "protoId": "0x63D126D681F51B01"
+    },
+    "MarvelPlayer_GreenGoblin": {
+      "assetId": "0x3F32BF05F7A71269",
+      "protoId": "0xD827654FCBAE17F8"
+    },
+    "MarvelPlayer_GreenGoblin_Classic": {
+      "assetId": "0x349ACFC00DEF12D4",
+      "protoId": "0x62A8BD3E14FA1924"
+    },
+    "MarvelPlayer_GreenGoblin_JackOLantern": {
+      "assetId": "0x7D1B057902F5122A",
+      "protoId": "0x4F6AEC9198B51B3E"
+    },
+    "MarvelPlayer_GreenGoblin_MarvelKnights": {
+      "assetId": "0x7D32A6D8089212B8",
+      "protoId": "0x499C7D52B6351BC1"
+    },
+    "MarvelPlayer_GreenGoblin_Thunderbolts": {
+      "assetId": "0xEB2AE6620B3312AF",
+      "protoId": "0xFF531E8C9B481B60"
+    },
+    "MarvelPlayer_Hawkeye_AgeOfUltron": {
+      "assetId": "0x6889B6310F2612ED",
+      "protoId": "0x4721AACB9B541B6A"
+    },
+    "MarvelPlayer_Hawkeye_Avengers": {
+      "assetId": "0xEC93E3900DFC12E0",
+      "protoId": "0x864C55ACCB7F17FF"
+    },
+    "MarvelPlayer_Hawkeye_CivilWar": {
+      "assetId": "0x7E4B12D70C4112A8",
+      "protoId": "0x27CED941CBE41805"
+    },
+    "MarvelPlayer_Hawkeye_Classic": {
+      "assetId": "0xC2B06AFF11841313",
+      "protoId": "0x9FC2365BB2E91786"
+    },
+    "MarvelPlayer_Hawkeye_ClassicVU": {
+      "assetId": "0x26F868791272133B",
+      "protoId": "0xB2FAF66FE41C1871"
+    },
+    "MarvelPlayer_Hawkeye_FearItself": {
+      "assetId": "0xE989FBD11176131A",
+      "protoId": "0x60C01849FBFD18C9"
+    },
+    "MarvelPlayer_Hawkeye_HawkGuySweatpants": {
+      "assetId": "0x5C406AE60AB6127A",
+      "protoId": "0xEEAB7285B92E1BEE"
+    },
+    "MarvelPlayer_Hawkeye_HawkGuyTShirt": {
+      "assetId": "0x2B63967B0D0312DD",
+      "protoId": "0x630B04734C531A42"
+    },
+    "MarvelPlayer_Hawkeye_HawkguyLongsleeves": {
+      "assetId": "0x7F88BD3605B51221",
+      "protoId": "0x2076117FD49C1C4B"
+    },
+    "MarvelPlayer_Hawkeye_Modern": {
+      "assetId": "0xF765A8950B1B1289",
+      "protoId": "0xCA4944969C251729"
+    },
+    "MarvelPlayer_Hawkeye_OldManLogan": {
+      "assetId": "0xEF05FDC21109130B",
+      "protoId": "0x2F4F81E515411930"
+    },
+    "MarvelPlayer_Hawkeye_Ronin": {
+      "assetId": "0x1A18F3A7113512EA",
+      "protoId": "0x2990DEBC85B516CA"
+    },
+    "MarvelPlayer_Hawkeye_Shield": {
+      "assetId": "0xA80EA9CB0C9212B8",
+      "protoId": "0x279195849BAC171D"
+    },
+    "MarvelPlayer_Hulk_2099": {
+      "assetId": "0x53D06A660C7112B6",
+      "protoId": "0x6D3CD3117AC315F2"
+    },
+    "MarvelPlayer_Hulk_AgeOfUltron": {
+      "assetId": "0xB1080BA80F4312D8",
+      "protoId": "0xD76DE8904AD91A30"
+    },
+    "MarvelPlayer_Hulk_Avengers": {
+      "assetId": "0x8724A9810A1912B1",
+      "protoId": "0x43D7B5DAFD5F18E5"
+    },
+    "MarvelPlayer_Hulk_Christmas": {
+      "assetId": "0x1809715E0D7912C2",
+      "protoId": "0xEC9DD3A4CBAF1808"
+    },
+    "MarvelPlayer_Hulk_ClassicVU": {
+      "assetId": "0x2993BFD808CC1287",
+      "protoId": "0xB64DDE7C9C371737"
+    },
+    "MarvelPlayer_Hulk_GreyHulk": {
+      "assetId": "0x904A2E7609FA128A",
+      "protoId": "0x8FEB1DF2859F16D1"
+    },
+    "MarvelPlayer_Hulk_Horseman": {
+      "assetId": "0xC4CE18D206D61262",
+      "protoId": "0xDFF7F5EDB6CC1BCD"
+    },
+    "MarvelPlayer_Hulk_Maestro": {
+      "assetId": "0x5F7B7E1E03771222",
+      "protoId": "0x5FA05FCE6EAB1665"
+    },
+    "MarvelPlayer_Hulk_MarvelNOW": {
+      "assetId": "0xF426679F06171262",
+      "protoId": "0x83C333EC9D291745"
+    },
+    "MarvelPlayer_Hulk_MrFixIt": {
+      "assetId": "0x60A6288F08441266",
+      "protoId": "0x5F50EAAA6F3D166D"
+    },
+    "MarvelPlayer_Hulk_MrFixIt_Pinstripe": {
+      "assetId": "0xA64DD3F707A01267",
+      "protoId": "0xCBDBD4C94D711A4B"
+    },
+    "MarvelPlayer_Hulk_MrFixIt_White": {
+      "assetId": "0x5755C4E607E8125D",
+      "protoId": "0x533BFEDFE61F188E"
+    },
+    "MarvelPlayer_Hulk_PlanetVU": {
+      "assetId": "0x05FA6BD20A431283",
+      "protoId": "0x310EC385E57F188D"
+    },
+    "MarvelPlayer_Hulk_Revengers": {
+      "assetId": "0xF5AED37E0F8112EC",
+      "protoId": "0x303A59AD9CC8173B"
+    },
+    "MarvelPlayer_Hulk_Ultimate": {
+      "assetId": "0x64D056F7147E1368",
+      "protoId": "0x828A256085D516CF"
+    },
+    "MarvelPlayer_HumanTorch": {
+      "assetId": "0xDD52D96F0AF4128F",
+      "protoId": "0x5048643BE5CD1874"
+    },
+    "MarvelPlayer_HumanTorch_2099": {
+      "assetId": "0xC68052451A4513AC",
+      "protoId": "0x30B6F56B8BFA1EF0"
+    },
+    "MarvelPlayer_HumanTorch_ClassicBlue": {
+      "assetId": "0x31C1841208AD1294",
+      "protoId": "0xA5B91FD0650A1A79"
+    },
+    "MarvelPlayer_HumanTorch_Inhumans": {
+      "assetId": "0x4E99033F0FFE1312",
+      "protoId": "0xC8DB3EB6185D1952"
+    },
+    "MarvelPlayer_HumanTorch_LightBrigade": {
+      "assetId": "0x181FAC92120C1319",
+      "protoId": "0x8AA1530E7F721AD5"
+    },
+    "MarvelPlayer_HumanTorch_Original": {
+      "assetId": "0x3188343A12631316",
+      "protoId": "0x7724390217D31944"
+    },
+    "MarvelPlayer_HumanTorch_Red": {
+      "assetId": "0x992FF4010D8112C9",
+      "protoId": "0x8730BC3D9D72172A"
+    },
+    "MarvelPlayer_Iceman_AgeOfApocalypse": {
+      "assetId": "0xDEF1BACD10A312E1",
+      "protoId": "0x6142EA8F5F551A56"
+    },
+    "MarvelPlayer_Iceman_AllNewXmen": {
+      "assetId": "0xFDA09A22F43F1224",
+      "protoId": "0xD3B50CC8E223185E"
+    },
+    "MarvelPlayer_Iceman_Classic": {
+      "assetId": "0x3D393F02034B1226",
+      "protoId": "0x2ACB881599501705"
+    },
+    "MarvelPlayer_Iceman_Original": {
+      "assetId": "0xCF5273AD09181292",
+      "protoId": "0xC6322446B16C1778"
+    },
+    "MarvelPlayer_InvisibleWoman_AllNewMarvelNOW": {
+      "assetId": "0x2EF0F58903981221",
+      "protoId": "0xB251F22B4B8B1DFB"
+    },
+    "MarvelPlayer_InvisibleWoman_Classic": {
+      "assetId": "0x810FAAF10F4B12F5",
+      "protoId": "0x6E6DD4CA66991A7F"
+    },
+    "MarvelPlayer_InvisibleWoman_FFInverted": {
+      "assetId": "0xC649EA3C08821281",
+      "protoId": "0x24713C9BB9311BCA"
+    },
+    "MarvelPlayer_InvisibleWoman_FutureFoundation": {
+      "assetId": "0x914C42F215921342",
+      "protoId": "0xC78B8E8D6B911E6F"
+    },
+    "MarvelPlayer_InvisibleWoman_UltimateFF": {
+      "assetId": "0x2F95241C0FD21311",
+      "protoId": "0x63B00120B9EF1BCE"
+    },
+    "MarvelPlayer_IronFist_Classic": {
+      "assetId": "0xAAEE74151196130A",
+      "protoId": "0x91BA043BCCED1806"
+    },
+    "MarvelPlayer_IronFist_HeroesForHire": {
+      "assetId": "0xC2E029180A2F12B0",
+      "protoId": "0x4A007FD667051A99"
+    },
+    "MarvelPlayer_IronFist_Immortal": {
+      "assetId": "0x5A4804450F661314",
+      "protoId": "0x799A0955E6CD1889"
+    },
+    "MarvelPlayer_IronFist_ImmortalVariant": {
+      "assetId": "0xD013820908B5128E",
+      "protoId": "0x469090909E921B7E"
+    },
+    "MarvelPlayer_IronFist_Netflix": {
+      "assetId": "0x78E032690C8312B9",
+      "protoId": "0xD52BEA52CE2B181E"
+    },
+    "MarvelPlayer_IronFist_Skrull": {
+      "assetId": "0x1145DEA20D1612E3",
+      "protoId": "0xB218EDEBB70317C1"
+    },
+    "MarvelPlayer_IronFist_White": {
+      "assetId": "0x5AF6543C0731125D",
+      "protoId": "0xB56DDB9B9E821745"
+    },
+    "MarvelPlayer_Ironman_AoUHulkbuster": {
+      "assetId": "0x0F9873670E3412C0",
+      "protoId": "0x941A0F5BC6EC1FB9"
+    },
+    "MarvelPlayer_Ironman_AoUMark43": {
+      "assetId": "0x9B65A1290B4512B6",
+      "protoId": "0x633BD4A3447A1D82"
+    },
+    "MarvelPlayer_Ironman_Avengers": {
+      "assetId": "0x690627E40807127C",
+      "protoId": "0xDFC5CC20CC331805"
+    },
+    "MarvelPlayer_Ironman_CivilWar": {
+      "assetId": "0xCD4D05010EF312BF",
+      "protoId": "0x7E4740CDCC98180B"
+    },
+    "MarvelPlayer_Ironman_Classic": {
+      "assetId": "0xCB923AEC0E7312E6",
+      "protoId": "0xA566AD27B397178C"
+    },
+    "MarvelPlayer_Ironman_Extremis": {
+      "assetId": "0xBB433F800F8012E7",
+      "protoId": "0x1A762426CDA9181B"
+    },
+    "MarvelPlayer_Ironman_Gemini": {
+      "assetId": "0xBC2D97F1FDEB12B8",
+      "protoId": "0x14B9F648E648188B"
+    },
+    "MarvelPlayer_Ironman_GoldAvenger": {
+      "assetId": "0x65B65E290D6512B5",
+      "protoId": "0x51DD12E015F61938"
+    },
+    "MarvelPlayer_Ironman_GotG": {
+      "assetId": "0x99453CD70CBA1296",
+      "protoId": "0x9694EC676F07165B"
+    },
+    "MarvelPlayer_Ironman_Heartbreaker": {
+      "assetId": "0x33C1CF500A3E12AE",
+      "protoId": "0x11BF5EE22EFB199A"
+    },
+    "MarvelPlayer_Ironman_HomecomingMark47": {
+      "assetId": "0x5B1FE3AC08B8127D",
+      "protoId": "0x0C03EAAC95A41AE6"
+    },
+    "MarvelPlayer_Ironman_Hulkbuster": {
+      "assetId": "0xB1A84C4103E11252",
+      "protoId": "0xF8E41D93FEF618F3"
+    },
+    "MarvelPlayer_Ironman_IronMan3": {
+      "assetId": "0x674E6303143D1349",
+      "protoId": "0xEDAB80B3482519F1"
+    },
+    "MarvelPlayer_Ironman_MacPac": {
+      "assetId": "0x3289F67F1A551393",
+      "protoId": "0x4A0723809B37170F"
+    },
+    "MarvelPlayer_Ironman_Mark2": {
+      "assetId": "0xFF0E6D490A5F1285",
+      "protoId": "0x897A246883001687"
+    },
+    "MarvelPlayer_Ironman_Mark3": {
+      "assetId": "0xBF6948EE05DC125D",
+      "protoId": "0x48F4FBA8830B1688"
+    },
+    "MarvelPlayer_Ironman_Mark4": {
+      "assetId": "0xA99DB4EFF9301258",
+      "protoId": "0x61CFEE2B83161689"
+    },
+    "MarvelPlayer_Ironman_Mark5": {
+      "assetId": "0x660400170BD412B0",
+      "protoId": "0xA04131EB8321168A"
+    },
+    "MarvelPlayer_Ironman_Mark6": {
+      "assetId": "0xDC6F92C1111912F1",
+      "protoId": "0x39A357EA832C168B"
+    },
+    "MarvelPlayer_Ironman_MarvelNOW": {
+      "assetId": "0x56ADC2790DDA12D7",
+      "protoId": "0x63235D6DE5C81885"
+    },
+    "MarvelPlayer_Ironman_NightClub_Red": {
+      "assetId": "0x7280ED2308971282",
+      "protoId": "0xB2E0AF5C2FFD19A5"
+    },
+    "MarvelPlayer_Ironman_OriginalGray": {
+      "assetId": "0x3C035C571FAD1403",
+      "protoId": "0x1098426982F51686"
+    },
+    "MarvelPlayer_Ironman_Shotgun": {
+      "assetId": "0xFBA8E77C17B11399",
+      "protoId": "0x5880EB5EB5B417B2"
+    },
+    "MarvelPlayer_Ironman_SilverCenturion": {
+      "assetId": "0x38BC28B0127512E6",
+      "protoId": "0xE7A52715827D1B16"
+    },
+    "MarvelPlayer_Ironman_Stealth": {
+      "assetId": "0xCB53519F0CAD1307",
+      "protoId": "0x08421090B4C7179F"
+    },
+    "MarvelPlayer_JeanGrey_90sXmen": {
+      "assetId": "0x7FCB6B401E0113CB",
+      "protoId": "0x190561E4C709179F"
+    },
+    "MarvelPlayer_JeanGrey_90sXmenMH2013": {
+      "assetId": "0x3538971A09A61287",
+      "protoId": "0xC7BEDF3F522B193A"
+    },
+    "MarvelPlayer_JeanGrey_AgeOfApocalypse": {
+      "assetId": "0x50A51C70F58C1220",
+      "protoId": "0x997A658597D11B3E"
+    },
+    "MarvelPlayer_JeanGrey_AllNewXmen": {
+      "assetId": "0x67FE2D9E14C1131B",
+      "protoId": "0xDB566C8516261946"
+    },
+    "MarvelPlayer_JeanGrey_BlackQueen": {
+      "assetId": "0xFBE3D1440D0112D6",
+      "protoId": "0x7A6BCCD9142D1926"
+    },
+    "MarvelPlayer_JeanGrey_Classic": {
+      "assetId": "0x38CF694AFD951280",
+      "protoId": "0x5B716367CBDD1806"
+    },
+    "MarvelPlayer_JeanGrey_ClassicMH2013": {
+      "assetId": "0x6B9245FA116412EB",
+      "protoId": "0x2CD6E2A472C119FB"
+    },
+    "MarvelPlayer_JeanGrey_ClassicWhite": {
+      "assetId": "0xA9FC97ED08121282",
+      "protoId": "0x71F6CA554ACB1A27"
+    },
+    "MarvelPlayer_JeanGrey_ClassicWhiteMH2013": {
+      "assetId": "0x55DF18A501C51231",
+      "protoId": "0xC3C892B9E50E1BC2"
+    },
+    "MarvelPlayer_JeanGrey_DarkPhoenix": {
+      "assetId": "0xE111C4C6100F1319",
+      "protoId": "0x5641A7F42F0C19A8"
+    },
+    "MarvelPlayer_JeanGrey_DarkPhoenixMH2013": {
+      "assetId": "0x354DD086013E122E",
+      "protoId": "0xCD8DC548C6551B43"
+    },
+    "MarvelPlayer_JeanGrey_MarvelGirl": {
+      "assetId": "0x36388CF30EB712EC",
+      "protoId": "0xB3613F2C15F81940"
+    },
+    "MarvelPlayer_JeanGrey_MarvelNOW": {
+      "assetId": "0xE2B6B7B403BF124B",
+      "protoId": "0x4B0A32BBFD7F18E6"
+    },
+    "MarvelPlayer_JeanGrey_NewXmen": {
+      "assetId": "0x9FC5DBC908981277",
+      "protoId": "0xA06E70EDCC62180D"
+    },
+    "MarvelPlayer_JeanGrey_NewXmenJacket": {
+      "assetId": "0x854373FF0A181284",
+      "protoId": "0x845BA56464671A7F"
+    },
+    "MarvelPlayer_JeanGrey_NewXmenTrenchcoat": {
+      "assetId": "0xF9BB241F073F1253",
+      "protoId": "0xDBF6E718D3B61C38"
+    },
+    "MarvelPlayer_Juggernaut_Classic": {
+      "assetId": "0x5993AFF20FE8131A",
+      "protoId": "0xC88916DFFDD918D4"
+    },
+    "MarvelPlayer_Juggernaut_FearItself": {
+      "assetId": "0x6F35B46710D312F0",
+      "protoId": "0xF27617F84AE61A17"
+    },
+    "MarvelPlayer_Juggernaut_Unstoppable": {
+      "assetId": "0xB3120044077A1294",
+      "protoId": "0xB1574A1E68101A9F"
+    },
+    "MarvelPlayer_Juggernaut_Xmen": {
+      "assetId": "0x8E4AD55C002812D5",
+      "protoId": "0x5D4BB031B5DE17AA"
+    },
+    "MarvelPlayer_KateBishop": {
+      "assetId": "0x2CEE6030037A1236",
+      "protoId": "0x5C90ADB666D71E5B"
+    },
+    "MarvelPlayer_KittyPrideTest": {
+      "assetId": "0x4C615BBF13751334",
+      "protoId": "0x55ED5B9E35F119EE"
+    },
+    "MarvelPlayer_KittyPryde_AgeOfApocalypse": {
+      "assetId": "0x65DC408B0C0812B9",
+      "protoId": "0x5EF95286D63E1C42"
+    },
+    "MarvelPlayer_KittyPryde_Classic": {
+      "assetId": "0xB9E3D6B60C7E12DF",
+      "protoId": "0x4B801B3A00E818F1"
+    },
+    "MarvelPlayer_KittyPryde_ExcaliburMasked": {
+      "assetId": "0xB1D62FCD0A6D128D",
+      "protoId": "0x70F6BF62D72A1C43"
+    },
+    "MarvelPlayer_LadyLoki": {
+      "assetId": "0x85A61C03119D1315",
+      "protoId": "0x6A3F9A5C846B16BE"
+    },
+    "MarvelPlayer_Loki_AgentOfAsgard": {
+      "assetId": "0x9BE7774914A6134A",
+      "protoId": "0xBAE30BD6FA9018BB"
+    },
+    "MarvelPlayer_Loki_AgentOfAsgardVariant": {
+      "assetId": "0xE699B35805F51282",
+      "protoId": "0x229C02A2B3B31BB0"
+    },
+    "MarvelPlayer_Loki_Classic": {
+      "assetId": "0x15C56E8E12671314",
+      "protoId": "0xAF069F43CAB717F6"
+    },
+    "MarvelPlayer_Loki_Prisoner": {
+      "assetId": "0x90D68946105812F3",
+      "protoId": "0x86AA1219FEE718F7"
+    },
+    "MarvelPlayer_Loki_Seige": {
+      "assetId": "0xCEDBA3790453125A",
+      "protoId": "0xD2BACF07412D1572"
+    },
+    "MarvelPlayer_Loki_Traveling": {
+      "assetId": "0x0C440C0F10A5131E",
+      "protoId": "0xB560C24CD3D81C43"
+    },
+    "MarvelPlayer_Loki_VoteLoki": {
+      "assetId": "0x59B062AE1077131E",
+      "protoId": "0xF08DF36885E116D2"
+    },
+    "MarvelPlayer_LukeCage_90s": {
+      "assetId": "0xBCCCD80F1242131E",
+      "protoId": "0x461D0D4B277E1914"
+    },
+    "MarvelPlayer_LukeCage_Classic": {
+      "assetId": "0xABC8DB0A0A4912AA",
+      "protoId": "0x89C92906C96017D9"
+    },
+    "MarvelPlayer_LukeCage_Classic2013": {
+      "assetId": "0x49F54557140D134F",
+      "protoId": "0x2938623921AC189F"
+    },
+    "MarvelPlayer_LukeCage_EarthX": {
+      "assetId": "0x2AEABCB20BC112CB",
+      "protoId": "0x6474D8E3B2741783"
+    },
+    "MarvelPlayer_LukeCage_HeroesForHire": {
+      "assetId": "0xAE38C9CF0814125A",
+      "protoId": "0xA00A7DAA626A1A6C"
+    },
+    "MarvelPlayer_LukeCage_Modern": {
+      "assetId": "0x793DEBF60D4012BA",
+      "protoId": "0xAD995C49B249177C"
+    },
+    "MarvelPlayer_LukeCage_Modern2013": {
+      "assetId": "0x2DFCF392005012EF",
+      "protoId": "0x3ECD396C09211842"
+    },
+    "MarvelPlayer_LukeCage_Noir": {
+      "assetId": "0x1E80247D0C6E12D8",
+      "protoId": "0x92236586844016AF"
+    },
+    "MarvelPlayer_LukeCage_Skrull": {
+      "assetId": "0x38183D5F0FA9130A",
+      "protoId": "0x7672A73CB3A31794"
+    },
+    "MarvelPlayer_LukeCage_StreetClothes": {
+      "assetId": "0x0D11970F04B31255",
+      "protoId": "0x15D8CE2464041A80"
+    },
+    "MarvelPlayer_LukeCage_TV": {
+      "assetId": "0xE57850C0114D131F",
+      "protoId": "0x6EE5361B57C315E1"
+    },
+    "MarvelPlayer_LukeCage_TV_Variant": {
+      "assetId": "0x9BD7002107401260",
+      "protoId": "0x11C433F4FCE118D6"
+    },
+    "MarvelPlayer_MODOK": {
+      "assetId": "0x37903CE60E7312EA",
+      "protoId": "0x5569EFF6010618F6"
+    },
+    "MarvelPlayer_Magik_MarvelNOW": {
+      "assetId": "0xF665A94F12441322",
+      "protoId": "0x76302487B2F6179A"
+    },
+    "MarvelPlayer_Magik_NewMutants": {
+      "assetId": "0x27FED6F11347131D",
+      "protoId": "0xA69D6040CBFF1815"
+    },
+    "MarvelPlayer_Magik_PhoenixForce": {
+      "assetId": "0x5803166B0C5712E3",
+      "protoId": "0xCBF34116FB5B18C9"
+    },
+    "MarvelPlayer_Magik_SoulArmor": {
+      "assetId": "0xEAF8746A0D8012F8",
+      "protoId": "0x31EC2F68B3CB17A3"
+    },
+    "MarvelPlayer_Magneto_Classic": {
+      "assetId": "0x7EAB70A70D6612E8",
+      "protoId": "0x404B80FBB2921783"
+    },
+    "MarvelPlayer_Magneto_MarvelNOW_Black": {
+      "assetId": "0x35A4C61D09CA1292",
+      "protoId": "0xBCF2646063F81A79"
+    },
+    "MarvelPlayer_Magneto_MarvelNOW_White": {
+      "assetId": "0x82C2C6ED050F125E",
+      "protoId": "0xA24E36A765ED1A9D"
+    },
+    "MarvelPlayer_Magneto_UncannyAvengers": {
+      "assetId": "0xE987EC380844125D",
+      "protoId": "0x0793925F7FC01AF8"
+    },
+    "MarvelPlayer_MedusaTesting": {
+      "assetId": "0xB6EEE52D03BA1239",
+      "protoId": "0x0999A58E2F0A1D75"
+    },
+    "MarvelPlayer_MoonKnight_EarthX": {
+      "assetId": "0xE4DFB42C0D5612E5",
+      "protoId": "0x0F3DAEEEE6611880"
+    },
+    "MarvelPlayer_MoonKnight_MarvelNOW": {
+      "assetId": "0xE5B6D2D90EB11312",
+      "protoId": "0x7BD49764331E19CF"
+    },
+    "MarvelPlayer_MoonKnight_Modern": {
+      "assetId": "0x65856AFA07E61267",
+      "protoId": "0xC6D02A44E6361879"
+    },
+    "MarvelPlayer_MoonKnight_MrKnightCoat": {
+      "assetId": "0xA25EDD340E2812DB",
+      "protoId": "0xCD79354482211AFF"
+    },
+    "MarvelPlayer_MoonKnight_MrKnightVest": {
+      "assetId": "0xC4745B3202B71227",
+      "protoId": "0xF514720083811B1A"
+    },
+    "MarvelPlayer_MoonKnight_SecretAvengers": {
+      "assetId": "0x343885D201A01227",
+      "protoId": "0x9602B25BB8F61BD5"
+    },
+    "MarvelPlayer_MrFantastic": {
+      "assetId": "0xEA389F7B09D412B1",
+      "protoId": "0xBE9F33A4169E1934"
+    },
+    "MarvelPlayer_MrFantastic_FFInverted": {
+      "assetId": "0x225F57B809B912B7",
+      "protoId": "0x24B42C7A65551A7F"
+    },
+    "MarvelPlayer_MrFantastic_FutureFoundation": {
+      "assetId": "0x5269F44B06701254",
+      "protoId": "0x3BE0CF1C0FF31D24"
+    },
+    "MarvelPlayer_MrFantastic_MarvelNOW": {
+      "assetId": "0x62F68188FB1E1288",
+      "protoId": "0x1B4CCECB9CDC1B68"
+    },
+    "MarvelPlayer_MsMarvel_AgentOfSWORD": {
+      "assetId": "0xBF9C9C061732137F",
+      "protoId": "0x24F76FC34C0C1A30"
+    },
+    "MarvelPlayer_MsMarvel_Binary": {
+      "assetId": "0x9184468B095312D7",
+      "protoId": "0x691C2F38B50617A2"
+    },
+    "MarvelPlayer_MsMarvel_CaptainMarvel": {
+      "assetId": "0xDA8BA9A709081280",
+      "protoId": "0x4F6D1D6C29B71D66"
+    },
+    "MarvelPlayer_MsMarvel_CaptainMarvelANAD": {
+      "assetId": "0x11811145067D1232",
+      "protoId": "0x3BC83198D2241C18"
+    },
+    "MarvelPlayer_MsMarvel_Classic": {
+      "assetId": "0x307CB7F409EE12A1",
+      "protoId": "0x3D3F4190CC7C17FF"
+    },
+    "MarvelPlayer_MsMarvel_DexterSoy": {
+      "assetId": "0x9A4C2F7F0C9B12AA",
+      "protoId": "0x0D0867B700301904"
+    },
+    "MarvelPlayer_MsMarvel_MarVell": {
+      "assetId": "0x5594E7B9087D12B2",
+      "protoId": "0xBB549AD5CD701810"
+    },
+    "MarvelPlayer_MsMarvel_Modern": {
+      "assetId": "0xC1C965C817031396",
+      "protoId": "0x504FFDB5B53F17A2"
+    },
+    "MarvelPlayer_MsMarvel_Shield": {
+      "assetId": "0x2CAB9FCA090D12AC",
+      "protoId": "0xBD972CA7B4C61796"
+    },
+    "MarvelPlayer_MsMarvel_Skrull": {
+      "assetId": "0x707B693E0FBB130B",
+      "protoId": "0x8BA406C0B69917BA"
+    },
+    "MarvelPlayer_MsMarvel_Warbird": {
+      "assetId": "0x061D943F03331222",
+      "protoId": "0x246709DACD261808"
+    },
+    "MarvelPlayer_NickFury_SHIELD": {
+      "assetId": "0x6B34B7201240133E",
+      "protoId": "0xE3D61D87B4B6179A"
+    },
+    "MarvelPlayer_NickFury_Ultimate": {
+      "assetId": "0xF100C41707871283",
+      "protoId": "0x26CABF70E6841886"
+    },
+    "MarvelPlayer_Nightcrawler_AgeOfApocalypse": {
+      "assetId": "0x632ECCE5117012E5",
+      "protoId": "0x4678BAB40B791CF3"
+    },
+    "MarvelPlayer_Nightcrawler_AgeOfApocalypseVariant": {
+      "assetId": "0x5177D8930E1412B0",
+      "protoId": "0x854520A0E2151FE8"
+    },
+    "MarvelPlayer_Nightcrawler_Classic": {
+      "assetId": "0x9937AAA31575137A",
+      "protoId": "0x680BEFFA308C19A2"
+    },
+    "MarvelPlayer_Nightcrawler_HouseOfM": {
+      "assetId": "0xD7D17FF30DA112B7",
+      "protoId": "0xDF6A425E4C241A26"
+    },
+    "MarvelPlayer_Nightcrawler_Modern": {
+      "assetId": "0x69C0518C1A011375",
+      "protoId": "0x61C7B80217AC1945"
+    },
+    "MarvelPlayer_Nightcrawler_XForce": {
+      "assetId": "0xB655CF090B07129C",
+      "protoId": "0xB91BF15D18011947"
+    },
+    "MarvelPlayer_Nova_RR_ModernVU": {
+      "assetId": "0xCB73DCA108CC1289",
+      "protoId": "0xEE320EA3CDC4181F"
+    },
+    "MarvelPlayer_Nova_RR_Original": {
+      "assetId": "0xF9FFD13509F512B9",
+      "protoId": "0x149BE32AB4B517A3"
+    },
+    "MarvelPlayer_Nova_SA_BlackVortex": {
+      "assetId": "0x9B450F000CB112E5",
+      "protoId": "0x34DE5278FCCA18E3"
+    },
+    "MarvelPlayer_Nova_SA_MarvelNOW": {
+      "assetId": "0x831494A80C1212C0",
+      "protoId": "0x5134B333CCA81819"
+    },
+    "MarvelPlayer_Nova_SA_MarvelNowVU": {
+      "assetId": "0x4CB7954E0813129C",
+      "protoId": "0x820CAE99FF011904"
+    },
+    "MarvelPlayer_NullMesh": {
+      "assetId": "0x7BE99745070B127C",
+      "protoId": "0xD39DE30BA1201B96"
+    },
+    "MarvelPlayer_Psylocke_ClassicVU": {
+      "assetId": "0x71292435044F1257",
+      "protoId": "0xD87736ECCD091802"
+    },
+    "MarvelPlayer_Psylocke_HouseofM": {
+      "assetId": "0x0BC12968047B1254",
+      "protoId": "0x2B0E8BD6E7011886"
+    },
+    "MarvelPlayer_Psylocke_LadyMandarin": {
+      "assetId": "0x363CD36D09EB128D",
+      "protoId": "0x42DB6D894B011A14"
+    },
+    "MarvelPlayer_Psylocke_Skrull": {
+      "assetId": "0x213627B90FF71316",
+      "protoId": "0x166D770DB72317BD"
+    },
+    "MarvelPlayer_Psylocke_XForce": {
+      "assetId": "0xECFE552E10B71302",
+      "protoId": "0x155AC527B61E17A7"
+    },
+    "MarvelPlayer_Punisher": {
+      "assetId": "0x2D530E6508161254",
+      "protoId": "0x10FAC1F0E64B1879"
+    },
+    "MarvelPlayer_Punisher_Classic": {
+      "assetId": "0xB09EAD850CD212B1",
+      "protoId": "0x348DD6B5CD2E1806"
+    },
+    "MarvelPlayer_Punisher_DeadWinter": {
+      "assetId": "0x18A2DA080E7C12E3",
+      "protoId": "0x449C899A17A3194B"
+    },
+    "MarvelPlayer_Punisher_FrankenCastle": {
+      "assetId": "0xC571ABD20E3912E4",
+      "protoId": "0xC407F76C65DD1A85"
+    },
+    "MarvelPlayer_Punisher_MarvelNOW": {
+      "assetId": "0xB9E6C6C10FFA12E7",
+      "protoId": "0xE7838CAA006218FF"
+    },
+    "MarvelPlayer_Punisher_ModernVU": {
+      "assetId": "0x4C2CAD4003F61249",
+      "protoId": "0x5494F3B9B5EA17A9"
+    },
+    "MarvelPlayer_Punisher_Noir": {
+      "assetId": "0x9D2504030906128A",
+      "protoId": "0xE902CE7A878716DC"
+    },
+    "MarvelPlayer_Punisher_Omega": {
+      "assetId": "0xEEF0F77F0B6212C1",
+      "protoId": "0x75542E053019199A"
+    },
+    "MarvelPlayer_Punisher_RachelAlves": {
+      "assetId": "0x07C8262810421326",
+      "protoId": "0x067AA6CD30FB19AE"
+    },
+    "MarvelPlayer_Punisher_Skrull": {
+      "assetId": "0x2A3C9B980B5C12DB",
+      "protoId": "0x8F7F08CCB74417C1"
+    },
+    "MarvelPlayer_Punisher_TV": {
+      "assetId": "0x8146423F12DE133D",
+      "protoId": "0x51AA6D145AB0160E"
+    },
+    "MarvelPlayer_Punisher_Test": {
+      "assetId": "0xE5926E260E4A12B7",
+      "protoId": "0x0A0A58E5E89218A6"
+    },
+    "MarvelPlayer_Punisher_Trenchcoat": {
+      "assetId": "0xDDF811F60AD212B3",
+      "protoId": "0x40C8AB4E1888194F"
+    },
+    "MarvelPlayer_Punisher_WarJournal": {
+      "assetId": "0x18AD818C0C9212C2",
+      "protoId": "0xCEA0350E1A171969"
+    },
+    "MarvelPlayer_Punisher_WarTorn": {
+      "assetId": "0xC64E90DA14011334",
+      "protoId": "0xF1EF6E7CCF901831"
+    },
+    "MarvelPlayer_RocketRaccoon_CosmicGear": {
+      "assetId": "0xCBD8E99C0C4812BC",
+      "protoId": "0xBD0E08109AA81B40"
+    },
+    "MarvelPlayer_RocketRaccoon_DeepSpace": {
+      "assetId": "0x7B40534F0637125D",
+      "protoId": "0x1E2160857EDB1ACD"
+    },
+    "MarvelPlayer_RocketRaccoon_GotGMovie": {
+      "assetId": "0xC39CC6000A641284",
+      "protoId": "0x9EAFF03581281AF4"
+    },
+    "MarvelPlayer_RocketRaccoon_GotGMovie_Vol2": {
+      "assetId": "0x066CCD53038A1234",
+      "protoId": "0xEC3F6CA3EF751C77"
+    },
+    "MarvelPlayer_RocketRaccoon_GuardiansOG": {
+      "assetId": "0x092829FF0DDE12E3",
+      "protoId": "0x7002CAF2B7CD1BCC"
+    },
+    "MarvelPlayer_RocketRaccoon_MarvelNOW": {
+      "assetId": "0x3BB5BFE704C61251",
+      "protoId": "0x51A7A5CE81701AFE"
+    },
+    "MarvelPlayer_RocketRaccoon_Modern": {
+      "assetId": "0x50FC17FF13111343",
+      "protoId": "0xF3EAE786310A19A8"
+    },
+    "MarvelPlayer_RocketRaccoon_OfficeAttire": {
+      "assetId": "0xA6108E8A016A11FA",
+      "protoId": "0x1A6EFDFED2361C18"
+    },
+    "MarvelPlayer_RocketRaccoon_OriginalGreen": {
+      "assetId": "0x68051E240FD212E2",
+      "protoId": "0x7B568646EF991C89"
+    },
+    "MarvelPlayer_RocketRaccoon_Symbiote": {
+      "assetId": "0xBEC92583114D130C",
+      "protoId": "0x00F8262766C11A8F"
+    },
+    "MarvelPlayer_Rogue_1602": {
+      "assetId": "0xA9AD41900DFA12E5",
+      "protoId": "0x31DD2E15C1631728"
+    },
+    "MarvelPlayer_Rogue_AgeOfX": {
+      "assetId": "0xF9142B57074F1268",
+      "protoId": "0xFAB6B38B6DFE1652"
+    },
+    "MarvelPlayer_Rogue_Classic90s": {
+      "assetId": "0x4B2EE332018A1225",
+      "protoId": "0x5F676D60C6681796"
+    },
+    "MarvelPlayer_Rogue_Modern": {
+      "assetId": "0x2B6899A00E1412CC",
+      "protoId": "0x7C10F39F6EC8165D"
+    },
+    "MarvelPlayer_Rogue_SavageLand": {
+      "assetId": "0x636DA00F0E7E12E9",
+      "protoId": "0xA413DAF1CAEC17EE"
+    },
+    "MarvelPlayer_ScarletWitch_ANAD": {
+      "assetId": "0x3645FABD02B8122F",
+      "protoId": "0x84033AFCE4A41857"
+    },
+    "MarvelPlayer_ScarletWitch_AgeOfUltron": {
+      "assetId": "0x32A74B0F099D1289",
+      "protoId": "0x1547EC512C761D89"
+    },
+    "MarvelPlayer_ScarletWitch_CivilWar": {
+      "assetId": "0x29685C0E0772125B",
+      "protoId": "0x5462FC484C0E1A24"
+    },
+    "MarvelPlayer_ScarletWitch_DarkWanda": {
+      "assetId": "0x0287E54707A31296",
+      "protoId": "0xA33A1A6764FA1A70"
+    },
+    "MarvelPlayer_ScarletWitch_ForceWorks": {
+      "assetId": "0x47C1D3000E3712B9",
+      "protoId": "0x4B94F9AF82371B08"
+    },
+    "MarvelPlayer_ScarletWitch_HeroesReborn": {
+      "assetId": "0x2701C9030AF612DD",
+      "protoId": "0x6E80EE81B8A61BD1"
+    },
+    "MarvelPlayer_ScarletWitch_HouseOfM": {
+      "assetId": "0x1A2EB2830ECB12C5",
+      "protoId": "0x0DE03DF04C8F1A29"
+    },
+    "MarvelPlayer_ScarletWitch_MarvelNOW": {
+      "assetId": "0xC410EFF40854128D",
+      "protoId": "0xFEDB0F7E67571A9E"
+    },
+    "MarvelPlayer_ScarletWitch_ModernVU": {
+      "assetId": "0x1C6923A7072A1294",
+      "protoId": "0x93374C9318111948"
+    },
+    "MarvelPlayer_ScarletWitch_Romani": {
+      "assetId": "0x4F52B08A113C130E",
+      "protoId": "0xB53C351F18441949"
+    },
+    "MarvelPlayer_ScarletWitch_Ultimate": {
+      "assetId": "0x8F8B6C3E0C3012AF",
+      "protoId": "0x9D2806EF4CAA1A28"
+    },
+    "MarvelPlayer_ScarletWitch_Wiccan": {
+      "assetId": "0x54F505FB01F512E8",
+      "protoId": "0x1DF756C217631938"
+    },
+    "MarvelPlayer_SheHulk_HeroesForHire": {
+      "assetId": "0x3373173E0F8612F7",
+      "protoId": "0x8F1936EE4ABE1A1F"
+    },
+    "MarvelPlayer_SheHulk_LawAndDisorder": {
+      "assetId": "0xCD657A9308C9126A",
+      "protoId": "0xF2C7E21064291A7D"
+    },
+    "MarvelPlayer_SheHulk_Lawyer": {
+      "assetId": "0x3ABE044B135F1340",
+      "protoId": "0x2778D4FC9D74173E"
+    },
+    "MarvelPlayer_SheHulk_SGFJeans": {
+      "assetId": "0x80C178640F9912DB",
+      "protoId": "0x946C69BBCBB717FB"
+    },
+    "MarvelPlayer_SheHulk_SingleGreenFemale": {
+      "assetId": "0x0103F6DF0EEF12EA",
+      "protoId": "0xEE2F9DACB5471BA7"
+    },
+    "MarvelPlayer_SilverSurfer_Classic": {
+      "assetId": "0x4A262F121490133C",
+      "protoId": "0x78CB9ABA341119C4"
+    },
+    "MarvelPlayer_SilverSurfer_Exiles": {
+      "assetId": "0x4871B41211B712F6",
+      "protoId": "0xFA355A8E1B52196C"
+    },
+    "MarvelPlayer_SilverSurfer_Keeper": {
+      "assetId": "0x15B7D55B0DB312DE",
+      "protoId": "0xA71D10AA1A86195E"
+    },
+    "MarvelPlayer_SilverSurfer_Savage": {
+      "assetId": "0x688DB933EB4A1259",
+      "protoId": "0x517FF792BCEF1BEE"
+    },
+    "MarvelPlayer_Spiderman_Amazing": {
+      "assetId": "0x51BAA77211781314",
+      "protoId": "0xBE9A2E85E4181860"
+    },
+    "MarvelPlayer_Spiderman_AmazingBagMan": {
+      "assetId": "0xBC1AFC2F09D712AA",
+      "protoId": "0x7D663ECA7D6F1AC6"
+    },
+    "MarvelPlayer_Spiderman_BackInBlack": {
+      "assetId": "0xAD5CD501117D1344",
+      "protoId": "0xFEEBA36146DB19DE"
+    },
+    "MarvelPlayer_Spiderman_BattleDamaged": {
+      "assetId": "0xA26F36C3096A12AA",
+      "protoId": "0xEE909A747CBD1AB8"
+    },
+    "MarvelPlayer_Spiderman_BigTime": {
+      "assetId": "0x12EA379E0707125D",
+      "protoId": "0xFFA2D3C5E3CD185A"
+    },
+    "MarvelPlayer_Spiderman_BigTimeBlue": {
+      "assetId": "0xD42AA53F03E51316",
+      "protoId": "0xDDA96D4D491F1A02"
+    },
+    "MarvelPlayer_Spiderman_BigTimeGreen": {
+      "assetId": "0x2E8824C70E1B12B7",
+      "protoId": "0x03FC54AB63761A6B"
+    },
+    "MarvelPlayer_Spiderman_CivilWarMovie": {
+      "assetId": "0x9AFE67020AC9127E",
+      "protoId": "0x084B13B080B51AFA"
+    },
+    "MarvelPlayer_Spiderman_Classic": {
+      "assetId": "0x5C4611FE08DF128C",
+      "protoId": "0x20818A62E3E2185B"
+    },
+    "MarvelPlayer_Spiderman_EndsOfTheEarth": {
+      "assetId": "0x65CDB88013881315",
+      "protoId": "0x9EF5910E9A6E1B4D"
+    },
+    "MarvelPlayer_Spiderman_FFBlack": {
+      "assetId": "0xD4E2196C09C612B6",
+      "protoId": "0x7E9EEE84301D19A6"
+    },
+    "MarvelPlayer_Spiderman_FutureFoundation": {
+      "assetId": "0xB0EDB7020D1212B8",
+      "protoId": "0x2909E8F2D5961C4B"
+    },
+    "MarvelPlayer_Spiderman_Homecoming": {
+      "assetId": "0xDD2DDA2B14F11371",
+      "protoId": "0xD70BE98D2FBD199F"
+    },
+    "MarvelPlayer_Spiderman_Homemade": {
+      "assetId": "0xA4EE59E713151338",
+      "protoId": "0x4D1D547DFC2B18B9"
+    },
+    "MarvelPlayer_Spiderman_Homemade_HoodUp": {
+      "assetId": "0xB0C4CC400A2812B9",
+      "protoId": "0xAE5B911299CB1B48"
+    },
+    "MarvelPlayer_Spiderman_IronSpider": {
+      "assetId": "0xF96214C00B8612C9",
+      "protoId": "0x202547C9316A19B8"
+    },
+    "MarvelPlayer_Spiderman_MilesMorales": {
+      "assetId": "0x75A41E2D14421343",
+      "protoId": "0x6EE0F42D654C1A86"
+    },
+    "MarvelPlayer_Spiderman_Modern": {
+      "assetId": "0xC7ECA11B16161341",
+      "protoId": "0x59946BA5CC4917FE"
+    },
+    "MarvelPlayer_Spiderman_Noir": {
+      "assetId": "0x7E7C59B30D3712EA",
+      "protoId": "0xC6C4AF6F9D3C1731"
+    },
+    "MarvelPlayer_Spiderman_ScarletSpider": {
+      "assetId": "0x62AFA1810D0212DC",
+      "protoId": "0x1E4F24C37FF91AEE"
+    },
+    "MarvelPlayer_Spiderman_Sensational": {
+      "assetId": "0x9F84958C0E7212B9",
+      "protoId": "0xDE80AD414AF81A1A"
+    },
+    "MarvelPlayer_Spiderman_SpiderGirl": {
+      "assetId": "0x97FC39EB0BB612E0",
+      "protoId": "0xCA95115430B319AE"
+    },
+    "MarvelPlayer_Spiderman_SpiderGwen": {
+      "assetId": "0x39B10B78174D1370",
+      "protoId": "0xA498068C30E319B1"
+    },
+    "MarvelPlayer_Spiderman_Superior": {
+      "assetId": "0x19B13E8F0A4012BE",
+      "protoId": "0xC8036F59FF4818F2"
+    },
+    "MarvelPlayer_Spiderman_Symbiote": {
+      "assetId": "0xAF24277711DB12D9",
+      "protoId": "0x5A5F3433FEAC18E5"
+    },
+    "MarvelPlayer_SquirrelGirl_Aviator": {
+      "assetId": "0xFD7D1F5F0D76130F",
+      "protoId": "0x75DB85E9349C19D1"
+    },
+    "MarvelPlayer_SquirrelGirl_Christmas": {
+      "assetId": "0x8F86C9D10FB61306",
+      "protoId": "0x155ADD76698C1AA9"
+    },
+    "MarvelPlayer_SquirrelGirl_GLX": {
+      "assetId": "0xD241A39C1336130B",
+      "protoId": "0x69E8865ED0201826"
+    },
+    "MarvelPlayer_SquirrelGirl_ModernVU": {
+      "assetId": "0x8254BAD513401312",
+      "protoId": "0x855D5BD150C31A5D"
+    },
+    "MarvelPlayer_SquirrelGirl_Unbeatable": {
+      "assetId": "0x36C6FDD105111245",
+      "protoId": "0x710125FF82BF1AEE"
+    },
+    "MarvelPlayer_SquirrelGirl_Unbeatable_Variant": {
+      "assetId": "0x84686664F8041245",
+      "protoId": "0xB647E7134B471DE3"
+    },
+    "MarvelPlayer_StarLord": {
+      "assetId": "0xE94FE6D307E91291",
+      "protoId": "0xDAF2BA72E7451893"
+    },
+    "MarvelPlayer_StarLord_Conquest_Red": {
+      "assetId": "0x332F6B18FB2B127B",
+      "protoId": "0x54277246334319CE"
+    },
+    "MarvelPlayer_StarLord_CosmicAvenger": {
+      "assetId": "0x6940904E0AD612B3",
+      "protoId": "0x2AF488A665FA1A87"
+    },
+    "MarvelPlayer_StarLord_CosmicAvengerHelmet": {
+      "assetId": "0xA8070B0907EE1248",
+      "protoId": "0x5C72F0EA0D8F1D06"
+    },
+    "MarvelPlayer_StarLord_GotGMovie": {
+      "assetId": "0x1E64A6A715341343",
+      "protoId": "0x13F21E56FFC418F2"
+    },
+    "MarvelPlayer_StarLord_GotGMovie2": {
+      "assetId": "0x7D394ACA0BD912AE",
+      "protoId": "0xD15AF86A16B71924"
+    },
+    "MarvelPlayer_StarLord_Legendary": {
+      "assetId": "0x5A72E09F0D9512E0",
+      "protoId": "0x26BC4987FE1E18DC"
+    },
+    "MarvelPlayer_StarLord_MarvelNOW": {
+      "assetId": "0xFCEBE7F606131246",
+      "protoId": "0xDCFA4BAD001B18FC"
+    },
+    "MarvelPlayer_StarLord_MovieHeadphones": {
+      "assetId": "0xB6F645570A5B12BD",
+      "protoId": "0xE6C158419C8C1B60"
+    },
+    "MarvelPlayer_Storm_AfricanGoddess": {
+      "assetId": "0x17EF390B09221294",
+      "protoId": "0x43E79DDD2FF019A8"
+    },
+    "MarvelPlayer_Storm_Asgard": {
+      "assetId": "0xDA440265FD9011D3",
+      "protoId": "0x46460F796F42165D"
+    },
+    "MarvelPlayer_Storm_Astonishing": {
+      "assetId": "0x922F3C4311EA1345",
+      "protoId": "0xE961F9E6E7651892"
+    },
+    "MarvelPlayer_Storm_AvX": {
+      "assetId": "0xDE9EC72B042D12F2",
+      "protoId": "0x054E24152EBA153A"
+    },
+    "MarvelPlayer_Storm_BlueGold": {
+      "assetId": "0x8D9223460E0112C7",
+      "protoId": "0x36ED69FCE87618A3"
+    },
+    "MarvelPlayer_Storm_Classic": {
+      "assetId": "0xEC03E0D102C11225",
+      "protoId": "0xF4A16FE9FD1618CA"
+    },
+    "MarvelPlayer_Storm_MarvelNOW": {
+      "assetId": "0xF8A06D4910881330",
+      "protoId": "0x21F7FF5CB6FC17C6"
+    },
+    "MarvelPlayer_Storm_ModernVU": {
+      "assetId": "0x09F8418009EC1292",
+      "protoId": "0xBE84FDD3703E1670"
+    },
+    "MarvelPlayer_Storm_Mohawk": {
+      "assetId": "0x4F096A5F08EF1296",
+      "protoId": "0xBD3CDD3A705D1672"
+    },
+    "MarvelPlayer_Storm_Ultimate": {
+      "assetId": "0x5E8643C40D6A12D6",
+      "protoId": "0xD137E7439F271750"
+    },
+    "MarvelPlayer_Storm_WhiteCostume": {
+      "assetId": "0x0234AF8D08811280",
+      "protoId": "0x7582C1582B9C1961"
+    },
+    "MarvelPlayer_TaskMaster": {
+      "assetId": "0x06ED37480760125C",
+      "protoId": "0xF6FAD8E2FE4118D7"
+    },
+    "MarvelPlayer_TaskMaster_AvengersWorld": {
+      "assetId": "0xD6A0278504981230",
+      "protoId": "0xF98D9D689DF41B78"
+    },
+    "MarvelPlayer_TaskMaster_Udon": {
+      "assetId": "0x35FD0E77016D130F",
+      "protoId": "0xAA1800EBB61617AB"
+    },
+    "MarvelPlayer_Taskmaster_AgeOfUltron": {
+      "assetId": "0xA4B5B3080C2F12C4",
+      "protoId": "0x09CECC7566CC1A9B"
+    },
+    "MarvelPlayer_Thing_ByrneJersey": {
+      "assetId": "0xCAF62EFF0FE612E4",
+      "protoId": "0xBF5F677DE52A1882"
+    },
+    "MarvelPlayer_Thing_Classic": {
+      "assetId": "0xA470BD0A0FC91320",
+      "protoId": "0x1B74A16E841816B2"
+    },
+    "MarvelPlayer_Thing_FFInverted": {
+      "assetId": "0x36741C0E0D6612B1",
+      "protoId": "0xCC23EC21CB4917FD"
+    },
+    "MarvelPlayer_Thing_FearItself": {
+      "assetId": "0x53D42DEF07AA1282",
+      "protoId": "0x5E6235D2CAB017F5"
+    },
+    "MarvelPlayer_Thing_FutureFoundation": {
+      "assetId": "0x3BB04DDD0EF5130B",
+      "protoId": "0x33DA87F666DB1AA2"
+    },
+    "MarvelPlayer_Thing_Incognito": {
+      "assetId": "0x6CD5A3A515931349",
+      "protoId": "0xA2B68FF4B3A1179A"
+    },
+    "MarvelPlayer_Thing_MarvelNOW": {
+      "assetId": "0xADFE64BA19731372",
+      "protoId": "0x37EDD83D4AA21A2E"
+    },
+    "MarvelPlayer_Thing_Pants": {
+      "assetId": "0x53DD458713011302",
+      "protoId": "0x77A297602F9D19B3"
+    },
+    "MarvelPlayer_Thing_RedSuit": {
+      "assetId": "0x57AE23C307091289",
+      "protoId": "0x42574D9085A916D0"
+    },
+    "MarvelPlayer_Thor_AgeOfUltron": {
+      "assetId": "0x69661948E85C1224",
+      "protoId": "0x4287622E4BE21A39"
+    },
+    "MarvelPlayer_Thor_Avengers": {
+      "assetId": "0xD421D31414E6134F",
+      "protoId": "0xE30BBC62FE4D18EE"
+    },
+    "MarvelPlayer_Thor_BetaRayBill": {
+      "assetId": "0x5210AFC50ADE12B3",
+      "protoId": "0x2FBB05FECB5617FE"
+    },
+    "MarvelPlayer_Thor_Classic": {
+      "assetId": "0x92027C6504DD1237",
+      "protoId": "0x5AD9D5EC6E301655"
+    },
+    "MarvelPlayer_Thor_Destroyer": {
+      "assetId": "0xA931732AFA7F125D",
+      "protoId": "0xA541D3D5198B1975"
+    },
+    "MarvelPlayer_Thor_EarthX": {
+      "assetId": "0xAE2EDF0A114C1310",
+      "protoId": "0xA27CC98458C815FF"
+    },
+    "MarvelPlayer_Thor_GoldenArmor": {
+      "assetId": "0xBFA4D838116C12F2",
+      "protoId": "0x1443DF8ECC2A180D"
+    },
+    "MarvelPlayer_Thor_JaneFoster": {
+      "assetId": "0x2B0B27DE1112131A",
+      "protoId": "0x5A6E4481B43A17A4"
+    },
+    "MarvelPlayer_Thor_MarvelNOW": {
+      "assetId": "0xFEB6661F0EBE12EA",
+      "protoId": "0x15F355599DF3174E"
+    },
+    "MarvelPlayer_Thor_ModernVU": {
+      "assetId": "0xB8CC69CF0719129A",
+      "protoId": "0xE64242A2E691188A"
+    },
+    "MarvelPlayer_Thor_MovieVariant": {
+      "assetId": "0x7D90BB4511FF1309",
+      "protoId": "0x6B5A4170E6141888"
+    },
+    "MarvelPlayer_Thor_OldThor": {
+      "assetId": "0xCFF06DD10BED12C5",
+      "protoId": "0x4A000E646F95166F"
+    },
+    "MarvelPlayer_Thor_Skrull": {
+      "assetId": "0x30491FC7093412A8",
+      "protoId": "0xB07AB65B59F71610"
+    },
+    "MarvelPlayer_Thor_Ultimate": {
+      "assetId": "0x16692D010BB912AD",
+      "protoId": "0xBB441E2A869616D8"
+    },
+    "MarvelPlayer_Ultron": {
+      "assetId": "0x18BA210D086B1255",
+      "protoId": "0x387D76659E0A173C"
+    },
+    "MarvelPlayer_Ultron_11": {
+      "assetId": "0xB5C9FBA10649125B",
+      "protoId": "0x136DC762B3431760"
+    },
+    "MarvelPlayer_Ultron_AoUComicsGold": {
+      "assetId": "0x0CD2BCC91564137D",
+      "protoId": "0x34BB0C7632B119C3"
+    },
+    "MarvelPlayer_Ultron_AoUMovie": {
+      "assetId": "0x325ACC9B138A1367",
+      "protoId": "0xC76A2D58B71717BF"
+    },
+    "MarvelPlayer_Venom_AntiVenom": {
+      "assetId": "0xD4F1833117361366",
+      "protoId": "0x2F9E827CB50D17AC"
+    },
+    "MarvelPlayer_Venom_Classic": {
+      "assetId": "0x533EA0980AE712BC",
+      "protoId": "0x75BD052D84F316BD"
+    },
+    "MarvelPlayer_Venom_Hydra": {
+      "assetId": "0x87187AE206921280",
+      "protoId": "0x3EA34B4358A215F3"
+    },
+    "MarvelPlayer_Venom_SpaceKnight": {
+      "assetId": "0xDA186D720412122E",
+      "protoId": "0x4F13FBCFE443186C"
+    },
+    "MarvelPlayer_Venom_Toxin": {
+      "assetId": "0x790CE4E70D9012C1",
+      "protoId": "0x618BA82759F1160D"
+    },
+    "MarvelPlayer_Vision": {
+      "assetId": "0xDAA19694070E124C",
+      "protoId": "0x8B9D33339D0A1730"
+    },
+    "MarvelPlayer_Vision_AgeOfUltron": {
+      "assetId": "0xA97A748A0D6F12AA",
+      "protoId": "0xA5A05EC0826F1B14"
+    },
+    "MarvelPlayer_Vision_SuburbanDad": {
+      "assetId": "0x432BE37D0E8012EA",
+      "protoId": "0xEDD91FF2FE8618D9"
+    },
+    "MarvelPlayer_Vision_UncannyAvengers": {
+      "assetId": "0x0B299C190D9112D1",
+      "protoId": "0xE5EFBD1867A01AA5"
+    },
+    "MarvelPlayer_Vision_WestCoast": {
+      "assetId": "0x298904FC0A7C12B5",
+      "protoId": "0x2053A768B5C917AC"
+    },
+    "MarvelPlayer_WarMachine_AgeOfUltron": {
+      "assetId": "0x20D6EE200AA6128B",
+      "protoId": "0x5B416C68EEC31C9B"
+    },
+    "MarvelPlayer_WarMachine_CivilWarMovie": {
+      "assetId": "0x9F5BCFAC0DC112B8",
+      "protoId": "0x62C879E59A9A1B56"
+    },
+    "MarvelPlayer_WarMachine_IM3": {
+      "assetId": "0x2A34E7180F6C131A",
+      "protoId": "0x070A22C7972F1B1C"
+    },
+    "MarvelPlayer_WarMachine_IronPatriot": {
+      "assetId": "0x39482F1D0A0B12BD",
+      "protoId": "0xF35ABDDC656D1A90"
+    },
+    "MarvelPlayer_WarMachine_Modern": {
+      "assetId": "0x1968CF5A0B1612AA",
+      "protoId": "0xAE3EB4FB49801A0B"
+    },
+    "MarvelPlayer_WinterSoldier_CivilWar": {
+      "assetId": "0x489585B30FD0131E",
+      "protoId": "0xA23B0ED769271AA2"
+    },
+    "MarvelPlayer_WinterSoldier_Classic": {
+      "assetId": "0xACCE46760E58131C",
+      "protoId": "0x0F2578094D8F1A23"
+    },
+    "MarvelPlayer_WinterSoldier_Movie": {
+      "assetId": "0xA04012100C1A12EA",
+      "protoId": "0x34021258814C1AC7"
+    },
+    "MarvelPlayer_WinterSoldier_MovieCap2NoMask": {
+      "assetId": "0x4077CBD10D0712B4",
+      "protoId": "0xB0E9445D2B0E1D50"
+    },
+    "MarvelPlayer_WinterSoldier_OriginalSin": {
+      "assetId": "0xEA3CB1190F921315",
+      "protoId": "0x1D220760BB6C1BE0"
+    },
+    "MarvelPlayer_WinterSoldier_SnowGear": {
+      "assetId": "0x24AC521206EA1277",
+      "protoId": "0xA524B18269CE1AA7"
+    },
+    "MarvelPlayer_Wolverine_AllNewMarvelNOW": {
+      "assetId": "0xC5BCB3CD06DF1254",
+      "protoId": "0x74ECE1BBBAC61BEF"
+    },
+    "MarvelPlayer_Wolverine_BlueGoldVU": {
+      "assetId": "0x532EA37E13401347",
+      "protoId": "0x92AD651F85C11B34"
+    },
+    "MarvelPlayer_Wolverine_Brood": {
+      "assetId": "0xDC78F76B130B1322",
+      "protoId": "0x69B8CCB1B64717A7"
+    },
+    "MarvelPlayer_Wolverine_BrownVU": {
+      "assetId": "0xB3E28F1F0853127E",
+      "protoId": "0x81030F37B71517B9"
+    },
+    "MarvelPlayer_Wolverine_DaysOfFuturePastVU": {
+      "assetId": "0x7637904007ED125E",
+      "protoId": "0xA9FBA04313841D55"
+    },
+    "MarvelPlayer_Wolverine_EOTS": {
+      "assetId": "0x6045296E05E21268",
+      "protoId": "0xB7E94FF49F57174C"
+    },
+    "MarvelPlayer_Wolverine_FearItself": {
+      "assetId": "0x97ED44D812141307",
+      "protoId": "0xDC1DA064321E19B6"
+    },
+    "MarvelPlayer_Wolverine_Hydra": {
+      "assetId": "0x9EB33841088B128D",
+      "protoId": "0x45A675B9B67717A9"
+    },
+    "MarvelPlayer_Wolverine_LeatherFang": {
+      "assetId": "0xD5414AB91563134B",
+      "protoId": "0x94B20F434B7E1A12"
+    },
+    "MarvelPlayer_Wolverine_LoganYakuza": {
+      "assetId": "0x62ECCB0510671314",
+      "protoId": "0x03E3962E4DA11A37"
+    },
+    "MarvelPlayer_Wolverine_Modern": {
+      "assetId": "0x2FB1D5F40D7612B2",
+      "protoId": "0x318B911C690E1AB2"
+    },
+    "MarvelPlayer_Wolverine_Modern2013": {
+      "assetId": "0xECEDA7C007661288",
+      "protoId": "0xDD8420FE13D51D43"
+    },
+    "MarvelPlayer_Wolverine_OldManLoganVU": {
+      "assetId": "0x04BDF5DE0425122D",
+      "protoId": "0x7952BC2D82A11B08"
+    },
+    "MarvelPlayer_Wolverine_Patch": {
+      "assetId": "0xA6C28BB1FDCC12D7",
+      "protoId": "0xC3513DE7B60817A1"
+    },
+    "MarvelPlayer_Wolverine_Ronin": {
+      "assetId": "0x139C7B500DEF12E6",
+      "protoId": "0x2C963B28B72617B7"
+    },
+    "MarvelPlayer_Wolverine_Symbiote": {
+      "assetId": "0xEF3407B8149A133A",
+      "protoId": "0x35954D32012518FD"
+    },
+    "MarvelPlayer_Wolverine_WeaponX": {
+      "assetId": "0xFD096771119F131E",
+      "protoId": "0x483E4A22E7DD1893"
+    },
+    "MarvelPlayer_Wolverine_XForceVU": {
+      "assetId": "0x57E7F378084712A6",
+      "protoId": "0xE5F25C71CED81818"
+    },
+    "MarvelPlayer_X23": {
+      "assetId": "0xA1E283A60D8212B2",
+      "protoId": "0x4585DD854EC31575"
+    },
+    "MarvelPlayer_X23_Fang": {
+      "assetId": "0x4043ABA112AE1313",
+      "protoId": "0x5E1D18BD0F6C142F"
+    },
+    "MarvelPlayer_X23_InnocenceLost": {
+      "assetId": "0x6561D8A60CA612AF",
+      "protoId": "0xC58CFB7AD9091807"
+    },
+    "MarvelPlayer_X23_Skrull": {
+      "assetId": "0xCD7A0CB30ADC1292",
+      "protoId": "0x36F1B1883B6A1530"
+    },
+    "MarvelPlayer_X23_TargetX": {
+      "assetId": "0xA396DF20FECE12B6",
+      "protoId": "0x5A8FEA3150401592"
+    },
+    "MarvelPlayer_X23_Wolverine": {
+      "assetId": "0xCF3B330906C71286",
+      "protoId": "0x0718ED8E0BFA18F1"
+    },
+    "MarvelPlayer_X23_XForce": {
+      "assetId": "0x01CA6F540510122B",
+      "protoId": "0x35C603A23A65151A"
+    }
+  }
+}

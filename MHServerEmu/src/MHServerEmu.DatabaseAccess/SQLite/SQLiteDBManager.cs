@@ -1,0 +1,623 @@
+﻿using Dapper;
+using System.Data.SQLite;
+using MHServerEmu.Core.Config;
+using MHServerEmu.Core.Helpers;
+using MHServerEmu.Core.Logging;
+using MHServerEmu.Core.System.Time;
+using MHServerEmu.DatabaseAccess.Models;
+
+namespace MHServerEmu.DatabaseAccess.SQLite
+{
+    /// <summary>
+    /// Provides functionality for storing <see cref="DBAccount"/> instances in a SQLite database using the <see cref="IDBManager"/> interface.
+    /// </summary>
+    public class SQLiteDBManager : IDBManager
+    {
+        private const int CurrentSchemaVersion = 8;         // Increment this when making changes to the database schema
+        private const int MinimumSchemaVersion = 6;         // Used to ignore legacy 0.x database files.
+        private const int NumTestAccounts = 5;              // Number of test accounts to create for new database files
+        private const int NumPlayerDataWriteAttempts = 3;   // Number of write attempts to do when saving player data
+
+        private static readonly Logger Logger = LogManager.CreateLogger();
+
+        private readonly object _writeLock = new();
+
+        private string _dbFilePath;
+        private string _connectionString;
+
+        private int _maxBackupNumber;
+        private CooldownTimer _backupTimer;
+        private volatile bool _backupInProgress;
+
+        public bool SkipBackup { get; set; }
+
+        public static SQLiteDBManager Instance { get; } = new();
+
+        private SQLiteDBManager() { }
+
+        public bool Initialize()
+        {
+            var config = ConfigManager.Instance.GetConfig<SQLiteDBManagerConfig>();
+
+            _dbFilePath = Path.Combine(FileHelper.DataDirectory, config.FileName);
+            _connectionString = $"Data Source={_dbFilePath};Synchronous=NORMAL;foreign_keys=OFF;";
+
+            // TODO: Foreign key constraints are explicitly disabled for now because our Item table references
+            // multiple parent tables (Player / Avatar / TeamUp) at the same time. Need to find an elegant way to fix that.
+
+            if (File.Exists(_dbFilePath) == false)
+            {
+                // Create a new database file if it does not exist
+                if (InitializeDatabaseFile() == false)
+                    return false;
+            }
+            else
+            {
+                // Migrate existing database if needed
+                if (MigrateDatabaseFileToCurrentSchema() == false)
+                    return false;
+            }
+
+            _maxBackupNumber = config.MaxBackupNumber;
+            _backupTimer = new(TimeSpan.FromMinutes(config.BackupIntervalMinutes));
+            
+            Logger.Info($"Using database file {FileHelper.GetRelativePath(_dbFilePath)}");
+            return true;
+        }
+
+        public bool TryQueryAccountByEmail(string email, out DBAccount account)
+        {
+            using SQLiteConnection connection = GetConnection();
+
+            // This is just the base account entry, associated player data is loaded separately
+            account = connection.QueryFirstOrDefault<DBAccount>("SELECT * FROM Account WHERE Email = @Email COLLATE NOCASE", new { Email = email });
+
+            return account != null;
+        }
+
+        public bool TryGetPlayerDbIdByName(string playerName, out ulong playerDbId, out string playerNameOut)
+        {
+            using SQLiteConnection connection = GetConnection();
+
+            // This check is case insensitive (COLLATE NOCASE)
+            var account = connection.QueryFirstOrDefault<DBAccount>(
+                "SELECT Id, PlayerName FROM Account WHERE PlayerName = @PlayerName COLLATE NOCASE",
+                new { PlayerName = playerName });
+
+            if (account == null)
+            {
+                playerDbId = 0;
+                playerNameOut = null;
+                return false;
+            }
+
+            playerDbId = (ulong)account.Id;
+            playerNameOut = account.PlayerName;
+            return true;
+        }
+
+        public bool TryGetPlayerName(ulong playerDbId, out string playerName)
+        {
+            using SQLiteConnection connection = GetConnection();
+            
+            playerName = connection.QueryFirstOrDefault<string>("SELECT PlayerName FROM Account WHERE Id = @Id", new { Id = (long)playerDbId });
+
+            return string.IsNullOrWhiteSpace(playerName) == false;
+        }
+
+        public bool GetPlayerNames(Dictionary<ulong, string> playerNames)
+        {
+            using SQLiteConnection connection = GetConnection();
+            
+            var accounts = connection.Query<DBAccount>("SELECT Id, PlayerName FROM Account");
+
+            foreach (DBAccount account in accounts)
+                playerNames[(ulong)account.Id] = account.PlayerName;
+
+            return playerNames.Count > 0;
+        }
+
+        public bool TryGetLastLogoutTime(ulong playerDbId, out long lastLogoutTime)
+        {
+            using SQLiteConnection connection = GetConnection();
+
+            lastLogoutTime = connection.QueryFirstOrDefault<long>("SELECT LastLogoutTime FROM Player WHERE DbGuid = @DbGuid", new { DbGuid = (long)playerDbId });
+
+            return lastLogoutTime > 0;
+        }
+
+        public bool InsertAccount(DBAccount account)
+        {
+            lock (_writeLock)
+            {
+                using SQLiteConnection connection = GetConnection();
+
+                try
+                {
+                    connection.Execute(@"INSERT INTO Account (Id, Email, PlayerName, PasswordHash, Salt, UserLevel, Flags)
+                        VALUES (@Id, @Email, @PlayerName, @PasswordHash, @Salt, @UserLevel, @Flags)", account);
+                    return true;
+                }
+                catch (Exception e)
+                {
+                    Logger.ErrorException(e, nameof(InsertAccount));
+                    return false;
+                }
+            }
+        }
+
+        public bool UpdateAccount(DBAccount account)
+        {
+            lock (_writeLock)
+            {
+                using SQLiteConnection connection = GetConnection();
+
+                try
+                {
+                    connection.Execute(@"UPDATE Account SET Email=@Email, PlayerName=@PlayerName, PasswordHash=@PasswordHash, Salt=@Salt,
+                        UserLevel=@UserLevel, Flags=@Flags WHERE Id=@Id", account);
+                    return true;
+                }
+                catch (Exception e)
+                {
+                    Logger.ErrorException(e, nameof(UpdateAccount));
+                    return false;
+                }
+            }
+        }
+
+        public bool LoadPlayerData(DBAccount account)
+        {
+            // Clear existing data
+            account.Player = null;
+            account.ClearEntities();
+
+            // Load fresh data
+            using SQLiteConnection connection = GetConnection();
+
+            account.Player = connection.QueryFirstOrDefault<DBPlayer>("SELECT * FROM Player WHERE DbGuid = @DbGuid", new { DbGuid = account.Id });
+            if (account.Player == null)
+            {
+                account.Player = new(account.Id);
+                Logger.Info($"Initialized player data for account 0x{account.Id:X}");
+            }
+
+            // Load inventory entities
+            SQLiteEntityTable avatarTable = SQLiteEntityTable.GetTable(DBEntityCategory.Avatar);
+            SQLiteEntityTable teamUpTable = SQLiteEntityTable.GetTable(DBEntityCategory.TeamUp);
+            SQLiteEntityTable itemTable = SQLiteEntityTable.GetTable(DBEntityCategory.Item);
+            SQLiteEntityTable controlledEntityTable = SQLiteEntityTable.GetTable(DBEntityCategory.ControlledEntity);
+
+            avatarTable.LoadEntities(connection, account.Id, account.Avatars);
+            teamUpTable.LoadEntities(connection, account.Id, account.TeamUps);
+            itemTable.LoadEntities(connection, account.Id, account.Items);
+
+            foreach (DBEntity avatar in account.Avatars)
+            {
+                itemTable.LoadEntities(connection, avatar.DbGuid, account.Items);
+                controlledEntityTable.LoadEntities(connection, avatar.DbGuid, account.ControlledEntities);
+            }
+
+            foreach (DBEntity teamUp in account.TeamUps)
+            {
+                itemTable.LoadEntities(connection, teamUp.DbGuid, account.Items);
+            }
+
+            return true;
+        }
+
+        public bool SavePlayerData(DBAccount account)
+        {
+            for (int i = 0; i < NumPlayerDataWriteAttempts; i++)
+            {
+                if (DoSavePlayerData(account))
+                    return true;
+
+                // Maybe we should add a delay here
+            }
+
+            Verify.IsTrue(false, $"Failed to write player data for account [{account}]");
+            return false;
+        }
+
+        public bool LoadGuilds(List<DBGuild> outGuilds)
+        {
+            try
+            {
+                using SQLiteConnection connection = GetConnection();
+
+                IEnumerable<DBGuild> guildQueryResult = connection.Query<DBGuild>("SELECT * FROM Guild");
+                IEnumerable<DBGuildMember> memberQueryResult = connection.Query<DBGuildMember>("SELECT * FROM GuildMember");
+
+                outGuilds.AddRange(guildQueryResult);
+
+                // This is going to be called only on server startup, so it's fine not to pool this.
+                Dictionary<long, DBGuild> guildLookup = new(outGuilds.Count);
+                foreach (DBGuild guild in outGuilds)
+                    guildLookup.Add(guild.Id, guild);
+
+                foreach (DBGuildMember member in memberQueryResult)
+                {
+                    if (!Verify.IsTrue(guildLookup.TryGetValue(member.GuildId, out DBGuild guild), $"Found orphan member [{member}]"))
+                        continue;
+
+                    guild.Members.Add(member);
+                }
+
+                return true;
+            }
+            catch (Exception e)
+            {
+                outGuilds.Clear();
+                Logger.ErrorException(e, nameof(LoadGuilds));
+                return false;
+            }
+        }
+
+        public bool SaveGuild(DBGuild guild)
+        {
+            try
+            {
+                using SQLiteConnection connection = GetConnection();
+
+                int inserted = connection.Execute("INSERT OR IGNORE INTO Guild (Id, Name, Motd, CreatorDbGuid, CreationTime) VALUES (@Id, @Name, @Motd, @CreatorDbGuid, @CreationTime)", guild);
+
+                // Only name and MOTD should be mutable after creation.
+                if (inserted == 0)
+                    connection.Execute("UPDATE Guild SET Name=@Name, Motd=@Motd WHERE Id=@Id", guild);
+
+                Logger.Trace($"SaveGuild(): {guild}");
+                return true;
+            }
+            catch (Exception e)
+            {
+                Logger.ErrorException(e, nameof(SaveGuild));
+                return false;
+            }
+        }
+
+        public bool DeleteGuild(DBGuild guild)
+        {
+            using SQLiteConnection connection = GetConnection();
+            using SQLiteTransaction transaction = connection.BeginTransaction();
+
+            try
+            {
+                // TODO: Enable foreign key constraints in the connection string and just delete the row from the parent table when we fix the Item table.
+                connection.Execute("DELETE FROM GuildMember WHERE GuildId = @Id", guild, transaction);
+                connection.Execute("DELETE FROM Guild WHERE Id = @Id", guild, transaction);
+
+                transaction.Commit();
+
+                Logger.Trace($"DeleteGuild(): {guild}");
+                return true;
+            }
+            catch (Exception e)
+            {
+                transaction.Rollback();
+                Logger.ErrorException(e, nameof(DeleteGuild));
+                return false;
+            }
+        }
+
+        public bool SaveGuildMember(DBGuildMember guildMember)
+        {
+            try
+            {
+                using SQLiteConnection connection = GetConnection();
+
+                int inserted = connection.Execute("INSERT OR IGNORE INTO GuildMember (PlayerDbGuid, GuildId, Membership) VALUES (@PlayerDbGuid, @GuildId, @Membership)", guildMember);
+
+                // Only membership should be mutable after creation.
+                if (inserted == 0)
+                    connection.Execute("UPDATE GuildMember SET Membership=@Membership WHERE PlayerDbGuid=@PlayerDbGuid", guildMember);
+
+                Logger.Trace($"SaveGuildMember(): {guildMember}");
+                return true;
+            }
+            catch (Exception e)
+            {
+                Logger.ErrorException(e, nameof(SaveGuildMember));
+                return false;
+            }
+        }
+
+        public bool DeleteGuildMember(DBGuildMember guildMember)
+        {
+            try
+            {
+                using SQLiteConnection connection = GetConnection();
+
+                connection.Execute("DELETE FROM GuildMember WHERE PlayerDbGuid = @PlayerDbGuid", guildMember);
+
+                Logger.Trace($"DeleteGuildMember(): {guildMember}");
+                return true;
+            }
+            catch (Exception e)
+            {
+                Logger.ErrorException(e, nameof(DeleteGuildMember));
+                return false;
+            }
+        }
+
+        public bool PurgeCustomCostume(ulong customId, ulong forgedGuid, ulong donorGuid,
+                                       out int itemsAffected, out int recordsStripped)
+        {
+            itemsAffected = 0;
+            recordsStripped = 0;
+
+            try
+            {
+                using SQLiteConnection connection = GetConnection();
+                using var transaction = connection.BeginTransaction();
+
+                itemsAffected = donorGuid != 0
+                    ? connection.Execute("UPDATE Item SET EntityProtoGuid = @Donor WHERE EntityProtoGuid = @Forged",
+                        new { Donor = (long)donorGuid, Forged = (long)forgedGuid }, transaction)
+                    : connection.Execute("DELETE FROM Item WHERE EntityProtoGuid = @Forged",
+                        new { Forged = (long)forgedGuid }, transaction);
+
+                string idHex = customId.ToString("X");
+                var rows = connection.Query<(long DbGuid, string CustomCostumes)>(
+                    "SELECT DbGuid, CustomCostumes FROM Player WHERE CustomCostumes IS NOT NULL AND CustomCostumes != ''",
+                    transaction: transaction).ToArray();
+
+                foreach (var row in rows)
+                {
+                    string[] parts = row.CustomCostumes.Split(';', StringSplitOptions.RemoveEmptyEntries);
+                    var keep = parts.Where(p => p.EndsWith(':' + idHex, StringComparison.OrdinalIgnoreCase) == false).ToArray();
+                    if (keep.Length == parts.Length)
+                        continue;
+
+                    recordsStripped += parts.Length - keep.Length;
+                    connection.Execute("UPDATE Player SET CustomCostumes = @Value WHERE DbGuid = @DbGuid",
+                        new { Value = string.Join(';', keep), DbGuid = row.DbGuid }, transaction);
+                }
+
+                transaction.Commit();
+                return true;
+            }
+            catch (Exception e)
+            {
+                Logger.ErrorException(e, $"PurgeCustomCostume(): failed for custom id 0x{customId:X}");
+                return false;
+            }
+        }
+
+        /// <summary>
+
+        /// <summary>
+        /// Creates and opens a new <see cref="SQLiteConnection"/>.
+        /// </summary>
+        private SQLiteConnection GetConnection()
+        {
+            SQLiteConnection connection = new(_connectionString);
+            connection.Open();
+            return connection;
+        }
+
+        /// <summary>
+        /// Initializes a new empty database file using the current schema.
+        /// </summary>
+        private bool InitializeDatabaseFile()
+        {
+            string initializationScript = SQLiteScripts.GetInitializationScript();
+            if (!Verify.IsTrue(string.IsNullOrWhiteSpace(initializationScript) == false, LoggingLevel.Error, "Failed to get database initialization script"))
+                return false;
+
+            SQLiteConnection.CreateFile(_dbFilePath);
+            using SQLiteConnection connection = GetConnection();
+            connection.Execute(initializationScript);
+
+            Logger.Info($"Initialized a new database file at {Path.GetRelativePath(FileHelper.ServerRoot, _dbFilePath)} using schema version {CurrentSchemaVersion}");
+
+            CreateTestAccounts(NumTestAccounts);
+
+            return true;
+        }
+
+        /// <summary>
+        /// Creates the specified number of test accounts.
+        /// </summary>
+        private void CreateTestAccounts(int numAccounts)
+        {
+            for (int i = 0; i < numAccounts; i++)
+            {
+                string email = $"test{i + 1}@test.com";
+                string playerName = $"Player{i + 1}";
+                string password = "123";
+
+                DBAccount account = new(email, playerName, password);
+                InsertAccount(account);
+                Logger.Info($"Created test account {account}");
+            }
+        }
+
+        /// <summary>
+        /// Migrates an existing database file to the current schema if needed.
+        /// </summary>
+        private bool MigrateDatabaseFileToCurrentSchema()
+        {
+            using SQLiteConnection connection = GetConnection();
+
+            int schemaVersion = GetSchemaVersion(connection);
+            if (schemaVersion > CurrentSchemaVersion)
+            {
+                Logger.Error($"Initialize(): Existing database file uses unsupported schema version {schemaVersion} (current = {CurrentSchemaVersion})");
+                return false;
+            }
+
+            if (schemaVersion < MinimumSchemaVersion)
+            {
+                Logger.Warn($"Found existing database file with legacy schema version {schemaVersion}, which is not supported by this version of MHServerEmu");
+                
+                // Need to dispose the connection before moving the database file so that the file is not in use.
+                connection.Dispose();
+                File.Move(_dbFilePath, $"{_dbFilePath}.old");
+                
+                InitializeDatabaseFile();
+                return true;
+            }
+
+            Logger.Info($"Found existing database file with schema version {schemaVersion} (current = {CurrentSchemaVersion})");
+
+            if (schemaVersion == CurrentSchemaVersion)
+                return true;
+
+            // Create a backup to fall back to if something goes wrong
+            string backupDbPath = $"{_dbFilePath}.v{schemaVersion}";
+            File.Copy(_dbFilePath, backupDbPath);
+
+            bool success = true;
+
+            while (schemaVersion < CurrentSchemaVersion)
+            {
+                Logger.Info($"Migrating version {schemaVersion} => {schemaVersion + 1}...");
+
+                string migrationScript = SQLiteScripts.GetMigrationScript(schemaVersion);
+                if (!Verify.IsTrue(string.IsNullOrWhiteSpace(migrationScript) == false, LoggingLevel.Error,
+                    $"Failed to get database migration script for version {schemaVersion}"))
+                {
+                    success = false;
+                    break;
+                }
+
+                connection.Execute(migrationScript);
+                SetSchemaVersion(connection, ++schemaVersion);
+            }
+
+            success &= GetSchemaVersion(connection) == CurrentSchemaVersion;
+
+            if (success == false)
+            {
+                // Restore backup
+                File.Delete(_dbFilePath);
+                File.Move(backupDbPath, _dbFilePath);
+                Logger.Error("MigrateDatabaseFileToCurrentSchema(): Migration failed, backup restored");
+                return false;
+            }
+            else
+            {
+                // Clean up backup
+                File.Delete(backupDbPath);
+            }
+
+            Logger.Info($"Successfully migrated to schema version {CurrentSchemaVersion}");
+            return true;
+        }
+
+        private bool DoSavePlayerData(DBAccount account)
+        {
+            // Lock to prevent corruption if we are doing a backup (TODO: Make this better)
+            lock (_writeLock)
+            {
+                using SQLiteConnection connection = GetConnection();
+
+                // Use a transaction to make sure all data is saved
+                using SQLiteTransaction transaction = connection.BeginTransaction();
+
+                try
+                {
+                    // Update player entity
+                    if (Verify.IsNotNull(account.Player, $"Attempted to save null player entity data for account {account}"))
+                    {
+                        connection.Execute(@"INSERT OR IGNORE INTO Player (DbGuid) VALUES (@DbGuid)", account.Player, transaction);
+                        connection.Execute(@"UPDATE Player SET ArchiveData=@ArchiveData, StartTarget=@StartTarget, AOIVolume=@AOIVolume,
+                                            GazillioniteBalance=@GazillioniteBalance, LastLogoutTime=@LastLogoutTime, Flags=@Flags WHERE DbGuid = @DbGuid",
+                                            account.Player, transaction);
+                    }
+
+                    // Update inventory entities
+                    SQLiteEntityTable avatarTable = SQLiteEntityTable.GetTable(DBEntityCategory.Avatar);
+                    SQLiteEntityTable teamUpTable = SQLiteEntityTable.GetTable(DBEntityCategory.TeamUp);
+                    SQLiteEntityTable itemTable = SQLiteEntityTable.GetTable(DBEntityCategory.Item);
+                    SQLiteEntityTable controlledEntityTable = SQLiteEntityTable.GetTable(DBEntityCategory.ControlledEntity);
+
+                    avatarTable.UpdateEntities(connection, transaction, account.Id, account.Avatars);
+                    teamUpTable.UpdateEntities(connection, transaction, account.Id, account.TeamUps);
+                    itemTable.UpdateEntities(connection, transaction, account.Id, account.Items);
+
+                    foreach (DBEntity avatar in account.Avatars)
+                    {
+                        itemTable.UpdateEntities(connection, transaction, avatar.DbGuid, account.Items);
+                        controlledEntityTable.UpdateEntities(connection, transaction, avatar.DbGuid, account.ControlledEntities);
+                    }
+
+                    foreach (DBEntity teamUp in account.TeamUps)
+                    {
+                        itemTable.UpdateEntities(connection, transaction, teamUp.DbGuid, account.Items);
+                    }
+
+                    transaction.Commit();
+                }
+                catch (Exception e)
+                {
+                    Logger.Error($"DoSavePlayerData(): SQLite error for account [{account}]: {e.Message}");
+                    transaction.Rollback();
+                    return false;
+                }
+
+                Logger.Info($"Successfully written player data for account [{account}]");
+
+                if (_backupInProgress == false && _backupTimer.Check() && SkipBackup == false)
+                {
+                    _backupInProgress = true;
+                    Task.Run(CreateBackup);
+                }
+
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Creates a backup of the database file using the SQLite backup API.
+        /// </summary>
+        private void CreateBackup()
+        {
+            try
+            {
+                Logger.Info("Starting database backup...");
+                TimeSpan startTime = Clock.UnixTime;
+
+                if (FileHelper.PrepareFileBackup(_dbFilePath, _maxBackupNumber, out string backupFilePath) == false)
+                    return;
+
+                using SQLiteConnection sourceConnection = GetConnection();
+                using SQLiteConnection backupConnection = new($"Data Source={backupFilePath}");
+                backupConnection.Open();
+                sourceConnection.BackupDatabase(backupConnection, "main", "main", -1, null, -1);
+
+                TimeSpan elapsed = Clock.UnixTime - startTime;
+                Logger.Info($"Created database backup in {elapsed.TotalMilliseconds} ms");
+            }
+            catch (Exception e)
+            {
+                Logger.Error($"CreateBackup(): SQLite error creating database backup: {e.Message}");
+            }
+            finally
+            {
+                _backupInProgress = false;
+            }
+        }
+
+        /// <summary>
+        /// Returns the user_version value of the current database file.
+        /// </summary>
+        private static int GetSchemaVersion(SQLiteConnection connection)
+        {
+            IEnumerable<int> queryResult = connection.Query<int>("PRAGMA user_version");
+            if (!Verify.IsTrue(queryResult.Any(), "Failed to query user_version from the DB"))
+                return -1;
+
+            return queryResult.First();
+        }
+
+        /// <summary>
+        /// Sets the user_version value of the current database file.
+        /// </summary>
+        private static void SetSchemaVersion(SQLiteConnection connection, int version)
+        {
+            connection.Execute($"PRAGMA user_version = {version}");
+        }
+    }
+}

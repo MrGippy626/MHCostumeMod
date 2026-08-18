@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!--
+    Shared settings for the injected client DLL.
+
+    ⚑ MinHook is located with $(MSBuildThisFileDirectory), NOT $(ProjectDir).
+    The old form was $(ProjectDir)..\external\MinHook, which only resolved while every
+    project sat exactly one level under a folder containing external\ - so the layout
+    itself was load-bearing and any nesting change broke all of them at once, silently,
+    at link time. $(MSBuildThisFileDirectory) is relative to THIS file, so the projects
+    can be nested however you like as long as this sheet sits beside minhook\.
+
+    There were also TWO byte-identical copies of this file (MH_hookTest\ and
+    MH_hookTest\MH_HookTest\) splitting the projects into two camps. This is the only one.
+
+    ⚠ RuntimeLibrary is MultiThreadedDLL (/MD), not /MT - some notes said otherwise.
+  -->
+  <ImportGroup Label="PropertySheets" />
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <MinHookDir>$(MSBuildThisFileDirectory)minhook</MinHookDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>$(MinHookDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <WarningLevel>Level3</WarningLevel>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>_WINDLL;%(PreprocessorDefinitions);NDEBUG;MHHOOKTEST_EXPORTS;_WINDOWS;_USRDLL;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <ConformanceMode>true</ConformanceMode>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(MinHookDir)\lib</AdditionalLibraryDirectories>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);$(MinHookDir)\lib\libMinHook.x64.lib</AdditionalDependencies>
+      <EnableUAC>false</EnableUAC>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup />
+</Project>

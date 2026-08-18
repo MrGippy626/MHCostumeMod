@@ -1,0 +1,397 @@
+﻿using MHServerEmu.Core.Collections;
+using MHServerEmu.Core.Extensions;
+using MHServerEmu.Core.Logging;
+using MHServerEmu.Games.GameData.Calligraphy;
+using MHServerEmu.Games.GameData.LiveTuning;
+
+namespace MHServerEmu.Games.GameData.Prototypes
+{
+    #region Enums
+
+    [AssetEnum((int)Invalid)]
+    public enum DEPRECATEDDifficultyMode
+    {
+        Invalid = -1,
+        Normal = 0,
+        Heroic = 1,
+        SuperHeroic = 2,
+    }
+
+#if GAME_VERSION_1_53
+    [AssetEnum((int)Tier00Normal)]
+    public enum DifficultyTier
+    {
+        Tier00Normal,
+        Tier01Heroic,
+        Tier02Cosmic,
+        Tier03,
+        Tier04,
+        Tier05,
+        NumTiers,
+    }
+#else
+    [AssetEnum((int)Green)]
+    public enum DifficultyTier
+    {
+        Green,
+        Red,
+        Cosmic,
+        NumTiers,
+    }
+#endif
+
+#if GAME_VERSION_1_53
+    public enum DifficultyTierMask
+    {
+        None            = 0,
+        Tier00Normal    = 1 << 0,
+        Tier01Heroic    = 1 << 1,
+        Tier02Cosmic    = 1 << 2,
+        Tier03          = 1 << 3,
+        Tier04          = 1 << 4,
+        Tier05          = 1 << 5,
+
+        All = Tier00Normal | Tier01Heroic | Tier02Cosmic | Tier03 | Tier04 | Tier05,
+    }
+#elif GAME_VERSION_1_52
+    public enum DifficultyTierMask
+    {
+        None            = 0,
+        Green           = 1 << 0,
+        Red             = 1 << 1,
+        Cosmic          = 1 << 2,
+
+        All = Green | Red | Cosmic,
+    }
+#endif
+
+    #endregion
+
+    public class RegionDifficultySettingsPrototype : Prototype
+    {
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+        public PrototypeId TuningTable { get; protected set; }
+#else
+        public PrototypeId DifficultyTable { get; protected set; }
+        public int DifficultyIndex { get; protected set; }
+#endif
+    }
+
+    public class NumNearbyPlayersDmgByRankPrototype : Prototype
+    {
+        public Rank Rank { get; protected set; }
+        public CurveId MobToPlayerCurve { get; protected set; }
+        public CurveId PlayerToMobCurve { get; protected set; }
+    }
+
+    public class DifficultyIndexDamageByRankPrototype : Prototype
+    {
+        public Rank Rank { get; protected set; }
+        public CurveId MobToPlayerCurve { get; protected set; }
+        public CurveId PlayerToMobCurve { get; protected set; }
+    }
+
+    public class TuningDamageByRankPrototype : Prototype
+    {
+        public Rank Rank { get; protected set; }
+        public float TuningMobToPlayer { get; protected set; }
+        public float TuningPlayerToMob { get; protected set; }
+    }
+
+    public class NegStatusRankCurveEntryPrototype : Prototype
+    {
+        public Rank Rank { get; protected set; }
+        public CurveId TenacityModifierCurve { get; protected set; }
+    }
+
+    public class NegStatusPropCurveEntryPrototype : Prototype
+    {
+        public PrototypeId NegStatusProp { get; protected set; }
+        public NegStatusRankCurveEntryPrototype[] RankEntries { get; protected set; }
+
+        //---
+
+        public CurveId GetCurveRefForRank(Rank rank)
+        {
+            int index = (int)rank;
+            if (index < 0 || index >= RankEntries.Length)
+                return CurveId.Invalid;
+
+            NegStatusRankCurveEntryPrototype entry = RankEntries[index];
+            if (entry.Rank != rank)
+                return CurveId.Invalid;
+
+            return entry.TenacityModifierCurve;
+        }
+    }
+
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+    public class RankAffixTableByDifficultyEntryPrototype : Prototype
+    {
+        public PrototypeId DifficultyMin { get; protected set; }
+        public PrototypeId DifficultyMax { get; protected set; }
+        public RankAffixEntryPrototype[] RankAffixTable { get; protected set; }
+    }
+#endif
+
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+    public class TuningPrototype : Prototype
+#else
+    public class DifficultyPrototype : Prototype
+#endif
+    {
+        public LocaleStringId Name { get; protected set; }
+        public float PlayerInflictedDamageTimerSec { get; protected set; }
+        public float PlayerNearbyRange { get; protected set; }
+        public NegStatusPropCurveEntryPrototype[] NegativeStatusCurves { get; protected set; }
+#if GAME_VERSION_1_48
+        public float PlayerXPNearbyRange { get; protected set; }
+#endif
+        public CurveId LootFindByLevelDeltaCurve { get; protected set; }
+        public CurveId SpecialItemFindByLevelDeltaCurve { get; protected set; }
+        public CurveId LootFindByDifficultyIndexCurve { get; protected set; }
+        public CurveId PlayerXPByDifficultyIndexCurve { get; protected set; }
+        public PrototypeId DeathPenaltyCondition { get; protected set; }
+        public CurveId PctXPFromParty { get; protected set; }
+        public CurveId PctXPFromRaid { get; protected set; }
+        public PrototypeId Tier { get; protected set; }
+        public bool UseTierMinimapColor { get; protected set; }
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+        public RankAffixEntryPrototype[] RankAffixTable { get; protected set; }
+#else
+        public DifficultyRankEntryPrototype[] RankAffixTable { get; protected set; }
+#endif
+        public float PctXPMultiplier { get; protected set; }
+        public bool NumNearbyPlayersScalingEnabled { get; protected set; }
+        public float TuningDamageMobToPlayer { get; protected set; }
+        public float TuningDamageMobToPlayerDCL { get; protected set; }
+        public float TuningDamagePlayerToMob { get; protected set; }
+        public float TuningDamagePlayerToMobDCL { get; protected set; }
+        public TuningDamageByRankPrototype[] TuningDamageByRank { get; protected set; }
+        public TuningDamageByRankPrototype[] TuningDamageByRankDCL { get; protected set; }
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+        public RankAffixTableByDifficultyEntryPrototype[] RankAffixTableByDifficulty { get; protected set; }
+#endif
+
+        //---
+
+#if GAME_VERSION_1_53
+        [DoNotCopy]
+        public int DifficultyTuningPrototypeEnumValue { get; private set; }
+#endif
+
+#if GAME_VERSION_1_53
+        public override void PostProcess()
+        {
+            base.PostProcess();
+            DifficultyTuningPrototypeEnumValue = GetEnumValueFromBlueprint(LiveTuningData.GetDifficultyTuningBlueprintDataRef());
+        }
+#endif
+
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+        public void BuildRankPicker(PrototypeId difficultyTierRef, bool noAffixes, Picker<RankPrototype> picker)
+        {
+            RankAffixEntryPrototype[] table = GetRankAffixTable(difficultyTierRef);
+            if (table.IsNullOrEmpty())
+                return;
+
+            foreach (RankAffixEntryPrototype entry in table)
+            {
+                if (entry.Weight > 0 && (noAffixes || entry.GetMaxAffixes() > 0))
+                    picker.Add(entry.Rank, entry.Weight);
+            }
+        }
+#else
+        public void BuildRankPicker(bool noAffixes, Picker<RankPrototype> picker)
+        {
+            DifficultyRankEntryPrototype[] table = GetRankAffixTable();
+            if (table.IsNullOrEmpty())
+                return;
+
+            foreach (DifficultyRankEntryPrototype entry in table)
+            {
+                if (entry.Weight > 0 && (noAffixes || entry.GetMaxAffixes() > 0))
+                    picker.Add(entry.Rank, entry.Weight);
+            }
+        }
+#endif
+
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+        public RankAffixEntryPrototype[] GetRankAffixTable(PrototypeId difficultyTierRef)
+        {
+            if (RankAffixTableByDifficulty.HasValue())
+            {
+                foreach (RankAffixTableByDifficultyEntryPrototype entry in RankAffixTableByDifficulty)
+                {
+                    if (DifficultyTierPrototype.InRange(difficultyTierRef, entry.DifficultyMin, entry.DifficultyMax))
+                        return entry.RankAffixTable;
+                }
+            }
+
+            return RankAffixTable;
+        }
+#else
+        public DifficultyRankEntryPrototype[] GetRankAffixTable()
+        {
+            return RankAffixTable;
+        }
+#endif
+
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+        public RankAffixEntryPrototype GetDifficultyRankEntry(PrototypeId difficultyTierRef, RankPrototype rankProto)
+        {
+            RankAffixEntryPrototype[] table = GetRankAffixTable(difficultyTierRef);
+            if (table.HasValue())
+            {
+                foreach (RankAffixEntryPrototype entry in table)
+                {
+                    RankPrototype entryRank = entry.Rank;
+                    if (entryRank != null && entryRank.Rank == rankProto.Rank)
+                        return entry;
+                }
+            }
+
+            return null;
+        }
+#else
+        public DifficultyRankEntryPrototype GetDifficultyRankEntry(RankPrototype rankProto)
+        {
+            DifficultyRankEntryPrototype[] table = GetRankAffixTable();
+            if (table.HasValue())
+            {
+                foreach (DifficultyRankEntryPrototype entry in table)
+                {
+                    RankPrototype entryRank = entry.Rank;
+                    if (entryRank != null && entryRank.Rank == rankProto.Rank)
+                        return entry;
+                }
+            }
+
+            return null;
+        }
+#endif
+    }
+
+    public class DifficultyModePrototype : Prototype
+    {
+        public AssetId IconPath { get; protected set; }
+        public LocaleStringId Name { get; protected set; }
+        public DEPRECATEDDifficultyMode DifficultyModeEnum { get; protected set; }
+        public int MigrationUnlocksAtLevel { get; protected set; }
+        public PrototypeId UnlockNotification { get; protected set; }
+        public PrototypeId TextStyle { get; protected set; }
+    }
+
+    public class DifficultyTierPrototype : Prototype
+    {
+#if GAME_VERSION_1_53
+        public DifficultyTier Tier { get; protected set; }
+        public float ItemFindCreditsPct { get; protected set; }
+        public float ItemFindRarePct { get; protected set; }
+        public float ItemFindSpecialPct { get; protected set; }
+        public int UnlockLevel { get; protected set; }
+        public AssetId UIColor { get; protected set; }
+        public LocaleStringId UIDisplayName { get; protected set; }
+        public DesignWorkflowState DesignState { get; protected set; }
+        public DesignWorkflowState DesignStatePS4 { get; protected set; }
+        public DesignWorkflowState DesignStateXboxOne { get; protected set; }
+        public LocalizedEvalConditionEntryPrototype[] UnlockEvals { get; protected set; }
+        public DifficultyTierGameplaySettingsPrototype[] PlatformSpecificGameplaySettings { get; protected set; }
+#elif GAME_VERSION_1_52
+        public int DEPTier { get; protected set; }
+        public DifficultyTier Tier { get; protected set; }
+        public float BonusExperiencePct { get; protected set; }
+        public float DamageMobToPlayerPct { get; protected set; }
+        public float DamagePlayerToMobPct { get; protected set; }
+        public float ItemFindCreditsPct { get; protected set; }
+        public float ItemFindRarePct { get; protected set; }
+        public float ItemFindSpecialPct { get; protected set; }
+        public int UnlockLevel { get; protected set; }
+        public AssetId UIColor { get; protected set; }
+        public LocaleStringId UIDisplayName { get; protected set; }
+        public int BonusItemFindBonusDifficultyMult { get; protected set; }
+#else
+        public int Tier { get; protected set; }
+        public AssetId MinimapNameColor { get; protected set; }
+#endif
+
+        //---
+
+        public static bool InRange(PrototypeId value, PrototypeId min, PrototypeId max)
+        {
+            if (min == PrototypeId.Invalid && max == PrototypeId.Invalid)
+                return true;
+
+            DifficultyTierPrototype valueProto = value.As<DifficultyTierPrototype>();
+            if (!Verify.IsNotNull(valueProto)) return false;
+
+            DifficultyTierPrototype minProto = min.As<DifficultyTierPrototype>();
+            if (minProto != null && valueProto.Tier < minProto.Tier)
+                return false;
+
+            DifficultyTierPrototype maxProto = max.As<DifficultyTierPrototype>();
+            if (maxProto != null && valueProto.Tier > maxProto.Tier)
+                return false;
+
+            return true;
+        }
+
+        public static bool InRange(DifficultyTierPrototype valueProto, DifficultyTierPrototype minProto, DifficultyTierPrototype maxProto)
+        {
+            if (valueProto == null)
+                return false;
+
+            if (minProto == null && maxProto == null)
+                return true;
+
+            if (minProto != null && valueProto.Tier < minProto.Tier)
+                return false;
+
+            if (maxProto != null && valueProto.Tier > maxProto.Tier)
+                return false;
+
+            return true;
+        }
+    }
+
+    public class DifficultyGlobalsPrototype : Prototype
+    {
+        public CurveId MobConLevelCurve { get; protected set; }
+        public RegionDifficultySettingsPrototype RegionSettingsDefault { get; protected set; }
+        public RegionDifficultySettingsPrototype RegionSettingsDefaultPCZ { get; protected set; }
+        public CurveId NumNearbyPlayersDmgDefaultMtoP { get; protected set; }
+        public CurveId NumNearbyPlayersDmgDefaultPtoM { get; protected set; }
+        public NumNearbyPlayersDmgByRankPrototype[] NumNearbyPlayersDmgByRank { get; protected set; }
+        public NumNearbyPlayersDmgByRankPrototype[] NumNearbyPlayersDmgByRankPCZ { get; protected set; }
+        public CurveId DifficultyIndexDamageDefaultMtoP { get; protected set; }
+        public CurveId DifficultyIndexDamageDefaultPtoM { get; protected set; }
+        public DifficultyIndexDamageByRankPrototype[] DifficultyIndexDamageByRank { get; protected set; }
+        public float PvPDamageMultiplier { get; protected set; }
+        public float PvPCritDamageMultiplier { get; protected set; }
+        public CurveId PvPDamageScalarFromLevelCurve { get; protected set; }
+        public CurveId TeamUpDamageScalarFromLevelCurve { get; protected set; }
+        public EvalPrototype EvalDamageLevelDeltaMtoP { get; protected set; }
+        public EvalPrototype EvalDamageLevelDeltaPtoM { get; protected set; }
+
+        //---
+
+        public float GetTeamUpDamageScalar(int combatLevel)
+        {
+            Curve teamUpDamageScalarCurve = TeamUpDamageScalarFromLevelCurve.AsCurve();
+            if (!Verify.IsNotNull(teamUpDamageScalarCurve)) return 1f;
+
+            return teamUpDamageScalarCurve.GetAt(combatLevel);
+        }
+    }
+
+#if GAME_VERSION_1_53
+    public class DifficultyTierGameplaySettingsPrototype : Prototype
+    {
+        public float BonusExperiencePct { get; protected set; }
+        public int BonusItemFindBonusDifficultyMult { get; protected set; }
+        public float DamageMobToPlayerPct { get; protected set; }
+        public float DamagePlayerToMobPct { get; protected set; }
+        public Platforms Platform { get; protected set; }
+    }
+#endif
+}

@@ -1,0 +1,114 @@
+﻿using MHServerEmu.Games.GameData.Calligraphy;
+
+namespace MHServerEmu.Games.Properties.Evals
+{
+    [AssetEnum((int)Default)]
+    public enum EvalContext
+    {
+        Default,
+        Entity,
+        EntityBehaviorBlackboard,
+        Other,
+        Condition,
+        ConditionKeywords,
+        TeamUp,
+        Var1,
+        Var2,
+        Var3,
+        Var4,
+        Var5,
+        MaxVars,
+        LocalStack,
+        CallerStack,
+        Globals,
+    }
+
+    public enum GetEvalPropertyIdEnum
+    {
+        PropertyInfoEvalInput,
+        Output,
+        Input
+    }
+
+    public enum EvalOp
+    {
+        Invalid,
+        And,
+        Equals,
+        GreaterThan,
+        IsContextDataNull,
+        LessThan,
+        DifficultyTierRange,
+        MissionIsActive,
+        MissionIsComplete,
+        Not,
+        Or,
+        HasEntityInInventory,
+        LoadAssetRef,
+        LoadBool,
+        LoadFloat,
+        LoadInt,
+        LoadProtoRef,
+        LoadContextInt,
+        LoadContextProtoRef,
+        For,
+        ForEachConditionInContext,
+        ForEachProtoRefInContextRefList,
+        IfElse,
+        Scope,
+        ExportError,
+        LoadCurve,
+        Add,
+        Div,
+        Exponent,
+        Max,
+        Min,
+        Modulus,
+        Mult,
+        Sub,
+        AssignProp,
+        AssignPropEvalParams,
+        HasProp,
+        LoadProp,
+        LoadPropContextParams,
+        LoadPropEvalParams,
+        SwapProp,
+        RandomFloat,
+        RandomInt,
+        LoadEntityToContextVar,
+        LoadConditionCollectionToContext,
+        EntityHasKeyword,
+        EntityHasTalent,
+        GetCombatLevel,
+        GetPowerRank,
+        CalcPowerRank,
+        IsInParty,
+        GetDamageReductionPct,
+        GetDistanceToEntity,
+        IsDynamicCombatLevelEnabled,
+#if GAME_VERSION_1_53
+        GetConditionStackCount,
+#endif
+    }
+
+    public enum EvalReturnType
+    {
+        Error,
+        Undefined,
+        Int,
+        Float,
+        Bool,
+        EntityId,
+        RegionId,
+        ProtoRef,
+        AssetRef,
+        PropertyCollectionPtr,
+        PropertyId,
+        ProtoRefListPtr,
+        ProtoRefVectorPtr,
+        ConditionCollectionPtr,
+        EntityPtr,
+        EntityGuid,
+        AvatarOfPlayerGuid,
+    }
+}

@@ -1,0 +1,169 @@
+﻿using Gazillion;
+using MHServerEmu.Core.Logging;
+using MHServerEmu.Core.Network;
+
+namespace MHServerEmu.Grouping
+{
+    internal sealed class GroupingServiceMailbox : ServiceMailbox
+    {
+        private readonly GroupingManagerService _groupingManager;
+
+        public GroupingServiceMailbox(GroupingManagerService groupingManager)
+        {
+            _groupingManager = groupingManager;
+        }
+
+        protected override void HandleServiceMessage(IGameServiceMessage message)
+        {
+            // NOTE: There is a ClientToGroupingManager protocol with a single message - GetPlayerInfoByName.
+            // It appears to be unused, but if we ever receive it, it should end up here as a ServiceMessage.RouteMessageBuffer.
+            switch (message)
+            {
+                case ServiceMessage.AddClient addClient:
+                    OnAddClient(addClient);
+                    break;
+
+                case ServiceMessage.RemoveClient removeClient:
+                    OnRemoveClient(removeClient);
+                    break;
+
+                case ServiceMessage.PlayerNameChanged playerNameChanged:
+                    OnPlayerNameChanged(playerNameChanged);
+                    break;
+
+                case ServiceMessage.GroupingManagerChat groupingManagerChat:
+                    OnGroupingManagerChat(groupingManagerChat);
+                    break;
+
+                case ServiceMessage.GroupingManagerTell groupingManagerTell:
+                    OnGroupingManagerTell(groupingManagerTell);
+                    break;
+
+                case ServiceMessage.GroupingManagerMetagameMessage groupingManagerMetagameMessage:
+                    OnGroupingManagerMetagameMessage(groupingManagerMetagameMessage);
+                    break;
+
+                case ServiceMessage.GroupingManagerServerNotification groupingManagerServerNotification:
+                    OnGroupingManagerServerNotification(groupingManagerServerNotification);
+                    break;
+
+                case ServiceMessage.GroupingManagerChatRoomOperation groupingManagerChatRoomOperation:
+                    OnGroupingManagerChatRoomOperation(groupingManagerChatRoomOperation);
+                    break;
+
+                case ServiceMessage.SetLiveTuningEventMessage setLiveTuningEventMessage:
+                    OnSetLiveTuningEventMessage(setLiveTuningEventMessage);
+                    break;
+
+                default:
+                    Verify.IsTrue(false, $"Unhandled service message type {message.GetType().Name}");
+                    break;
+            }
+        }
+
+        #region Handlers
+
+        // Try to keep these handlers free from logic and just route the requests to appropriate managers.
+
+        private void OnAddClient(in ServiceMessage.AddClient addClient)
+        {
+            IFrontendClient client = addClient.Client;
+
+            if (_groupingManager.ClientManager.AddClient(client) == false)
+                return;
+
+            _groupingManager.ChatManager.OnClientAdded(client);
+        }
+
+        private void OnRemoveClient(in ServiceMessage.RemoveClient removeClient)
+        {
+            IFrontendClient client = removeClient.Client;
+            _groupingManager.ClientManager.RemoveClient(client);
+        }
+
+        private void OnPlayerNameChanged(in ServiceMessage.PlayerNameChanged playerNameChanged)
+        {
+            ulong playerDbId = playerNameChanged.PlayerDbId;
+            string oldPlayerName = playerNameChanged.OldPlayerName;
+            string newPlayerName = playerNameChanged.NewPlayerName;
+
+            _groupingManager.ClientManager.OnPlayerNameChanged(playerDbId, oldPlayerName, newPlayerName);
+        }
+
+        private void OnGroupingManagerChat(in ServiceMessage.GroupingManagerChat groupingManagerChat)
+        {
+            ulong playerDbId = groupingManagerChat.PlayerDbId;
+            NetMessageChat chat = groupingManagerChat.Chat;
+            int prestigeLevel = groupingManagerChat.PrestigeLevel;
+            List<ulong> playerFilter = groupingManagerChat.PlayerFilter;
+
+            if (!Verify.IsTrue(_groupingManager.ClientManager.TryGetClient(playerDbId, out IFrontendClient client), $"Player 0x{playerDbId:X} not found"))
+                return;
+
+            _groupingManager.ChatManager.OnChat(client, chat, prestigeLevel, playerFilter);
+        }
+
+        private void OnGroupingManagerTell(in ServiceMessage.GroupingManagerTell groupingManagerTell)
+        {
+            ulong playerDbId = groupingManagerTell.PlayerDbId;
+            NetMessageTell tell = groupingManagerTell.Tell;
+            int prestigeLevel = groupingManagerTell.PrestigeLevel;
+
+            if (!Verify.IsTrue(_groupingManager.ClientManager.TryGetClient(playerDbId, out IFrontendClient client), $"Player 0x{playerDbId:X} not found"))
+                return;
+
+            _groupingManager.ChatManager.OnTell(client, tell, prestigeLevel);
+        }
+
+        private void OnGroupingManagerMetagameMessage(in ServiceMessage.GroupingManagerMetagameMessage groupingManagerMetagameMessage)
+        {
+            ulong playerDbId = groupingManagerMetagameMessage.PlayerDbId;
+            string text = groupingManagerMetagameMessage.Text;
+            bool showSender = groupingManagerMetagameMessage.ShowSender;
+
+            if (!Verify.IsTrue(_groupingManager.ClientManager.TryGetClient(playerDbId, out IFrontendClient client), $"Player 0x{playerDbId:X} not found"))
+                return;
+
+            _groupingManager.ChatManager.OnMetagameMessage(client, text, showSender);
+        }
+
+        private void OnGroupingManagerServerNotification(in ServiceMessage.GroupingManagerServerNotification groupingManagerServerNotification)
+        {
+            string notificationText = groupingManagerServerNotification.NotificationText;
+
+            _groupingManager.ChatManager.OnServerNotification(notificationText);
+        }
+
+        private void OnGroupingManagerChatRoomOperation(in ServiceMessage.GroupingManagerChatRoomOperation groupingManagerChatRoomOperation)
+        {
+            ChatRoomTypes roomType = groupingManagerChatRoomOperation.RoomType;
+            ulong roomId = groupingManagerChatRoomOperation.RoomId;
+            ulong playerDbId = groupingManagerChatRoomOperation.PlayerDbId;
+            ChatRoomOperationType operation = groupingManagerChatRoomOperation.Operation;
+
+            switch (operation)
+            {
+                case ChatRoomOperationType.Add:
+                    _groupingManager.ChatManager.AddPlayerToRoom(roomType, roomId, playerDbId);
+                    break;
+
+                case ChatRoomOperationType.Remove:
+                    _groupingManager.ChatManager.RemovePlayerFromRoom(roomType, roomId, playerDbId);
+                    break;
+
+                default:
+                    Verify.IsTrue(false, $"Unhandled chat room operation {operation}");
+                    break;
+            }
+        }
+
+        private void OnSetLiveTuningEventMessage(in ServiceMessage.SetLiveTuningEventMessage setLiveTuningEventMessage)
+        {
+            string messageText = setLiveTuningEventMessage.MessageText;
+
+            _groupingManager.ChatManager.SetLiveTuningEventMessage(messageText);
+        }
+
+        #endregion
+    }
+}

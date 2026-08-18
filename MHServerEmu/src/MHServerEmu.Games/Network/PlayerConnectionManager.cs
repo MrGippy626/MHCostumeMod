@@ -1,0 +1,226 @@
+﻿using Gazillion;
+using Google.ProtocolBuffers;
+using MHServerEmu.Core.Logging;
+using MHServerEmu.Core.Memory;
+using MHServerEmu.Core.Network;
+using MHServerEmu.Core.System.Time;
+using MHServerEmu.Games.Entities;
+using MHServerEmu.Games.Regions;
+
+namespace MHServerEmu.Games.Network
+{
+    // This is the equivalent of the client-side ClientServiceConnectionManager and GameConnectionManager implementations of the NetworkManager abstract class.
+
+    /// <summary>
+    /// Manages <see cref="PlayerConnection"/> instances.
+    /// </summary>
+    public class PlayerConnectionManager : NetworkManager<PlayerConnection, ClientToGameServerMessage>
+    {
+        private static readonly Logger Logger = LogManager.CreateLogger();
+
+        private readonly Game _game;
+
+        // HashSet for preventing the same account from logging in multiple times
+        private readonly HashSet<ulong> _playerDbIds = new();
+
+        /// <summary>
+        /// Constructs a new <see cref="PlayerConnectionManager"/> instance for the provided <see cref="Game"/>.
+        /// </summary>
+        public PlayerConnectionManager(Game game)
+        {
+            _game = game;
+        }
+
+        #region Player Connection Getters
+
+        /// <summary>
+        /// Adds all <see cref="Player"/> instances that are interested in the provided <see cref="Entity"/> to the provided <see cref="List{T}"/>.
+        /// Returns <see langword="true"/> if the number of interested players is > 0.
+        /// </summary>
+        public bool GetInterestedPlayers(List<Player> interestedPlayerList, Entity entity,
+            AOINetworkPolicyValues interestFilter = AOINetworkPolicyValues.AllChannels, bool skipOwner = false)
+        {
+            // Early out if we already know that none of the players match the interest channel filter
+            if ((entity.InterestedPoliciesUnion & interestFilter) == 0)
+                return false;
+
+            // Use InterestReferences to skip players that we know for sure are not interested in this entity
+            EntityManager entityManager = _game.EntityManager;
+            foreach (ulong playerId in entity.InterestReferences)
+            {
+                Player player = entityManager.GetEntity<Player>(playerId);
+                if (!Verify.IsNotNull(player))
+                    continue;
+
+                if (!Verify.IsNotNull(player.PlayerConnection))
+                    continue;
+
+                // Check ownership
+                if (skipOwner && entity.IsOwnedBy(playerId))
+                    continue;
+
+                // Check channel filter
+                if (player.AOI.InterestedInEntity(entity.Id, interestFilter) == false)
+                    continue;
+
+                interestedPlayerList.Add(player);
+            }
+
+            return interestedPlayerList.Count > 0;
+        }
+
+        /// <summary>
+        /// Adds all <see cref="Player"/> instances that are interested in the provided <see cref="Region"/> to the provided <see cref="List{T}"/>.
+        /// Returns <see langword="true"/> if the number of interested players is > 0.
+        /// </summary>
+        public bool GetInterestedPlayers(List<Player> interestedPlayerList, Region region)
+        {
+            foreach (Player player in new PlayerIterator(region))
+            {
+                if (player.AOI.Region == region)
+                    interestedPlayerList.Add(player);
+            }
+
+            return interestedPlayerList.Count > 0;
+        }
+
+        /// <summary>
+        /// Adds all <see cref="PlayerConnection"/> instances that are interested in the provided <see cref="Entity"/> to the provided <see cref="List{T}"/>.
+        /// Returns <see langword="true"/> if the number of interested player connections is > 0.
+        /// </summary>
+        public bool GetInterestedClients(List<PlayerConnection> interestedClientList, Entity entity,
+            AOINetworkPolicyValues interestFilter = AOINetworkPolicyValues.AllChannels, bool skipOwner = false)
+        {
+            using var interestedPlayerListHandle = ListPool<Player>.Get(out List<Player> interestedPlayerList);
+            GetInterestedPlayers(interestedPlayerList, entity, interestFilter, skipOwner);
+
+            foreach (Player player in interestedPlayerList)
+                interestedClientList.Add(player.PlayerConnection);
+
+            return interestedClientList.Count > 0;
+        }
+
+        /// <summary>
+        /// Returns <see cref="PlayerConnection"/> instances that are bound to players that are interested in the provided <see cref="Region"/>.
+        /// </summary>
+        /// <summary>
+        /// Adds all <see cref="PlayerConnection"/> instances that are interested in the provided <see cref="Region"/> to the provided <see cref="List{T}"/>.
+        /// Returns <see langword="true"/> if the number of interested clients is > 0.
+        /// </summary>
+        public bool GetInterestedClients(List<PlayerConnection> interestedClientList, Region region)
+        {
+            using var interestedPlayerListHandle = ListPool<Player>.Get(out List<Player> interestedPlayerList);
+            GetInterestedPlayers(interestedPlayerList, region);
+
+            foreach (Player player in interestedPlayerList)
+                interestedClientList.Add(player.PlayerConnection);
+
+            return interestedClientList.Count > 0;
+        }
+
+        #endregion
+
+        #region Message Sending
+
+        /// <summary>
+        /// Sends the provided <see cref="IMessage"/> over all <see cref="PlayerConnection"/> instaces in the provided <see cref="List{T}"/>.
+        /// </summary>
+        public void SendMessageToMultiple(List<PlayerConnection> clientList, IMessage message)
+        {
+            foreach (PlayerConnection playerConnection in clientList)
+                playerConnection.SendMessage(message);
+        }
+
+        /// <summary>
+        /// Sends the provided <see cref="IMessage"/> to all <see cref="PlayerConnection"/> instances that are interested in the provided <see cref="Region"/>.
+        /// </summary>
+        public void SendMessageToInterested(IMessage message, Region region)
+        {
+            using var interestedClientListHandle = ListPool<PlayerConnection>.Get(out List<PlayerConnection> interestedClientList);
+            GetInterestedClients(interestedClientList, region);
+
+            foreach (PlayerConnection playerConnection in interestedClientList)
+                playerConnection.SendMessage(message);
+        }
+
+        /// <summary>
+        /// Sends the provided <see cref="IMessage"/> to all <see cref="PlayerConnection"/> instances that are interested in the provided <see cref="Entity"/>.
+        /// </summary>
+        public void SendMessageToInterested(IMessage message, Entity entity, AOINetworkPolicyValues interestFilter = AOINetworkPolicyValues.AllChannels, bool skipOwner = false)
+        {
+            using var interestedClientListHandle = ListPool<PlayerConnection>.Get(out List<PlayerConnection> interestedClientList);
+            GetInterestedClients(interestedClientList, entity, interestFilter, skipOwner);
+
+            foreach (PlayerConnection playerConnection in interestedClientList)
+                playerConnection.SendMessage(message);
+        }
+
+        /// <summary>
+        /// Broadcasts an <see cref="IMessage"/> instance to all active <see cref="PlayerConnection"/> instances.
+        /// </summary>
+        public void BroadcastMessage(IMessage message)
+        {
+            foreach (PlayerConnection playerConnection in this)
+                playerConnection.PostMessage(message);
+        }
+
+        /// <summary>
+        /// Posts the provided <see cref="IMessage"/> to the specified <see cref="PlayerConnection"/> and immediately flushes it.
+        /// </summary>
+        public void SendMessageImmediate(PlayerConnection playerConnection, IMessage message)
+        {
+            playerConnection.PostMessage(message);
+            playerConnection.FlushMessages();
+        }
+
+        #endregion
+
+        protected override PlayerConnection AcceptAndRegisterNewClient(IFrontendClient frontendClient)
+        {
+            // Make sure this client is still connected (it may not be, e.g. if we are lagging hard)
+            if (!Verify.IsTrue(frontendClient.IsConnected, $"Client [{frontendClient}] is no longer connected"))
+            {
+                // Self-initiate a removal request
+                _game.GameManager.RemoveClientFromGame(frontendClient, _game.Id, true);
+                _game.GameManager.OnClientRemoved(_game, frontendClient);
+                return null;
+            }
+
+            // Construct a new PlayerConnection bound to this IFrontendClient
+            PlayerConnection playerConnection = new(_game, frontendClient);
+
+            // Make sure this client's account is not being used by another client pending disconnection.
+            // We do this after constructing the connection to keep the IFrontendClient -> PlayerDbId retrieval in one place.
+            ulong dbId = playerConnection.PlayerDbId;
+
+            if (!Verify.IsTrue(_playerDbIds.Add(dbId), $"Attempting to add client [{frontendClient}] to game [{_game}], but its account dbId 0x{dbId:X} is already in use"))
+                return null;
+
+            // Register the client to allow it to receive messages
+            Verify.IsTrue(RegisterNetClient(playerConnection), LoggingLevel.Error, $"Failed to add client [{frontendClient}]");
+
+            // Send time sync straight away for the client to be able to initialize its EventScheduler (needed for loading screens).
+            // This will also make the client start sending pings, so it needs to be done after we assign game id.
+            SendMessageImmediate(playerConnection, NetMessageInitialTimeSync.CreateBuilder()
+                .SetGameTimeServerSent(Clock.GameTime.Ticks / 10)
+                .SetDateTimeServerSent(Clock.UnixTime.Ticks / 10)
+                .Build());
+
+            // Initializing a player connection loads player data and sends the achievement database if needed
+            if (playerConnection.Initialize() == false)
+                return null;
+
+            // Notify the player manager. The player will be put into a region when we receive transfer params.
+            _game.GameManager.OnClientAdded(_game, frontendClient);
+
+            Logger.Info($"Accepted and registered client [{frontendClient}] to game [{_game}]");
+            return playerConnection;
+        }
+
+        protected override void OnNetClientDisconnected(PlayerConnection playerConnection)
+        {
+            ulong dbId = playerConnection.PlayerDbId;
+            Verify.IsTrue(_playerDbIds.Remove(dbId), $"Account id 0x{dbId:X} not found");
+        }
+    }
+}

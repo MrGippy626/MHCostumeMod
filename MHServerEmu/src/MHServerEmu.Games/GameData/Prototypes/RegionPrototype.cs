@@ -1,0 +1,898 @@
+﻿using Gazillion;
+using MHServerEmu.Core.Extensions;
+using MHServerEmu.Core.Logging;
+using MHServerEmu.Core.Memory;
+using MHServerEmu.Games.Entities;
+using MHServerEmu.Games.Entities.Avatars;
+using MHServerEmu.Games.GameData.Calligraphy;
+using MHServerEmu.Games.GameData.LiveTuning;
+using MHServerEmu.Games.Loot;
+using MHServerEmu.Games.Properties.Evals;
+using MHServerEmu.Games.Regions;
+using MHServerEmu.Games.Regions.ObjectiveGraphs;
+using MHServerEmu.Games.Social.Communities;
+using MHServerEmu.Games.Social.Parties;
+
+namespace MHServerEmu.Games.GameData.Prototypes
+{
+    #region Enums
+
+    [AssetEnum((int)None)]
+    public enum MissionTrackerFilterType
+    {
+        None = -1,
+        Standard = 0,
+        PvE = 1,
+        PvP = 2,
+        Daily = 3,
+        Challenge = 4,
+    }
+
+    [AssetEnum((int)Invalid)]
+    public enum RegionBehavior     // Regions/RegionBehavior.type
+    {
+        Invalid = -1,
+        Town = 0,
+        PublicCombatZone = 1,
+        PrivateStory = 2,
+        PrivateNonStory = 3,
+        PrivateRaid = 5,
+        MatchPlay = 4,
+    }
+
+    [AssetEnum((int)None)]
+    public enum RegionMusicBehavior
+    {
+        None,
+        Default,
+        Mission,
+    }
+
+    [AssetEnum((int)None)]
+    public enum FootstepTraceBehavior
+    {
+        None,
+        Enable,
+        Disable,
+    }
+
+    [AssetEnum((int)None)]
+    [Flags]
+    public enum RegionQueueMethod
+    {
+        None                    = 0,
+        UsesRegionRequestQueue  = 1 << 0,
+        Method1                 = 1 << 1,   // This is never set because there was no option for it in Calligraphy.
+        QueueBypass             = 1 << 2,
+
+        // Calligraphy aliases
+        PvPQueue = UsesRegionRequestQueue,
+        DailyQueue = UsesRegionRequestQueue | QueueBypass,
+    }
+
+    [AssetEnum((int)BiDirectional)]
+    public enum RegionTransitionDirectionality  // Regions/RegionConnectionType.type
+    {
+        BiDirectional = 0,
+        OneWay = 1,
+        Disabled = 2,
+    }
+
+#if GAME_VERSION_1_53
+    [AssetEnum((int)None)]
+    public enum ClientMapOverrideType
+    {
+        None = 1,
+        Halloween = 2,
+        Christmas = 3,
+        Ragnarok = 4,
+    }
+#endif
+
+    #endregion
+
+    public class RegionPrototype : Prototype
+    {
+        public AssetId ClientMap { get; protected set; }
+        public PrototypeId BodySliderTarget { get; protected set; }
+        public PrototypeId StartTarget { get; protected set; }
+        public AssetId[] Music { get; protected set; }
+        public RegionGeneratorPrototype RegionGenerator { get; protected set; }
+        public RegionBehavior Behavior { get; protected set; }
+        public LocaleStringId RegionName { get; protected set; }
+        public PrototypeId[] MetaGames { get; protected set; }
+        public bool ForceSimulation { get; protected set; }
+        public PrototypeId[] LoadingScreens { get; protected set; }
+        public bool AlwaysRevealFullMap { get; protected set; }
+        public PrototypeId Chapter { get; protected set; }
+        public int PlayerLimit { get; protected set; }
+        public float LifetimeInMinutes { get; protected set; }
+        public PrototypeId WaypointAutoUnlock { get; protected set; }
+        public bool PartyFormationAllowed { get; protected set; }
+        public TransitionUIPrototype[] TransitionUITypes { get; protected set; }
+        public AssetId AmbientSfx { get; protected set; }
+        public PrototypeId[] PowerKeywordBlacklist { get; protected set; }
+        public bool CloseWhenReservationsReachesZero { get; protected set; }
+        public float UIMapWallThickness { get; protected set; }
+        public PrototypeId[] PopulationOverrides { get; protected set; }
+        public int Level { get; protected set; }
+        public MissionTrackerFilterType[] MissionTrackerFilterList { get; protected set; }
+        public bool AllowAutoPartyOnEnter { get; protected set; }
+        public float AutoPartyWindowSecs { get; protected set; }
+        public bool DailyCheckpointStartTarget { get; protected set; }
+        public int LowPopulationPlayerLimit { get; protected set; }
+        public PrototypeId RespawnOverride { get; protected set; }
+        public PrototypeId PlayerCameraSettings { get; protected set; }
+        public RegionQueueMethod RegionQueueMethod { get; protected set; }
+        public EvalPrototype EvalAccessRestriction { get; protected set; }
+        public PrototypeId[] WaypointAutoUnlockList { get; protected set; }
+        public bool AlwaysShutdownWhenVacant { get; protected set; }
+        public bool SynergyEditAllowed { get; protected set; }
+        public PrototypeId[] Keywords { get; protected set; }
+        public PrototypeId UITopPanel { get; protected set; }
+        public PrototypeId[] AltRegions { get; protected set; }
+        public RegionAccessCheckPrototype[] AccessChecks { get; protected set; }
+        public LocaleStringId UIDescription { get; protected set; }
+        public LocaleStringId UILocation { get; protected set; }
+        public bool PausesBoostConditions { get; protected set; }
+        public bool ShowTransitionIndicators { get; protected set; }
+        public RegionQueueStateEntryPrototype[] RegionQueueStates { get; protected set; }
+        public PrototypeId MarkerFilter { get; protected set; }
+        public bool LevelBandedRegionUsesPlayerLevel { get; protected set; }
+        public FootstepTraceBehavior FootstepTraceOverride { get; protected set; }
+        public bool QueueDoNotWaitToFull { get; protected set; }
+        public bool DisplayCommunityNews { get; protected set; }
+        public AssetId UnrealClass { get; protected set; }
+        public bool RespawnDestructibles { get; protected set; }
+        public PrototypeId PropertyGameModeSetOnEntry { get; protected set; }
+        public bool UsePrevRegionPlayerDeathCount { get; protected set; }
+        public LootTableAssignmentPrototype[] LootTables { get; protected set; }
+        public PrototypeId AffixTable { get; protected set; }
+        public ObjectiveGraphSettingsPrototype ObjectiveGraph { get; protected set; }
+        public DividedStartLocationPrototype[] DividedStartLocations { get; protected set; }
+        public RegionMusicBehavior MusicBehavior { get; protected set; }
+        [PrototypeField(PrototypeFieldType.PrototypeRefPtr)]
+        public ObjectiveInfoPrototype AvatarObjectiveInfoOverride { get; protected set; }
+        public RegionDifficultySettingsPrototype DifficultySettings { get; protected set; }
+        public bool LevelOverridesCharacterLevel { get; protected set; }
+        public bool LevelUseAreaOffset { get; protected set; }
+        public LocaleStringId EvalAccessRestrictionMessage { get; protected set; }
+        public bool BodySliderOneWay { get; protected set; }
+        public bool EnableAvatarSwap { get; protected set; }
+        public PrototypeId[] RestrictedRoster { get; protected set; }
+        public PrototypeId[] AvatarPowers { get; protected set; }
+        public bool IsNPE { get; protected set; }
+#if GAME_VERSION_1_53
+        public LocaleStringId PresenceStatusTextPS4 { get; protected set; }
+#else
+        public LocaleStringId PresenceStatusText { get; protected set; }
+#endif
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+        public PrototypeId[] AccessDifficulties { get; protected set; }
+        [PrototypeField(PrototypeFieldType.PrototypeRefPtr)]
+        public TuningPrototype Tuning { get; protected set; }
+        public int BonusItemFindMultiplier { get; protected set; }
+        public PrototypeId PlayerCameraSettingsOrbis { get; protected set; }
+        public PrototypeId[] LoadingScreensConsole { get; protected set; }
+        public bool AllowLocalCoopMode { get; protected set; }
+#endif
+#if GAME_VERSION_1_53
+        public LocaleStringId PresenceStatusKeyXboxOne { get; protected set; }
+        public DisplayDifficultySliderPrototype DisplayDifficultySlider { get; protected set; }
+        public ClientMapOverridePairPrototype[] ClientMapOverrides { get; protected set; }
+#endif
+
+        //---
+
+        private readonly Dictionary<AssetId, List<LootTableAssignmentPrototype>> _lootTableMap = new();
+
+        [DoNotCopy]
+        public KeywordsMask KeywordsMask { get; private set; }
+        [DoNotCopy]
+        public bool HasKeywords { get => Keywords.HasValue(); }
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+        [DoNotCopy]
+        public DifficultyTierMask DifficultyTierMask { get; private set; }
+#endif
+        [DoNotCopy]
+        public bool HasPvPMetaGame { get; private set; }
+        [DoNotCopy]
+        public bool HasScoreSchema { get; private set; }
+        [DoNotCopy]
+        public int RegionPrototypeEnumValue { get; private set; }
+        [DoNotCopy]
+        public HashSet<PrototypeId> AreasInGenerator { get; private set; }
+        [DoNotCopy]
+        public bool IsPublic { get => Behavior == RegionBehavior.Town || Behavior == RegionBehavior.PublicCombatZone || Behavior == RegionBehavior.MatchPlay; }
+        [DoNotCopy]
+        public bool IsPrivate { get => IsPublic == false; }
+        [DoNotCopy]
+        public bool IsQueueRegion { get => RegionQueueMethod.HasFlag(RegionQueueMethod.UsesRegionRequestQueue); }
+        [DoNotCopy]
+        public bool AllowsQueueBypass { get => RegionQueueMethod.HasFlag(RegionQueueMethod.QueueBypass); }
+        [DoNotCopy]
+        public int[] TeamLimits { get; private set; }
+        [DoNotCopy]
+        public int QueueGroupLimit { get; private set; }
+        [DoNotCopy]
+        public TimeSpan Lifetime { get; private set; }
+
+        public override void PostProcess()
+        {
+            base.PostProcess();
+
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+            DifficultyTierMask = DifficultyTierMask.None;
+
+            if (AccessDifficulties.HasValue())
+            {
+                foreach (PrototypeId difficultyTierRef in AccessDifficulties)
+                {
+                    DifficultyTierPrototype difficultyTierProto = difficultyTierRef.As<DifficultyTierPrototype>();
+                    if (!Verify.IsNotNull(difficultyTierProto))
+                        continue;
+
+                    DifficultyTierMask |= (DifficultyTierMask)(1 << (int)difficultyTierProto.Tier);
+                }
+            }
+            else
+            {
+                DifficultyTierMask = DifficultyTierMask.All;
+            }
+#endif
+
+                if (RegionQueueStates.HasValue())
+            {
+                for (int i = 0; i < RegionQueueStates.Length; i++)
+                {
+                    RegionQueueStateEntryPrototype entryProto = RegionQueueStates[i];
+                    if (!Verify.IsNotNull(entryProto))
+                        continue;
+
+                    entryProto.Index = i;
+                }
+            }
+
+            HasPvPMetaGame = false;
+            HasScoreSchema = false;
+
+            if (MetaGames.HasValue())
+            {
+                foreach (PrototypeId metaGameRef in MetaGames)
+                {
+                    if (!Verify.IsTrue(metaGameRef != PrototypeId.Invalid))
+                        continue;
+
+                    PvPPrototype metaGameProto = GameDatabase.GetPrototype<PvPPrototype>(metaGameRef);
+                    if (metaGameProto != null)
+                    {
+                        if (metaGameProto.IsPvP)
+                            HasPvPMetaGame = true;
+
+                        if (metaGameProto.ScoreSchemaPlayer != PrototypeId.Invalid || metaGameProto.ScoreSchemaRegion != PrototypeId.Invalid)
+                            HasScoreSchema = true;
+
+                        break;
+                    }
+                }
+            }
+
+            KeywordsMask = KeywordPrototype.GetBitMaskForKeywordList(Keywords);
+
+            // GetLevelAccessRestrictionMinMax - client only?
+
+            if (LootTables.HasValue())
+            {
+                foreach (LootTableAssignmentPrototype lootTableAssignmentProto in LootTables)
+                {
+                    if (lootTableAssignmentProto.Name == AssetId.Invalid)
+                        continue;
+
+                    if (_lootTableMap.TryGetValue(lootTableAssignmentProto.Name, out List<LootTableAssignmentPrototype> table) == false)
+                    {
+                        table = new();
+                        _lootTableMap.Add(lootTableAssignmentProto.Name, table);
+                    }
+
+                    table.Add(lootTableAssignmentProto);
+                }
+            }
+
+            RegionPrototypeEnumValue = GetEnumValueFromBlueprint(LiveTuningData.GetRegionBlueprintDataRef());
+
+            if (AreasInGenerator == null)
+            {
+                AreasInGenerator = new();
+                HashSet<PrototypeId> regions = new();
+                GetAreasInGenerator(this, AreasInGenerator, regions);
+            }
+
+            // ClientMapOverrides client only
+
+            Lifetime = TimeSpan.FromMinutes(LifetimeInMinutes);
+
+            TeamLimits = GetTeamLimits();
+            QueueGroupLimit = GetQueueGroupLimit();
+        }
+
+        public static bool Equivalent(RegionPrototype regionA, RegionPrototype regionB)
+        {
+            if (regionA == null || regionB == null)
+                return false;
+
+            if (regionA == regionB)
+                return true;
+
+            return regionA.HasAltRegion(regionB.DataRef);
+        }
+
+        private bool HasAltRegion(PrototypeId dataRef)
+        {
+            if (AltRegions.IsNullOrEmpty())
+                return false;
+
+            foreach (PrototypeId altRegionProtoRef in AltRegions)
+            {
+                if (altRegionProtoRef == dataRef)
+                    return true;
+            }
+
+            return false;
+        }
+
+        public PrototypeId GetDefaultAreaRef(Region region)
+        {
+            PrototypeId defaultArea = PrototypeId.Invalid;
+
+            if (StartTarget != PrototypeId.Invalid)
+            {
+                RegionConnectionTargetPrototype target = StartTarget.As<RegionConnectionTargetPrototype>();
+                if (Verify.IsNotNull(target))
+                    defaultArea = target.Area;
+            }
+
+            if (RegionGenerator != null && defaultArea == PrototypeId.Invalid)
+                return RegionGenerator.GetStartAreaRef(region);
+
+            return defaultArea;
+        }
+
+        public RegionDifficultySettingsPrototype GetDifficultySettings()
+        {
+            if (DifficultySettings != null)
+                return DifficultySettings;
+
+            DifficultyGlobalsPrototype difficultyGlobals = GameDatabase.DifficultyGlobalsPrototype;
+            if (!Verify.IsNotNull(difficultyGlobals)) return null;
+
+            if (Behavior == RegionBehavior.PublicCombatZone && difficultyGlobals.RegionSettingsDefaultPCZ != null)
+                return difficultyGlobals.RegionSettingsDefaultPCZ;
+
+            return difficultyGlobals.RegionSettingsDefault;
+        }
+
+        private int[] GetTeamLimits()
+        {
+            List<int> teamLimits = null;
+
+            if (MetaGames.HasValue())
+            {
+                foreach (PrototypeId metaGameProtoRef in MetaGames)
+                {
+                    MetaGamePrototype metaGameProto = metaGameProtoRef.As<MetaGamePrototype>();
+                    if (!Verify.IsNotNull(metaGameProto))
+                        continue;
+
+                    if (metaGameProto.Teams.IsNullOrEmpty())
+                        continue;
+
+                    foreach (PrototypeId teamProtoRef in metaGameProto.Teams)
+                    {
+                        MetaGameTeamPrototype teamProto = teamProtoRef.As<MetaGameTeamPrototype>();
+                        if (!Verify.IsNotNull(teamProto))
+                            continue;
+
+                        teamLimits ??= new();
+                        teamLimits.Add(teamProto.MaxPlayers);
+                    }
+                }
+            }
+
+            return teamLimits?.ToArray();
+        }
+
+        private int GetQueueGroupLimit()
+        {
+            if (TeamLimits.HasValue())
+            {
+                int limit = 0;
+
+                foreach (int teamLimit in TeamLimits)
+                    limit = Math.Max(teamLimit, limit);
+
+                return limit;
+            }
+
+            switch (Behavior)
+            {
+                case RegionBehavior.Town:
+                case RegionBehavior.PublicCombatZone:
+                case RegionBehavior.MatchPlay:
+                    return PlayerLimit;
+
+                case RegionBehavior.PrivateStory:
+                case RegionBehavior.PrivateNonStory:
+                    return Math.Min(GameDatabase.GlobalsPrototype.PlayerPartyMaxSize, PlayerLimit);
+
+                case RegionBehavior.PrivateRaid:
+                    return Math.Min(GameDatabase.GlobalsPrototype.PlayerRaidMaxSize, PlayerLimit);
+
+                default:
+                    return 0;
+            }
+        }
+
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+        public static PrototypeId ConstrainDifficulty(PrototypeId regionProtoRef, PrototypeId difficultyTierProtoRef)
+        {
+            return ConstrainDifficulty(regionProtoRef.As<RegionPrototype>(), difficultyTierProtoRef.As<DifficultyTierPrototype>());
+        }
+
+        public static PrototypeId ConstrainDifficulty(RegionPrototype regionProto, DifficultyTierPrototype difficultyTierProto)
+        {
+            if (regionProto == null || difficultyTierProto == null)
+                return PrototypeId.Invalid;
+
+            DifficultyTierMask mask = regionProto.DifficultyTierMask;
+            DifficultyTier tier = difficultyTierProto.Tier;
+
+            // First try to downgrade
+            for (DifficultyTier i = tier; i >= 0; i--)
+            {
+                if (mask.HasFlag((DifficultyTierMask)(1 << (int)i)))
+                {
+                    DifficultyTierPrototype constrainedDifficultyProto = GameDatabase.GlobalsPrototype.GetDifficultyTierByEnum(i);
+                    return constrainedDifficultyProto.DataRef;
+                }
+            }
+
+            // Now upgrade
+            for (DifficultyTier i = tier + 1; i < DifficultyTier.NumTiers; i++)
+            {
+                if (mask.HasFlag((DifficultyTierMask)(1 << (int)i)))
+                {
+                    DifficultyTierPrototype constrainedDifficultyProto = GameDatabase.GlobalsPrototype.GetDifficultyTierByEnum(i);
+                    return constrainedDifficultyProto.DataRef;
+                }
+            }
+
+            // No available difficulty
+            return PrototypeId.Invalid;
+        }
+#endif
+
+        public bool HasKeyword(KeywordPrototype keywordProto)
+        {
+            return keywordProto != null && KeywordPrototype.TestKeywordBit(KeywordsMask, keywordProto);
+        }
+
+        public bool HasKeyword(PrototypeId keywordRef)
+        {
+            var keywordProto = GameDatabase.GetPrototype<KeywordPrototype>(keywordRef);
+            return HasKeyword(keywordProto);
+        }
+
+        public bool AllowRaids()
+        {
+            GlobalsPrototype globalsProto = GameDatabase.GlobalsPrototype;
+            if (!Verify.IsNotNull(globalsProto)) return false;
+
+            switch (Behavior)
+            {
+                case RegionBehavior.Town:
+                case RegionBehavior.PublicCombatZone:
+                case RegionBehavior.PrivateRaid:
+                    return true;
+                case RegionBehavior.PrivateStory:
+                case RegionBehavior.PrivateNonStory:
+                    return false;
+                case RegionBehavior.MatchPlay:
+                    int largestTeamSize = GetLargestTeamSize();
+                    if (largestTeamSize > 0)
+                        return largestTeamSize >= globalsProto.PlayerRaidMaxSize;
+                    else if (PlayerLimit > 0)
+                        return PlayerLimit >= globalsProto.PlayerRaidMaxSize;
+                    break;
+                default:
+                    Verify.IsTrue(false);
+                    return false;
+            }
+
+            return false;
+        }
+
+        public int GetPlayerLimit()
+        {
+            return (int)(PlayerLimit * LiveTuningManager.GetLiveRegionTuningVar(this, RegionTuningVar.eRTV_PlayerLimit));
+        }
+
+        private int GetLargestTeamSize()
+        {
+            int largestTeamSize = 0;
+
+            if (MetaGames.HasValue())
+            {
+                foreach (PrototypeId metaGameRef in MetaGames)
+                {
+                    MetaGamePrototype metaGameProto = metaGameRef.As<MetaGamePrototype>();
+                    if (metaGameProto != null && metaGameProto.Teams.HasValue())
+                    {
+                        foreach (PrototypeId teamRef in metaGameProto.Teams)
+                        {
+                            MetaGameTeamPrototype teamProto = teamRef.As<MetaGameTeamPrototype>();
+                            if (teamProto != null)
+                                largestTeamSize = Math.Max(largestTeamSize, teamProto.MaxPlayers);
+                        }
+                    }
+                }
+            }
+
+            return largestTeamSize;
+        }
+
+        public static void BuildRegionsFromFilters(HashSet<PrototypeId> regions, RegionPrototype[] includeRegions, bool includeChildren, RegionPrototype[] excludeRegions)
+        {
+            if (includeRegions.HasValue())
+            {
+                foreach (RegionPrototype regionProto in includeRegions)
+                {
+                    if (regionProto != null)
+                        regions.Add(regionProto.DataRef);
+                }
+            }
+
+            if (includeChildren)
+            {
+                using var parentRegionsHandle = ListPool<PrototypeId>.Get(regions, out List<PrototypeId> parentRegions);
+                foreach (PrototypeId childRef in GameDatabase.DataDirectory.IteratePrototypesInHierarchy<RegionPrototype>(PrototypeIterateFlags.NoAbstractApprovedOnly))
+                {
+                    foreach (PrototypeId parentRef in parentRegions)
+                    {
+                        if (GameDatabase.DataDirectory.PrototypeIsAPrototype(childRef, parentRef))
+                        {
+                            regions.Add(childRef);
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (excludeRegions.HasValue())
+            {
+                foreach (RegionPrototype regionProto in excludeRegions)
+                    regions.Remove(regionProto.DataRef);
+            }
+
+            using var altRegionsHandle = ListPool<PrototypeId>.Get(regions, out List<PrototypeId> altRegions);
+            foreach (PrototypeId regionRef in altRegions)
+            {
+                RegionPrototype regionProto = regionRef.As<RegionPrototype>();
+                if (regionProto != null && regionProto.AltRegions.HasValue())
+                {
+                    foreach (PrototypeId altRegionRef in regionProto.AltRegions)
+                        regions.Add(altRegionRef);
+                }
+            }
+        }
+
+        public static void GetAreasInGenerator(PrototypeId regionRef, HashSet<PrototypeId> areas)
+        {
+            if (regionRef == PrototypeId.Invalid)
+                return;
+            
+            RegionPrototype regionProto = regionRef.As<RegionPrototype>();
+            if (regionProto == null)
+                return;
+
+            if (regionProto.AreasInGenerator == null)
+            {
+                regionProto.AreasInGenerator = new();
+                using var regionsHandle = HashSetPool<PrototypeId>.Get(out HashSet<PrototypeId> regions);
+                GetAreasInGenerator(regionProto, regionProto.AreasInGenerator, regions);
+            }
+
+            if (regionProto.AreasInGenerator != null)
+                areas.Insert(regionProto.AreasInGenerator);
+        }
+
+        private static void GetAreasInGenerator(RegionPrototype regionProto, HashSet<PrototypeId> areas, HashSet<PrototypeId> regions)
+        {
+            if (!Verify.IsNotNull(regionProto)) return;
+
+            if (regions.Contains(regionProto.DataRef))
+                return;
+
+            regions.Add(regionProto.DataRef);
+
+            if (regionProto.AltRegions.HasValue())
+            {
+                foreach (PrototypeId altRegionRef in regionProto.AltRegions)
+                {
+                    RegionPrototype altRegionProto = altRegionRef.As<RegionPrototype>();
+                    if (altRegionProto != null)
+                        GetAreasInGenerator(altRegionProto, areas, regions);
+                }
+            }
+
+            regionProto.RegionGenerator?.GetAreasInGenerator(areas);
+        }
+
+        public bool FilterRegion(RegionPrototype filterProto, bool includeChildren, RegionPrototype[] regionsExclude)
+        {
+            if (regionsExclude.HasValue() && regionsExclude.Contains(this))
+                return false;
+
+            if (filterProto == null)
+                return false;
+
+            if (filterProto != null)
+            {
+                if (filterProto == this)
+                    return true;
+
+                if (includeChildren && GameDatabase.DataDirectory.PrototypeIsAPrototype(DataRef, filterProto.DataRef))
+                    return true;
+
+                if (filterProto.HasAltRegion(DataRef))
+                    return true;
+            }
+
+            return false;
+        }
+
+        public RegionQueueStateEntryPrototype GetRegionQueueStateEntry(PrototypeId gameStateRef)
+        {
+            if (RegionQueueStates.HasValue())
+            {
+                foreach (RegionQueueStateEntryPrototype entryProto in RegionQueueStates)
+                {
+                    if (!Verify.IsNotNull(entryProto))
+                        continue;
+
+                    if (entryProto.State == gameStateRef)
+                        return entryProto;
+                }
+            }
+
+            return null;
+        }
+
+        public PrototypeId GetMetagame()
+        {
+            if (MetaGames.HasValue())
+                return MetaGames[0];
+
+            return PrototypeId.Invalid;
+        }
+
+        public bool HasEndlessTheme()
+        {
+            return RegionGenerator is SequenceRegionGeneratorPrototype sequenceRegion && sequenceRegion.EndlessThemes.HasValue();
+        }
+
+        public PrototypeId GetLootTableOverride(WorldEntity worldEntity, AssetId source, LootDropEventType lootEvent)
+        {
+            if (_lootTableMap.TryGetValue(source, out List<LootTableAssignmentPrototype> tables))
+            {
+                foreach (LootTableAssignmentPrototype tableAssignment in tables)
+                {
+                    LootDropEventType tableAssignmentEvent = tableAssignment.Event;
+
+                    if (tableAssignmentEvent == lootEvent)
+                        return tableAssignment.Table;
+
+                    if (tableAssignmentEvent == LootDropEventType.None && (lootEvent == LootDropEventType.OnKilled || lootEvent == LootDropEventType.OnInteractedWith))
+                        return tableAssignment.Table;
+                }
+            }
+
+            Verify.IsTrue(false, $"Region [{this}] has no overrides for source=[{source}], lootEvent=[{lootEvent}] requested by entity [{worldEntity}]");
+            return PrototypeId.Invalid;
+        }
+
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+        public bool RunEvalAccessRestriction(Player player, Avatar avatar, PrototypeId difficultyProtoRef)
+#else
+        public bool RunEvalAccessRestriction(Player player, Avatar avatar)
+#endif
+        {
+            // Default to true if no valid avatar
+            if (!Verify.IsNotNull(avatar)) return true;
+
+            bool success = true;
+
+            if (AccessChecks.HasValue())
+            {
+                foreach (RegionAccessCheckPrototype checkProto in AccessChecks)
+                {
+                    if (!Verify.IsNotNull(checkProto))
+                        continue;
+
+                    if (checkProto.NoAccessOnFail == false)
+                        continue;
+
+                    success &= checkProto.Check(player, avatar);
+                }
+            }
+
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+            DifficultyTierPrototype difficultyProto = difficultyProtoRef.As<DifficultyTierPrototype>();
+            if (success && difficultyProto != null)
+                success &= avatar.CharacterLevel >= difficultyProto.UnlockLevel;
+#endif
+
+            if (success && EvalAccessRestriction != null)
+            {
+                using var evalContextHandle = EvalContextDataPool.Get(out EvalContextData evalContext);
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+                evalContext.SetReadOnlyVar_ProtoRef(EvalContext.Var1, difficultyProtoRef);
+#endif
+                evalContext.SetReadOnlyVar_EntityPtr(EvalContext.Default, avatar);
+                evalContext.SetReadOnlyVar_EntityPtr(EvalContext.Other, player);
+                success = Eval.RunBool(EvalAccessRestriction, evalContext);
+            }
+
+            return success;
+        }
+    }
+
+    public class RegionConnectionTargetPrototype : Prototype
+    {
+        public PrototypeId Region { get; protected set; }
+        public PrototypeId Area { get; protected set; }
+        public AssetId Cell { get; protected set; }
+        public PrototypeId Entity { get; protected set; }
+        public PrototypeId IntroKismetSeq { get; protected set; }
+        public LocaleStringId Name { get; protected set; }
+        public bool EnabledByDefault { get; protected set; }
+        public int UISortOrder { get; protected set; }
+    }
+
+    public class ObjectiveGraphSettingsPrototype : Prototype
+    {
+        public ObjectiveGraphMode Mode { get; protected set; }
+    }
+
+    public class FactionLimitPrototype : Prototype
+    {
+        public PrototypeId Faction { get; protected set; }
+        public int PlayerLimit { get; protected set; }
+    }
+
+    public class RegionAccessCheckPrototype : Prototype
+    {
+        public bool NoAccessOnFail { get; protected set; }
+        public bool NoDisplayOnFail { get; protected set; }
+
+        //---
+
+        public virtual bool Check(Player player, Avatar avatar)
+        {
+            return false;
+        }
+    }
+
+    public class LevelAccessCheckPrototype : RegionAccessCheckPrototype
+    {
+        public LocaleStringId UIResponseMessage { get; protected set; }
+        public LocaleStringId UILevelRangeFormat { get; protected set; }
+        public LocaleStringId UIMapDescriptionTag { get; protected set; }
+        public LocaleStringId UIWaypointNameTag { get; protected set; }
+        public int LevelMin { get; protected set; }
+        public int LevelMax { get; protected set; }
+
+        //---
+
+        public override bool Check(Player player, Avatar avatar)
+        {
+            if (!Verify.IsNotNull(player)) return false;
+            if (!Verify.IsNotNull(avatar)) return false;
+
+            int avatarLevel = avatar.CharacterLevel;
+
+            // Check party
+            if (NoAccessOnFail == false)
+            {
+                Party party = player.GetParty();
+                if (party != null)
+                {
+                    CommunityMember communityMember = party.GetCommunityMemberForLeader(player);
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+                    if (communityMember != null)
+                    {
+                        AvatarSlotInfo avatarSlotInfo = communityMember.GetAvatarSlotInfo();
+                        avatarLevel = avatarSlotInfo != null ? avatarSlotInfo.Level : 0;
+                    }
+#else
+                    avatarLevel = communityMember != null ? communityMember.CharacterLevel : 0;
+#endif
+                }
+            }
+
+            // Not doing LocaleString things because they are not needed server-side
+            return avatarLevel >= LevelMin && avatarLevel <= LevelMax;
+        }
+    }
+
+    public class RegionQueueStateEntryPrototype : Prototype
+    {
+        public PrototypeId StateParent { get; protected set; }
+        public PrototypeId State { get; protected set; }
+        public LocaleStringId QueueText { get; protected set; }
+
+        //---
+
+        [DoNotCopy]
+        public int Index { get; set; }
+
+        [DoNotCopy]
+        public bool CanQueue { get => StateParent != PrototypeId.Invalid || State == PrototypeId.Invalid; }
+    }
+
+    public class DividedStartLocationPrototype : Prototype
+    {
+        public PrototypeId Target { get; protected set; }
+        public int Players { get; protected set; }
+    }
+
+    public class RegionPortalControlEntryPrototype : Prototype
+    {
+        public PrototypeId Region { get; protected set; }
+        public int UnlockDurationMinutes { get; protected set; }
+        public int UnlockPeriodMinutes { get; protected set; }
+    }
+
+    public class RegionConnectionNodePrototype : Prototype
+    {
+        public PrototypeId Origin { get; protected set; }
+        public PrototypeId Target { get; protected set; }
+        public RegionTransitionDirectionality Type { get; protected set; }
+    }
+
+    public class ZoneLevelPrototype : Prototype
+    {
+    }
+
+    public class ZoneLevelFixedPrototype : ZoneLevelPrototype
+    {
+        public short level { get; protected set; }
+    }
+
+    public class ZoneLevelRelativePrototype : ZoneLevelPrototype
+    {
+        public short modmax { get; protected set; }
+        public short modmin { get; protected set; }
+    }
+
+    public class BlackOutZonePrototype : Prototype
+    {
+        public float BlackOutRadius { get; protected set; }
+    }
+
+#if GAME_VERSION_1_53
+    public class DisplayDifficultySliderPrototype : Prototype
+    {
+        public bool PC { get; protected set; }
+        public bool PS4 { get; protected set; }
+        public bool XB1 { get; protected set; }
+    }
+#endif
+
+#if GAME_VERSION_1_53
+    public class ClientMapOverridePairPrototype : Prototype
+    {
+        public ClientMapOverrideType LiveTuningValue { get; protected set; }
+        public AssetId Override { get; protected set; }
+    }
+#endif
+}

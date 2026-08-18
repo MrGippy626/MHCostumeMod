@@ -1,0 +1,118 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The UI-agnostic core of the Costume Manager.
+
+       ⚑ WHY THIS PROJECT EXISTS. Before it, these files lived inside the WPF project and
+       FOUR other projects reached in with <Compile Include="..\..\MHCostumeManager\
+       CostumeManager\X.cs"> - 13 brittle relative links in total. Moving any file broke
+       all four silently. They are now one <ProjectReference> each.
+
+       It is also what makes the WinUI 3 port tractable: the port then touches only
+       src\gui, not 12,928 lines of install/rename/FX logic.
+
+       ✅ TargetFramework is plain net8.0 and there is no UseWPF. Decouplings #1 and #2
+       landed: IconPack.ImageIo decodes via ImageSharp, and DDSLib's mipmap resize no
+       longer goes through WriteableBitmap/RenderTargetBitmap. The whole chain -
+       DDSLib, MHTexLib, UpkManager, and this - is platform-neutral.
+
+       ⚠ Neutral TFM is not "runs anywhere": UpkManager P/Invokes lzo2_64.dll, so it is
+       Windows-only at RUNTIME. The point is that no WPF/WinUI decision leaks into the
+       install, rename, TFC, FX or icon logic. -->
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <OutputType>Library</OutputType>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <PlatformTarget>x64</PlatformTarget>
+    <Platforms>x64</Platforms>
+    <AssemblyName>MHCostume.Core</AssemblyName>
+
+    <!-- No RootNamespace: these files declare their own namespaces (CostumeManager.Core,
+         UpkRename.Core, TfcAlias.Core, IconPack.Core) and moving a file between projects
+         must not change them, or every `using` in the GUI breaks. -->
+
+    <!-- Matches the GUI project: this codebase uses an explicit file list. -->
+    <EnableDefaultItems>false</EnableDefaultItems>
+
+    <RunAnalyzersDuringBuild>false</RunAnalyzersDuringBuild>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <NoWarn>CA2007;CS8618;CS8604;CS1998;CS0168</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Install pipeline -->
+    <Compile Include="CostumeManager.Core.cs" />
+    <Compile Include="CostumeShare.Core.cs" />
+    <Compile Include="Installer.cs" />
+    <Compile Include="CostumePack.cs" />
+    <!-- Bulk export/import. Split by dependency tier: BulkPack.cs is pure BCL and is LINKED into
+         the player installer; BulkPack.Export.cs calls Installer.ExportPack and so needs
+         UpkManager, and stays here. Same rule as IconPack.Roles / .Core / .ImageIo. -->
+    <Compile Include="BulkPack.cs" />
+    <Compile Include="BulkPack.Export.cs" />
+    <Compile Include="InstallLedger.cs" />
+    <Compile Include="EnumAllocator.cs" />
+    <Compile Include="ManifestReader.cs" />
+    <Compile Include="CollisionDetector.cs" />
+    <Compile Include="CostumeReferenceDb.cs" />
+    <!-- UPK / TFC engines -->
+    <Compile Include="UpkRename.Core.cs" />
+    <Compile Include="TfcAlias.Core.cs" />
+    <!-- Icons. Roles is pure BCL; Core needs DDSLib + MHTexLib; ImageIo decodes via
+         ImageSharp (no WPF). -->
+    <Compile Include="IconPack.Roles.cs" />
+    <Compile Include="IconPack.Core.cs" />
+    <Compile Include="IconPack.ImageIo.cs" />
+    <!-- FX -->
+    <Compile Include="FxTables.cs" />
+    <Compile Include="FxHotspots.cs" />
+    <Compile Include="FxRefDb.cs" />
+    <Compile Include="FxSiblingPolicy.cs" />
+    <Compile Include="FxScanCache.cs" />
+    <Compile Include="FxPack.Core.cs" />
+    <Compile Include="FxPack.Manage.cs" />
+    <!-- ⛔ EnableDefaultItems is false above, so a new .cs file compiles ONLY if it is listed
+         here. Forgetting this does not fail the build - the type simply does not exist, and the
+         error blames whatever referenced it. -->
+    <Compile Include="FxPackRegistry.cs" />
+    <Compile Include="FxPack.Migrate.cs" />
+    <Compile Include="FxPack.Packs.cs" />
+    <Compile Include="FxPackFile.cs" />
+    <Compile Include="FxPackInstall.cs" />
+    <Compile Include="LauncherCore.cs" />
+    <Compile Include="CatalogCompare.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\lib\UpkManager\UpkManager.csproj" />
+    <ProjectReference Include="..\lib\DDSLib\DDSLib.csproj" />
+    <!-- Required for icon packages: UpkManager cannot write inline bulk data (no
+         BulkDataOffsetInFile fixup) and produces a package that crashes the client on
+         load. See MHTexLib.csproj for the full reasoning. -->
+    <ProjectReference Include="..\lib\MHTexLib\MHTexLib.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- ⛔ STR.Common REMOVED - it was never referenced by a single line of source in this
+         repo (checked across every .cs outside archive\), and it was not free:
+           · it dragged in ConfigureAwaitEnforcer, the analyzer whose advice is actively WRONG
+             here (ConfigureAwait(false) resumes on a threadpool thread, and every await in the
+             GUI continues by touching controls) - which is why RunAnalyzersDuringBuild had to
+             be turned off in BOTH GUI projects;
+           · it shipped Str.Common.dll + JetBrains.Annotations.dll into every output folder.
+         If a helper from it is ever wanted, copy the one method rather than taking the package
+         and its analyzer back. -->
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.0" />
+    <!-- Replaces the WPF imaging codecs in IconPack.ImageIo. Fully managed - no native
+         binary to ship beside the exe, which matters here (see the lzo2_64.dll rule).
+         ⛔ PINNED TO THE 2.x LINE ON PURPOSE - IT IS THE LAST APACHE-2.0 RELEASE.
+         ImageSharp 3.x moved to the Six Labors Split License, and 4.x ENFORCES it at build
+         time: adding 4.0.0 fails the build outright with "No Six Labors license found ...
+         obtain a license from sixlabors.com/pricing". 2.1.11 is permissively licensed with
+         no key, no runtime check and no obligation. Do not "upgrade" this without deciding
+         to buy a licence. -->
+    <PackageReference Include="SixLabors.ImageSharp" Version="2.1.11" />
+  </ItemGroup>
+
+</Project>

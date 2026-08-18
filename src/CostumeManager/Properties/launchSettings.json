@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "CostumeManager (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "CostumeManager (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

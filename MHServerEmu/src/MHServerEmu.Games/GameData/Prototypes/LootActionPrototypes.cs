@@ -1,0 +1,83 @@
+﻿using MHServerEmu.Core.Logging;
+using MHServerEmu.Core.Memory;
+using MHServerEmu.Games.Loot;
+
+namespace MHServerEmu.Games.GameData.Prototypes
+{
+    // LootActionPrototype is a wrapper for LootNodePrototype with additional selection logic
+
+    public class LootActionPrototype : LootNodePrototype
+    {
+        public LootNodePrototype Target { get; protected set; }
+
+        //---
+
+        public override void Visit<T>(ref T visitor)
+        {
+            base.Visit(ref visitor);
+
+            Target?.Visit(ref visitor);
+        }
+
+        protected LootRollResult SelectTarget(LootRollSettings settings, IItemResolver resolver)
+        {
+            if (Target == null)
+                return LootRollResult.NoRoll;
+
+            return Target.Select(settings, resolver);
+        }
+    }
+
+    public class LootActionFirstTimePrototype : LootActionPrototype
+    {
+        public bool FirstTime { get; protected set; }
+
+        //---
+
+        protected internal override LootRollResult Roll(LootRollSettings settings, IItemResolver resolver)
+        {
+            if (resolver.Flags.HasFlag(LootResolverFlags.FirstTime) == false)
+                return LootRollResult.NoRoll;
+
+            return SelectTarget(settings, resolver);
+        }
+    }
+
+    public class LootActionLoopOverAvatarsPrototype : LootActionPrototype
+    {
+        //---
+
+        // NOTE: This is used only in two test tables in 1.52, but it's pretty easy to do,
+        // so I'm implementing it in case we need it for other versions.
+        // - Loot/Tables/Test/TestUniques41to100.prototype
+        // - Loot/Tables/Test/TestUniquesAll.prototype
+
+        protected internal override LootRollResult Roll(LootRollSettings settings, IItemResolver resolver)
+        {
+            LootRollResult result = LootRollResult.NoRoll;
+
+            using var modifiedSettingsHandle = LootRollSettingsPool.Get(out LootRollSettings modifiedSettings);
+            modifiedSettings.Set(settings);
+            modifiedSettings.ForceUsable = true;
+
+            foreach (PrototypeId avatarProtoRef in DataDirectory.Instance.IteratePrototypesInHierarchy<AvatarPrototype>(PrototypeIterateFlags.NoAbstractApprovedOnly))
+            {
+                AvatarPrototype avatarProto = avatarProtoRef.As<AvatarPrototype>();
+                if (!Verify.IsNotNull(avatarProto))
+                    continue;
+
+                // NOTE: This will skip disabled heroes
+                if (avatarProto.ShowInRosterIfLocked == false)
+                    continue;
+
+                if (avatarProto.IsLiveTuningEnabled() == false)
+                    continue;
+
+                modifiedSettings.UsableAvatar = avatarProto;
+                result |= SelectTarget(modifiedSettings, resolver);
+            }
+
+            return result;
+        }
+    }
+}

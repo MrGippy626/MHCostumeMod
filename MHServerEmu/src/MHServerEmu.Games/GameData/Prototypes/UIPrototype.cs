@@ -1,0 +1,910 @@
+﻿using MHServerEmu.Core.Extensions;
+using MHServerEmu.Core.VectorMath;
+using MHServerEmu.Games.GameData.Calligraphy;
+using MHServerEmu.Games.GameData.Resources;
+using MHServerEmu.Games.Properties.Evals;
+using MHServerEmu.Games.Properties;
+using MHServerEmu.Games.Entities;
+
+namespace MHServerEmu.Games.GameData.Prototypes
+{
+    #region Enums
+
+    public enum PanelScaleMode
+    {
+        None,
+        XStretch,
+        YOnly,
+        XOnly,
+        Both,
+        ScreenSize
+    }
+
+    [AssetEnum((int)Unknown)]
+    public enum UIWidgetEntityState
+    {
+        Unknown = 0,
+        Alive = 1,
+        Dead = 2,
+    }
+
+    [AssetEnum]
+    public enum ButtonStyle
+    {
+        Default,
+        Primary,
+        SecondaryPositive,
+        SecondaryNegative,
+        Terciary,
+    }
+
+    [AssetEnum]
+    public enum TransitionUIType
+    {
+        Environment,
+        HeroOwned,
+    }
+
+    [AssetEnum]
+    public enum TipTypeEnum
+    {
+        GenericGameplay,
+        SpecificGameplay,
+    }
+
+    // There are two MissionTrackerFilterType (asset and symbolic), the symbolic one is the one that fits our data files,
+    // and it seems to be UI-related
+    //[AssetEnum((int)None)]
+    public enum MissionTrackerFilterTypeEnum
+    {
+        None = -1,
+        Standard = 0,
+        PvE = 1,
+        PvP = 2,
+        Daily = 3,
+        Challenge = 4,
+    }
+
+    [AssetEnum((int)StoryMissions)]
+    public enum UIMissionTrackerFilterTypeEnum
+    {
+        AccountMissions = 0,
+        Achievements = 1,
+        GlobalEventMissions = 2,
+        InfluenceMissions = 3,
+        LegendaryQuests = 4,
+        LoreMissions = 5,
+        RegionEventMissions = 6,
+        SharedQuests = 7,
+        StoryMissions = 8,
+    }
+
+    [AssetEnum]
+    public enum BannerMessageStyle
+    {
+        Standard = 0,
+        Error = 1,
+        FlyIn = 2,
+        TimeBonusBronze = 3,
+        TimeBonusSilver = 4,
+        TimeBonusGold = 5,
+    }
+
+    [AssetEnum]
+    public enum BannerMessageType
+    {
+        Default = 0,
+        DiscoveryCompleted = 1,
+        LevelUp = 2,
+        PowerPointsAwarded = 3,
+        ItemError = 4,
+        PartyInvite = 5,
+        PartyError = 6,
+        GuildInvite = 7,
+        PowerError = 8,
+        PowerErrorDoNotQueue = 9,
+        PvPDisabledPortalFail = 10,
+        PvPFactionPortalFail = 11,
+        PvPPartyPortalFail = 12,
+        RegionChange = 13,
+        MissionAccepted = 14,
+        MissionCompleted = 15,
+        MissionFailed = 16,
+        WaypointUnlocked = 17,
+        PowerUnlocked = 18,
+        StatProgression = 19,
+        AvatarSwitchError = 20,
+        OmegaPointsAwarded = 21,
+        UISystemUnlocked = 22,
+        LeaderboardRewarded = 23,
+        InfinityPointsAwarded = 26,
+        WaypointError = 27,
+        // Not found in client
+        MatchQueue = 0
+    }
+
+    [AssetEnum]
+    public enum VOEventType
+    {
+        Spawned = 1,
+        Aggro = 2,
+    }
+
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+    [AssetEnum]
+    public enum ConsoleHUDNotificationType
+    {
+        Invalid,
+        NewPower,
+        NewItem,
+        QueueReady,
+        QueueGracePeriodAboutToExpire,
+        QueueEntered,
+        NewSynergy,
+        NewInfinityGemUpgrade,
+        InfinityUnlocked,
+#if GAME_VERSION_1_53
+        SynergyUnlocked,
+#endif
+        NewTalent,
+        NewDeliveryItem,
+        LegendaryQuestsUnlocked,
+        OmegaWeekAvailable,
+        GlobalEventAvailable,
+#if GAME_VERSION_1_53
+        UltUnlocked,
+        AtLevelCap,
+        InventoryFull,
+        PowerSlotUnlocked,
+        NewEmote,
+        LootBoxAcquired,
+#endif
+    }
+#endif
+
+    [AssetEnum]
+    public enum MovieType
+    {
+        None = 0,
+        Loading = 1,
+        TeleportFar = 2,
+        Cinematic = 3,
+    }
+
+    #endregion
+
+    #region Resource UI prototypes
+
+    public class UIPrototype : Prototype, IBinaryResource
+    {
+        public UIPanelPrototype[] UIPanels { get; protected set; }
+
+        //---
+
+        public void Deserialize(BinaryReader reader)
+        {
+            UIPanels = BinaryResourceSerializer.ReadPrototypeContainer<UIPanelPrototype>(reader);
+        }
+    }
+
+    public class UIPanelPrototype : Prototype, IBinaryResource
+    {
+        public string PanelName { get; protected set; }
+        public string TargetName { get; protected set; }
+        public PanelScaleMode ScaleMode { get; protected set; }
+        public UIPanelPrototype[] Children { get; protected set; }
+        public string WidgetClass { get; protected set; }
+        public string SwfName { get; protected set; }
+        public bool OpenOnStart { get; protected set; }
+        public bool VisibilityToggleable { get; protected set; }
+        public bool CanClickThrough { get; protected set; }
+        public bool StaticPosition { get; protected set; }
+        public bool EntityInteractPanel { get; protected set; }
+        public bool UseNewPlacementSystem { get; protected set; }
+        public bool KeepLoaded { get; protected set; }
+#if GAME_VERSION_1_53
+        public bool OpenOnPlay { get; protected set; }
+#endif
+
+        //---
+
+        public virtual void Deserialize(BinaryReader reader)
+        {
+            PanelName = reader.ReadFixedString32();
+            TargetName = reader.ReadFixedString32();
+            ScaleMode = (PanelScaleMode)reader.ReadUInt32();
+            Children = BinaryResourceSerializer.ReadPrototypeContainer<UIPanelPrototype>(reader);
+            WidgetClass = reader.ReadFixedString32();
+            SwfName = reader.ReadFixedString32();
+            OpenOnStart = reader.ReadBoolean();
+            VisibilityToggleable = reader.ReadBoolean();
+            CanClickThrough = reader.ReadBoolean();
+            StaticPosition = reader.ReadBoolean();
+            EntityInteractPanel = reader.ReadBoolean();
+            UseNewPlacementSystem = reader.ReadBoolean();
+            KeepLoaded = reader.ReadBoolean();
+#if GAME_VERSION_1_53
+            OpenOnPlay = reader.ReadBoolean();
+#endif
+        }
+    }
+
+    public class StretchedPanelPrototype : UIPanelPrototype
+    {
+        public Vector2 TopLeftPin { get; protected set; }
+        public string TL_X_TargetName { get; protected set; }
+        public string TL_Y_TargetName { get; protected set; }
+        public Vector2 BottomRightPin { get; protected set; }
+        public string BR_X_TargetName { get; protected set; }
+        public string BR_Y_TargetName { get; protected set; }
+
+        //---
+
+        public override void Deserialize(BinaryReader reader)
+        {
+            TopLeftPin = reader.Read<Vector2>();
+            TL_X_TargetName = reader.ReadFixedString32();
+            TL_Y_TargetName = reader.ReadFixedString32();
+            BottomRightPin = reader.Read<Vector2>();
+            BR_X_TargetName = reader.ReadFixedString32();
+            BR_Y_TargetName = reader.ReadFixedString32();
+
+            base.Deserialize(reader);
+        }
+    }
+
+    public class AnchoredPanelPrototype : UIPanelPrototype
+    {
+        public Vector2 SourceAttachmentPin { get; protected set; }
+        public Vector2 TargetAttachmentPin { get; protected set; }
+        public Vector2 VirtualPixelOffset { get; protected set; }
+        public string PreferredLane { get; protected set; }
+        public Vector2 OuterEdgePin { get; protected set; }
+        public Vector2 NewSourceAttachmentPin { get; protected set; }
+
+        //---
+
+        public override void Deserialize(BinaryReader reader)
+        {
+            SourceAttachmentPin = reader.Read<Vector2>();
+            TargetAttachmentPin = reader.Read<Vector2>();
+            VirtualPixelOffset = reader.Read<Vector2>();
+            PreferredLane = reader.ReadFixedString32();
+            OuterEdgePin = reader.Read<Vector2>();
+            NewSourceAttachmentPin = reader.Read<Vector2>();
+
+            base.Deserialize(reader);
+        }
+    }
+
+    #endregion
+
+    public class UILocalizedInfoPrototype : Prototype
+    {
+        public LocaleStringId DisplayText { get; protected set; }
+        public LocaleStringId TooltipText { get; protected set; }
+        public PrototypeId TooltipStyle { get; protected set; }
+        public AssetId TooltipFont { get; protected set; }
+    }
+
+    public class UILocalizedStatInfoPrototype : UILocalizedInfoPrototype
+    {
+        public PrototypeId Stat { get; protected set; }
+        public int StatValue { get; protected set; }
+        public PrototypeId LevelUnlockTooltipStyle { get; protected set; }
+        public TooltipSectionPrototype[] TooltipSectionList { get; protected set; }
+    }
+
+    public class UICraftingTabLabelPrototype : UILocalizedInfoPrototype
+    {
+        public int SortOrder { get; protected set; }
+    }
+
+    public class InventoryUIDataPrototype : Prototype
+    {
+        public PrototypeId EmptySlotTooltip { get; protected set; }
+        public AssetId SlotBackgroundIcon { get; protected set; }
+        public LocaleStringId InventoryItemDisplayName { get; protected set; }
+        public bool HintSlots { get; protected set; }
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+        public AssetId SlotBackgroundIconHiRes { get; protected set; }
+#endif
+    }
+
+    public class OfferingInventoryUIDataPrototype : Prototype
+    {
+        public AssetId NotificationIcon { get; protected set; }
+        public LocaleStringId NotificationTooltip { get; protected set; }
+        public LocaleStringId OfferingDescription { get; protected set; }
+        public LocaleStringId OfferingTitle { get; protected set; }
+    }
+
+    public class TipEntryPrototype : Prototype
+    {
+        public LocaleStringId Entry { get; protected set; }
+        public int Weight { get; protected set; }
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+        public bool SkipIfOnPC { get; protected set; }
+        public bool SkipIfOnPS4 { get; protected set; }
+        public bool SkipIfOnXBox { get; protected set; }
+#endif
+    }
+
+    public class TipEntryCollectionPrototype : Prototype
+    {
+        public TipEntryPrototype[] TipEntries { get; protected set; }
+    }
+
+#if GAME_VERSION_1_48
+    public class TipPrototype : Prototype
+    {
+        public LocaleStringId Header { get; protected set; }
+        public AssetId ScreenPosition { get; protected set; }
+        public LocaleStringId Text { get; protected set; }
+        public bool SendToChat { get; protected set; }
+        public bool ShowForEachAvatar { get; protected set; }
+        public bool AlwaysShow { get; protected set; }
+    }
+#endif
+
+    public class GenericTipEntryCollectionPrototype : TipEntryCollectionPrototype
+    {
+    }
+
+    public class RegionTipEntryCollectionPrototype : TipEntryCollectionPrototype
+    {
+        public PrototypeId[] RegionBindings { get; protected set; }
+    }
+
+    public class AvatarTipEntryCollectionPrototype : TipEntryCollectionPrototype
+    {
+        public PrototypeId[] AvatarBindings { get; protected set; }
+    }
+
+    public class WeightedTipCategoryPrototype : Prototype
+    {
+        public TipTypeEnum TipType { get; protected set; }
+        public int Weight { get; protected set; }
+    }
+
+    public class TransitionUIPrototype : Prototype
+    {
+        public WeightedTipCategoryPrototype[] TipCategories { get; protected set; }
+        public TransitionUIType TransitionType { get; protected set; }
+        public int Weight { get; protected set; }
+    }
+
+    public class AvatarSynergyUIDataPrototype : Prototype
+    {
+        public LocaleStringId DisplayName { get; protected set; }
+        public AssetId IconPath { get; protected set; }
+        public PrototypeId SynergyActiveValue { get; protected set; }
+        public PrototypeId SynergyInactiveValue { get; protected set; }
+        public LocaleStringId TooltipTextForList { get; protected set; }
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+        public AssetId IconPathHiRes { get; protected set; }
+#endif
+    }
+
+    public class MetaGameDataPrototype : Prototype
+    {
+        public LocaleStringId Descriptor { get; protected set; }
+        public bool DisplayMissionName { get; protected set; }
+        public int SortPriority { get; protected set; }
+        public AssetId IconHeader { get; protected set; }
+        public int Justification { get; protected set; }
+        public AssetId WidgetMovieClipOverride { get; protected set; }
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+        public AssetId IconHeaderHiRes { get; protected set; }
+#endif
+#if GAME_VERSION_1_53
+        public LocaleStringId DescriptorConsole { get; protected set; }
+        public AssetId WidgetMovieClipOverrideConsole { get; protected set; }
+#endif
+    }
+
+    public class UIWidgetGenericFractionPrototype : MetaGameDataPrototype
+    {
+        public AssetId IconComplete { get; protected set; }
+        public AssetId IconIncomplete { get; protected set; }
+        public int IconSpacing { get; protected set; }
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+        public AssetId IconCompleteHiRes { get; protected set; }
+        public AssetId IconIncompleteHiRes { get; protected set; }
+#endif
+    }
+
+    public class UIWidgetEntityIconsEntryPrototype : Prototype
+    {
+        public EntityFilterPrototype Filter { get; protected set; }
+        public int Count { get; protected set; }
+        public UIWidgetEntityState TreatUnknownAs { get; protected set; }
+        public AssetId Icon { get; protected set; }
+        public PrototypeId Descriptor { get; protected set; }
+        public AssetId IconDead { get; protected set; }
+        public int IconSpacing { get; protected set; }
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+        public AssetId IconHiRes { get; protected set; }
+        public AssetId IconDeadHiRes { get; protected set; }
+#endif
+#if GAME_VERSION_1_53
+        public PrototypeId DescriptorConsole { get; protected set; }
+#endif
+    }
+
+    public class UIWidgetEnrageEntryPrototype : UIWidgetEntityIconsEntryPrototype
+    {
+    }
+
+    public class WidgetPropertyEntryPrototype : Prototype
+    {
+        public AssetId Color { get; protected set; }
+        public LocaleStringId Descriptor { get; protected set; }
+        public AssetId Icon { get; protected set; }
+        public EvalPrototype PropertyEval { get; protected set; }
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+        public AssetId IconHiRes { get; protected set; }
+#endif
+#if GAME_VERSION_1_53
+        public LocaleStringId DescriptorConsole { get; protected set; }
+#endif
+    }
+
+    public class UIWidgetEntityPropertyEntryPrototype : UIWidgetEntityIconsEntryPrototype
+    {
+        public WidgetPropertyEntryPrototype[] PropertyEntryTable { get; protected set; }
+        public EvalPrototype PropertyEval { get; protected set; }
+
+        [DoNotCopy]
+        public List<PropertyId> PropertyIds { get; private set; } = new();
+
+        public override void PostProcess()
+        {
+            base.PostProcess();
+
+            PropertyIds.Clear();
+            if (PropertyEntryTable.HasValue())
+                foreach (var entryProto in PropertyEntryTable)
+                    if (entryProto != null && entryProto.PropertyEval != null)
+                        Eval.GetEvalPropertyIds(entryProto.PropertyEval, PropertyIds, GetEvalPropertyIdEnum.Input, null);
+        }
+    }
+
+    public class HealthPercentIconPrototype : Prototype
+    {
+        public AssetId Color { get; protected set; }
+        public int HealthPercent { get; protected set; }
+        public AssetId Icon { get; protected set; }
+        public PrototypeId Descriptor { get; protected set; }
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+        public AssetId IconHiRes { get; protected set; }
+#endif
+#if GAME_VERSION_1_53
+        public PrototypeId DescriptorConsole { get; protected set; }
+#endif
+    }
+
+    public class UIWidgetHealthPercentEntryPrototype : UIWidgetEntityIconsEntryPrototype
+    {
+        public bool ColorBasedOnHealth { get; protected set; }
+        public HealthPercentIconPrototype[] HealthDisplayTable { get; protected set; }
+    }
+
+    public class UIWidgetEntityIconsPrototype : MetaGameDataPrototype
+    {
+        public UIWidgetEntityIconsEntryPrototype[] Entities { get; protected set; }
+    }
+
+    public class UIWidgetMissionTextPrototype : MetaGameDataPrototype
+    {
+    }
+
+    public class UIWidgetButtonPrototype : MetaGameDataPrototype
+    {
+    }
+
+    public class UIWidgetReadyCheckPrototype : MetaGameDataPrototype
+    {
+    }
+
+    public class UIWidgetPanelPrototype : Prototype
+    {
+        public PrototypeId[] Widgets { get; protected set; }
+    }
+
+    public class UIWidgetTopPanelPrototype : UIWidgetPanelPrototype
+    {
+    }
+
+    public class LogoffPanelEntryPrototype : Prototype
+    {
+        public LocaleStringId Description { get; protected set; }
+        public PrototypeId GameModeType { get; protected set; }
+        public LocaleStringId Header { get; protected set; }
+        public AssetId Image { get; protected set; }
+        public int Priority { get; protected set; }
+        public LocaleStringId Title { get; protected set; }
+    }
+
+    public class StoreCategoryPrototype : Prototype
+    {
+        public AssetId Icon { get; protected set; }
+        public AssetId Identifier { get; protected set; }
+        public PrototypeId Label { get; protected set; }
+    }
+
+    public class ReputationLevelDisplayInfoPrototype : Prototype
+    {
+        public LocaleStringId DisplayName { get; protected set; }
+        public AssetId IconPath { get; protected set; }
+        public int ReputationLevel { get; protected set; }
+    }
+
+    public class ReputationDisplayInfoPrototype : Prototype
+    {
+        public LocaleStringId DisplayName { get; protected set; }
+        [PrototypeField(PrototypeFieldType.VectorPrototypeRefPtr)]
+        public ReputationLevelDisplayInfoPrototype[] ReputationLevels { get; protected set; }
+    }
+
+    public class UISystemLockPrototype : Prototype
+    {
+        public PrototypeId GameNotification { get; protected set; }
+        public AssetId UISystem { get; protected set; }
+        public int UnlockLevel { get; protected set; }
+        public bool IsNewPlayerExperienceLocked { get; protected set; }
+#if GAME_VERSION_1_53
+        public EvalPrototype UnlockEval { get; protected set; }
+        public DesignWorkflowState DesignState { get; protected set; }
+        public DesignWorkflowState DesignStatePS4 { get; protected set; }
+        public DesignWorkflowState DesignStateXboxOne { get; protected set; }
+        public bool IsPerAvatar { get; protected set; }
+        public bool AutoAcknowledge { get; protected set; }
+        public PrototypeId Title { get; protected set; }
+        public PrototypeId Description { get; protected set; }
+        public PrototypeId PlayingAvatar { get; protected set; }
+#endif
+    }
+
+    public class IconPackagePrototype : Prototype
+    {
+        public AssetId Package { get; protected set; }
+        public bool AlwaysLoaded { get; protected set; }
+        public bool EnableStreaming { get; protected set; }
+        public bool HighPriorityStreaming { get; protected set; }
+        public bool RemoveUnreferencedContent { get; protected set; }
+    }
+
+    public class RadialMenuEntryPrototype : Prototype
+    {
+        public AssetId ImageNormal { get; protected set; }
+        public AssetId ImageSelected { get; protected set; }
+        public PrototypeId LocalizedName { get; protected set; }
+        public AssetId Panel { get; protected set; }
+#if GAME_VERSION_1_48
+        public AssetId Position { get; protected set; }
+#endif
+    }
+
+    public class InputBindingPrototype : Prototype
+    {
+        public PrototypeId DisplayText { get; protected set; }
+        public LocaleStringId BindingName { get; protected set; }
+        public AssetId TutorialImage { get; protected set; }
+        public LocaleStringId TutorialImageOverlayText { get; protected set; }
+        public AssetId ControlScheme { get; protected set; }
+    }
+
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+    public class PanelLoaderTabPrototype : Prototype
+    {
+        public LocaleStringId Context { get; protected set; }
+        public PrototypeId DisplayName { get; protected set; }
+        public AssetId Panel { get; protected set; }
+        public bool ShowAvatarInfo { get; protected set; }
+        public PrototypeId SubTabs { get; protected set; }
+        public AssetId Icon { get; protected set; }
+        public bool ShowLocalPlayerName { get; protected set; }
+#if GAME_VERSION_1_53
+        public bool OnlyForPlayer1 { get; protected set; }
+#endif
+    }
+#endif
+
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+    public class PanelLoaderTabListPrototype : Prototype
+    {
+        public PrototypeId[] Tabs { get; protected set; }
+        public bool IsSubTabList { get; protected set; }
+    }
+#endif
+
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+    public class ConsoleRadialMenuEntryPrototype : Prototype
+    {
+        public PrototypeId DisplayName { get; protected set; }
+        public AssetId ImageNormal { get; protected set; }
+        public AssetId ImageSelected { get; protected set; }
+        public PrototypeId TabList { get; protected set; }
+#if GAME_VERSION_1_53
+        public bool OpensPartyPanel { get; protected set; }
+        public bool OnlyForPlayer1 { get; protected set; }
+#endif
+    }
+#endif
+
+#if GAME_VERSION_1_53
+    public class PanelModelRendererInfoPrototype : Prototype
+    {
+        public AssetId MarvelModelRenderClass { get; protected set; }
+        public AssetId ModelClass { get; protected set; }
+        public AssetId Panel { get; protected set; }
+    }
+#endif
+
+    public class DialogPrototype : Prototype
+    {
+        public LocaleStringId Text { get; protected set; }
+        public LocaleStringId Button1 { get; protected set; }
+        public LocaleStringId Button2 { get; protected set; }
+        public ButtonStyle Button1Style { get; protected set; }
+        public ButtonStyle Button2Style { get; protected set; }
+#if GAME_VERSION_1_53
+        public bool Button1Hold { get; protected set; }
+        public bool Button2Hold { get; protected set; }
+#endif
+    }
+
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+    public class MissionTrackerFilterPrototype : Prototype
+    {
+        public UIMissionTrackerFilterTypeEnum FilterType { get; protected set; }
+        public LocaleStringId Label { get; protected set; }
+        public bool DisplayByDefault { get; protected set; }
+        public int DisplayOrder { get; protected set; }
+    }
+#endif
+
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+    public class LocalizedTextAndImagePrototype : Prototype
+    {
+        public AssetId Image { get; protected set; }
+        public LocaleStringId Text { get; protected set; }
+    }
+#endif
+
+    public class TextStylePrototype : Prototype
+    {
+        public bool Bold { get; protected set; }
+        public AssetId Color { get; protected set; }
+        public LocaleStringId Tag { get; protected set; }
+        public bool Underline { get; protected set; }
+        public int FontSize { get; protected set; }
+        public AssetId Alignment { get; protected set; }
+        public bool Hidden { get; protected set; }
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+        public int FontSizeConsole { get; protected set; }
+#endif
+#if GAME_VERSION_1_53
+        public bool PlatformTag { get; protected set; }
+        public bool LanguageTag { get; protected set; }
+#endif
+
+        //--
+
+        public const PrototypeId BannerMessageAlert = (PrototypeId)2949056351269622091;
+        public const PrototypeId BannerMessageError = (PrototypeId)13605002274316751197;
+        public const PrototypeId BannerMessageErrorLarge = (PrototypeId)14779619855014040424;
+        public const PrototypeId BannerMessageGift = (PrototypeId)17622774712892985565;
+        public const PrototypeId BannerMessageHalloween = (PrototypeId)13493636367699743474;
+        public const PrototypeId BannerMessageLarge = (PrototypeId)5885646240247714110;
+        public const PrototypeId BannerMessageReward = (PrototypeId)2359092406774272440;
+        public const PrototypeId BannerMessageRewardLarge = (PrototypeId)17457913576525468611;
+        public const PrototypeId BannerMessageStandard = (PrototypeId)7680634729112998532;
+        public const PrototypeId BannerMessageStatProgression = (PrototypeId)12566597636377482666;
+        public const PrototypeId BannerMessageUnlock = (PrototypeId)15319327166454698431;
+    }
+
+    public class UINotificationPrototype : Prototype
+    {
+    }
+
+    public class BannerMessagePrototype : UINotificationPrototype
+    {
+        public LocaleStringId BannerText { get; protected set; }
+        public int TimeToLiveMS { get; protected set; }
+        public BannerMessageStyle MessageStyle { get; protected set; }
+        public bool DoNotQueue { get; protected set; }
+        public PrototypeId TextStyle { get; protected set; }
+        public bool ShowImmediately { get; protected set; }
+    }
+
+    public class GameNotificationPrototype : UINotificationPrototype
+    {
+        public LocaleStringId BannerText { get; protected set; }
+        public GameNotificationType GameNotificationType { get; protected set; }
+        public AssetId IconPath { get; protected set; }
+        public LocaleStringId TooltipText { get; protected set; }
+        public bool PlayAudio { get; protected set; }
+        public BannerMessageType BannerType { get; protected set; }
+        public bool FlashContinuously { get; protected set; }
+        public bool StackNotifications { get; protected set; }
+        public bool ShowTimer { get; protected set; }
+        public bool ShowScore { get; protected set; }
+        public PrototypeId TooltipStyle { get; protected set; }
+        public AssetId TooltipFont { get; protected set; }
+        public LocaleStringId DisplayText { get; protected set; }
+        public int MinimizeTimeDelayMS { get; protected set; }
+        public int DurationMS { get; protected set; }
+        public bool ShowAnimatedCircle { get; protected set; }
+        public bool Unique { get; protected set; }
+        public PrototypeId[] OnCreateRemoveNotifications { get; protected set; }
+        public bool RemoveOnRegionChange { get; protected set; }
+        public bool ShowOnSystemLock { get; protected set; }
+    }
+
+    public class StoryNotificationPrototype : UINotificationPrototype
+    {
+        public LocaleStringId DisplayText { get; protected set; }
+        public int TimeToLiveMS { get; protected set; }
+        public PrototypeId SpeakingEntity { get; protected set; }
+        public AssetId VOTrigger { get; protected set; }
+    }
+
+    public class VOStoryNotificationPrototype : Prototype
+    {
+        public VOEventType VOEventType { get; protected set; }
+        public StoryNotificationPrototype StoryNotification { get; protected set; }
+    }
+
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+    public class ConsoleHUDNotificationPrototype : Prototype
+    {
+        public PrototypeId DisplayName { get; protected set; }
+        public int DurationMS { get; protected set; }
+        public ConsoleHUDNotificationType NotificationType { get; protected set; }
+        public AssetId OpensPanel { get; protected set; }
+        public LocaleStringId PanelContext { get; protected set; }
+#if GAME_VERSION_1_53
+        public PrototypeId DisplayShortName { get; protected set; }
+        public bool AlwaysShow { get; protected set; }
+#endif
+    }
+#endif
+
+    public class HUDTutorialPrototype : UINotificationPrototype
+    {
+        public LocaleStringId Description { get; protected set; }
+        public int DisplayDurationMS { get; protected set; }
+        public AssetId Image { get; protected set; }
+        public LocaleStringId ImageOverlayText { get; protected set; }
+        public LocaleStringId Title { get; protected set; }
+        public PrototypeId[] HighlightAvatars { get; protected set; }
+        public PrototypeId[] HighlightPowers { get; protected set; }
+        public bool AllowMovement { get; protected set; }
+        public bool AllowPowerUsage { get; protected set; }
+        public bool AllowTakingDamage { get; protected set; }
+        public bool CanDismiss { get; protected set; }
+        public bool HighlightFirstEmptyPowerSlot { get; protected set; }
+        public bool HighlightUpgradeablePowers { get; protected set; }
+        public bool HighlightUnusedPowers { get; protected set; }
+        public bool HighlightUnequippedItem { get; protected set; }
+        public bool CloseOnRegionLeave { get; protected set; }
+        public LocaleStringId ImageFromCommand { get; protected set; }
+        public LocaleStringId DescriptionGamepad { get; protected set; }
+        public LocaleStringId DescriptionNoBindings { get; protected set; }
+        public LocaleStringId ImageFromCommandGamepad { get; protected set; }
+        public PrototypeId[] HighlightTeamUps { get; protected set; }
+        public bool SkipIfOnConsole { get; protected set; }
+        public bool SkipIfOnPC { get; protected set; }
+        public bool SkipIfUsingGamepad { get; protected set; }
+        public bool SkipIfUsingKeyboardMouse { get; protected set; }
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+        public float ScreenPositionConsoleX { get; protected set; }
+        public float ScreenPositionConsoleY { get; protected set; }
+        public float ScreenPositionX { get; protected set; }
+        public float ScreenPositionY { get; protected set; }
+#endif
+        public int FlashDelayMS { get; protected set; }
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+        public bool ShowOncePerAccount { get; protected set; }
+#endif
+#if GAME_VERSION_1_53
+        [PrototypeField(PrototypeFieldType.PrototypeRefPtr)]
+        public HUDTutorialPrototype NextPage { get; protected set; }
+#endif
+
+        //---
+
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+        public bool ShouldShowTip(Player player)
+        {
+            if (ShowOncePerAccount)
+                return player.Properties[PropertyEnum.TutorialHasSeenTip, DataRef] == false;
+
+            return true;
+        }
+#endif
+    }
+
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+    public class SessionImagePrototype : Prototype
+    {
+        public AssetId SessionImageAsset { get; protected set; }
+    }
+#endif
+
+    public class CurrencyDisplayPrototype : Prototype
+    {
+        public LocaleStringId DisplayName { get; protected set; }
+        public AssetId DisplayColor { get; protected set; }
+        public AssetId IconPath { get; protected set; }
+        public PrototypeId PropertyValueToDisplay { get; protected set; }
+        public LocaleStringId TooltipText { get; protected set; }
+        public bool UseGsBalance { get; protected set; }
+        public PrototypeId CurrencyToDisplay { get; protected set; }
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+        public AssetId IconPathHiRes { get; protected set; }
+        public sbyte CategoryIndex { get; protected set; }
+        public LocaleStringId CategoryName { get; protected set; }
+        public bool HideIfOnConsole { get; protected set; }
+        public bool HideIfOnPC { get; protected set; }
+#endif
+    }
+
+    public class UICinematicsListPrototype : Prototype
+    {
+        public PrototypeId[] CinematicsListToPopulate { get; protected set; }
+    }
+
+#if GAME_VERSION_1_53
+    public class CreditsTextPrototype : Prototype
+    {
+        public LocaleStringId CreditsImageTag { get; protected set; }
+        public LocaleStringId ExtendedCredits { get; protected set; }
+        public PrototypeId CreditsMovie { get; protected set; }
+        public int ScrollingSpeed { get; protected set; }
+        public LocaleStringId URLBaseAddress { get; protected set; }
+        public AssetId[] Webpages { get; protected set; }
+    }
+#endif
+
+#if GAME_VERSION_1_53
+    public class LFGObjectivePrototype : Prototype
+    {
+        public LocaleStringId DisplayName { get; protected set; }
+    }
+#endif
+
+#if GAME_VERSION_1_53
+    public class MetaKeyPrototype : Prototype
+    {
+        public LocaleStringId Description { get; protected set; }
+        public AssetId Icon { get; protected set; }
+    }
+#endif
+
+#if GAME_VERSION_1_53
+    public class MetaKeyListPrototype : Prototype
+    {
+        public PrototypeId[] Keys { get; protected set; }
+    }
+#endif
+
+#if GAME_VERSION_1_53
+    public class TokenOverridePrototype : Prototype
+    {
+        public LocaleStringId Value { get; protected set; }
+        public Platforms Platform { get; protected set; }
+    }
+#endif
+
+#if GAME_VERSION_1_53
+    public class TokenPrototype : Prototype
+    {
+        public LocaleStringId Token { get; protected set; }
+        public LocaleStringId DefaultValue { get; protected set; }
+        public TokenOverridePrototype[] Overrides { get; protected set; }
+    }
+#endif
+}

@@ -1,0 +1,527 @@
+﻿using Gazillion;
+using MHServerEmu.Core.Logging;
+using MHServerEmu.Core.Memory;
+using MHServerEmu.Core.VectorMath;
+using MHServerEmu.Games.Entities.Avatars;
+using MHServerEmu.Games.Entities.Inventories;
+using MHServerEmu.Games.Events;
+using MHServerEmu.Games.GameData;
+using MHServerEmu.Games.GameData.Prototypes;
+using MHServerEmu.Games.Loot;
+using MHServerEmu.Games.Loot.Specs;
+using MHServerEmu.Games.Powers;
+using MHServerEmu.Games.Properties;
+
+namespace MHServerEmu.Games.Entities.Items
+{
+    public enum ItemActionType
+    {
+        None,
+        AssignPower,
+        DestroySelf,
+        GuildUnlock,
+        PrestigeMode,
+        ReplaceSelfItem,
+        ReplaceSelfLootTable,
+        ResetMissions,
+        Respec,
+        SaveDangerRoomScenario,
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+        UnlockPermaBuff,
+#endif
+        UsePower,
+#if GAME_VERSION_1_53
+        AwardAvatarXP,
+#endif
+        AwardTeamUpXP,
+        OpenUIPanel
+    }
+
+    public partial class Item
+    {
+        private void TriggerItemActionOnUse(ItemActionPrototype actionProto, Player player, Avatar avatar, ref bool wasUsed, ref bool isConsumable)
+        {
+            if (actionProto.TriggeringEvent != ItemEventType.OnUse)
+                return;
+
+            switch (actionProto.ActionType)
+            {
+                case ItemActionType.AssignPower:
+                    wasUsed |= DoItemActionAssignPower();
+                    break;
+
+                case ItemActionType.DestroySelf:
+                    DoItemActionDestroySelf(ref isConsumable);    // This simply flags the item to be destroyed, so we don't need to update wasUsed here
+                    break;
+
+                case ItemActionType.GuildUnlock:
+                    wasUsed |= DoItemActionGuildUnlock(player);
+                    break;
+
+                case ItemActionType.PrestigeMode:
+                    wasUsed |= DoItemActionPrestigeMode(avatar);
+                    break;
+
+                case ItemActionType.ReplaceSelfItem:
+                    ItemActionReplaceSelfItemPrototype replaceSelfItemProto = actionProto as ItemActionReplaceSelfItemPrototype;
+                    if (!Verify.IsNotNull(replaceSelfItemProto)) return;
+
+                    wasUsed |= DoItemActionReplaceSelfItem(replaceSelfItemProto.Item, player, avatar);
+                    break;
+
+                case ItemActionType.ReplaceSelfLootTable:
+                    ItemActionReplaceSelfLootTablePrototype replaceSelfLootTableProto = actionProto as ItemActionReplaceSelfLootTablePrototype;
+                    if (!Verify.IsNotNull(replaceSelfLootTableProto)) return;
+
+                    wasUsed |= DoItemActionReplaceSelfLootTable(replaceSelfLootTableProto.LootTable, replaceSelfLootTableProto.UseCurrentAvatarLevelForRoll, player, avatar);
+                    break;
+
+                case ItemActionType.ResetMissions:
+                    wasUsed |= DoItemActionResetMissions(avatar);
+                    break;
+
+                case ItemActionType.Respec:
+                    wasUsed |= DoItemActionRespec();
+                    break;
+
+                case ItemActionType.SaveDangerRoomScenario:
+                    wasUsed |= DoItemActionSaveDangerRoomScenario();
+                    break;
+
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+                case ItemActionType.UnlockPermaBuff:
+                    ItemActionUnlockPermaBuffPrototype unlockPermaBuffProto = actionProto as ItemActionUnlockPermaBuffPrototype;
+                    if (!Verify.IsNotNull(unlockPermaBuffProto)) return;
+
+                    wasUsed |= DoItemActionUnlockPermaBuff(unlockPermaBuffProto.PermaBuff, player);
+                    break;
+#endif
+
+                case ItemActionType.UsePower:
+                    ItemActionUsePowerPrototype usePowerProto = actionProto as ItemActionUsePowerPrototype;
+                    if (!Verify.IsNotNull(usePowerProto)) return;
+
+                    wasUsed |= DoItemActionUsePower(usePowerProto.Power, avatar);
+                    break;
+
+                case ItemActionType.AwardTeamUpXP:
+                    ItemActionAwardTeamUpXPPrototype awardTeamUpXPProto = actionProto as ItemActionAwardTeamUpXPPrototype;
+                    if (!Verify.IsNotNull(awardTeamUpXPProto)) return;
+
+                    wasUsed |= DoItemActionAwardTeamUpXP(avatar, awardTeamUpXPProto.XP);
+                    break;
+
+                case ItemActionType.OpenUIPanel:
+                    ItemActionOpenUIPanelPrototype openUIPanelProto = actionProto as ItemActionOpenUIPanelPrototype;
+                    if (!Verify.IsNotNull(openUIPanelProto)) return;
+
+                    wasUsed |= DoItemActionOpenUIPanel(player, openUIPanelProto.PanelName);
+                    break;
+            }
+        }
+
+        private bool TriggerItemActionOnUsePowerActivated(ItemActionPrototype itemActionProto)
+        {
+            if (itemActionProto.TriggeringEvent != ItemEventType.OnUsePowerActivated)
+                return false;
+
+            switch (itemActionProto.ActionType)
+            {
+                case ItemActionType.DestroySelf:
+                    DecrementStack();
+                    return true;
+
+                default:
+                    Verify.IsTrue(false, $"Unhandled action type {itemActionProto.ActionType}");
+                    return false;
+            }
+        }
+
+        private bool DoItemActionAssignPower()
+        {
+            Verify.IsTrue(false);
+            return false;
+        }
+
+        private void DoItemActionDestroySelf(ref bool isConsumable)
+        {
+            // This "action" flags this item's effect as consumable (i.e. it needs to be destroyed on use)
+            isConsumable = true;
+        }
+
+        private bool DoItemActionGuildUnlock(Player player)
+        {
+            return player.UnlockGuilds(true);
+        }
+
+        private bool DoItemActionPrestigeMode(Avatar avatar)
+        {
+            return avatar.ActivatePrestigeMode();
+        }
+
+        private bool DoItemActionReplaceSelfItem(PrototypeId itemProtoRef, Player player, Avatar avatar)
+        {
+            ItemPrototype itemProto = itemProtoRef.As<ItemPrototype>();
+            if (!Verify.IsNotNull(itemProto)) return false;
+
+            using var lootResultSummaryHandle = LootResultSummaryPool.Get(out LootResultSummary lootResultSummary);
+            LootResult lootResult;
+
+            if (itemProto.IsCurrency)
+            {
+                itemProto.GetCurrency(out PrototypeId currencyRef, out int amount);
+                CurrencySpec currencySpec = new(itemProto.DataRef, currencyRef, amount);
+                lootResult = new(currencySpec);
+            }
+            else
+            {
+                ItemSpec itemSpec = Game.LootManager.CreateItemSpec(itemProtoRef, LootContext.CashShop, player, Properties[PropertyEnum.ItemLevel]);
+                if (!Verify.IsNotNull(itemSpec)) return false;
+                lootResult = new(itemSpec);
+            }
+
+            lootResultSummary.Add(lootResult);
+
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+            NetMessageLootRewardReport.Builder reportBuilder = NetMessageLootRewardReport.CreateBuilder();
+
+            if (ReplaceSelfHelper(lootResultSummary, player, reportBuilder))
+            {
+                reportBuilder.SetSource(_itemSpec.ToProtobuf());
+                player.SendMessage(reportBuilder.Build());
+                return true;
+            }
+
+            return false;
+#else
+            return ReplaceSelfHelper(lootResultSummary, player);
+#endif
+        }
+
+        private bool DoItemActionReplaceSelfLootTable(LootTablePrototype lootTableProto, bool useAvatarLevel, Player player, Avatar avatar)
+        {
+            using var inputSettingsHandle = LootInputSettingsPool.Get(out LootInputSettings inputSettings);
+            inputSettings.Initialize(LootContext.MysteryChest, player, null, useAvatarLevel ? avatar.CharacterLevel : Properties[PropertyEnum.ItemLevel]);
+
+            using var resolverHandle = ItemResolverPool.Get(out ItemResolver resolver);
+            resolver.Initialize(Game.Random);
+            resolver.SetContext(LootContext.MysteryChest, player);
+
+            LootRollResult result = lootTableProto.RollLootTable(inputSettings.LootRollSettings, resolver);
+            if (!Verify.IsTrue(result != LootRollResult.NoRoll && result != LootRollResult.Failure))
+            {
+                player.SendMessage(NetMessageLootRollFailed.DefaultInstance);
+                return false;
+            }
+
+            using var lootResultSummaryHandle = LootResultSummaryPool.Get(out LootResultSummary lootResultSummary);
+            resolver.FillLootResultSummary(lootResultSummary);
+
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+            NetMessageLootRewardReport.Builder reportBuilder = NetMessageLootRewardReport.CreateBuilder();
+
+            if (ReplaceSelfHelper(lootResultSummary, player, reportBuilder))
+            {
+                reportBuilder.SetSource(_itemSpec.ToProtobuf());
+                player.SendMessage(reportBuilder.Build());
+                return true;
+            }
+            
+            return false;
+#else
+            return ReplaceSelfHelper(lootResultSummary, player);
+#endif
+        }
+
+        private bool DoItemActionResetMissions(Avatar avatar)
+        {
+            return avatar.ResetMissions();
+        }
+
+        private bool DoItemActionRespec()
+        {
+            Verify.IsTrue(false);
+            return false;
+        }
+
+        private bool DoItemActionSaveDangerRoomScenario()
+        {
+            Verify.IsTrue(false);
+            return false;
+        }
+
+        private bool DoItemActionUnlockPermaBuff(PrototypeId permaBuffProtoRef, Player player)
+        {
+            if (!Verify.IsTrue(permaBuffProtoRef != PrototypeId.Invalid)) return false;
+
+            if (player.Properties[PropertyEnum.PermaBuff, permaBuffProtoRef])
+                return true;
+
+            return player.UnlockPermaBuff(permaBuffProtoRef);
+        }
+        
+        private bool DoItemActionUsePower(PrototypeId powerProtoRef, Avatar avatar)
+        {
+            Power power = avatar.GetPower(powerProtoRef);
+            if (!Verify.IsNotNull(power)) return false;
+
+            // Adjust index properties for this power specifically (if we have different items that activate the same power)
+            power.Properties.CopyProperty(Properties, PropertyEnum.ItemLevel);
+            power.Properties.CopyProperty(Properties, PropertyEnum.ItemVariation);
+
+            // Activate the power
+            Vector3 position = avatar.RegionLocation.Position;
+            PowerActivationSettings settings = new(InvalidId, position, position);
+            settings.ItemSourceId = Id;
+            settings.Flags |= PowerActivationSettingsFlags.NotifyOwner;
+
+            return avatar.ActivatePower(powerProtoRef, ref settings) == PowerUseResult.Success;
+        }
+
+        private bool DoItemActionAwardTeamUpXP(Avatar avatar, int amount)
+        {
+            Agent teamUpAgent = avatar.CurrentTeamUpAgent;
+            if (teamUpAgent == null)
+                return false;
+
+            teamUpAgent.AwardXP(amount, 0, true);
+            return true;
+        }
+
+        private bool DoItemActionOpenUIPanel(Player player, AssetId panelNameId)
+        {
+            return player.SendOpenUIPanel(panelNameId);
+        }
+
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+        private bool ReplaceSelfHelper(LootResultSummary lootResultSummary, Player player, NetMessageLootRewardReport.Builder reportBuilder)
+#else
+        private bool ReplaceSelfHelper(LootResultSummary lootResultSummary, Player player)
+#endif
+        {
+            // Validation
+
+            // Loot types not defined here cannot be used as MysteryChest replacements
+            const LootType LootTypeFilter = LootType.Item | LootType.Currency | LootType.CallbackNode | LootType.VanityTitle;
+
+            LootType unsupportedTypes = lootResultSummary.Types & ~LootTypeFilter;
+            if (!Verify.IsTrue(unsupportedTypes == LootType.None, $"Summary for [{this}] contains unsupported loot types {unsupportedTypes}"))
+                return false;
+
+            ItemPrototype itemProto = ItemPrototype;
+            if (!Verify.IsNotNull(itemProto)) return false;
+
+            if (!Verify.IsTrue(InventoryLocation.ContainerId == player.Id)) return false;
+
+            Inventory inventory = player.GetInventoryByRef(InventoryLocation.InventoryRef);
+            if (!Verify.IsNotNull(inventory)) return false;
+
+            Inventory deliveryBox = player.GetInventory(InventoryConvenienceLabel.DeliveryBox);
+            if (!Verify.IsNotNull(deliveryBox)) return false;
+
+            // Try to avoid delivery box overflow because people can abuse it to hoard loot and cause performance issues
+            int itemCount = lootResultSummary.ItemSpecs.Count;
+            if (itemCount > 1 && inventory.Count + itemCount >= inventory.MaxCapacity)
+            {
+                player.SendInventoryFullMessage(InvalidId, inventory.PrototypeDataRef);
+                return false;
+            }
+
+            // If this is the last item in the stack, move it out of the inventory while we try to replace it
+            InventoryLocation oldInvLoc = InventoryLocation;    // copy
+
+            if (CurrentStackSize <= 1)
+            {
+                InventoryResult removeResult = ChangeInventoryLocation(null);
+                if (!Verify.IsTrue(removeResult == InventoryResult.Success, $"Failed to remove the last item in the stack from its inventory\nItem=[{this}]\nInvLoc=[{InventoryLocation}]"))
+                    return false;
+            }
+
+            // We need to keep track of everything we are doing so we can roll back if something goes wrong
+            using var replacementItemListHandle = ListPool<(ulong, int)>.Get(out List<(ulong, int)> replacementItemList);
+
+            using var oldCurrencyPropertiesHandle = PropertyCollectionPool.Get(out PropertyCollection oldCurrencyProperties);
+            oldCurrencyProperties.CopyPropertyRange(player.Properties, PropertyEnum.Currency);
+
+            EntityManager entityManager = Game.EntityManager;
+
+            foreach (ItemSpec itemSpec in lootResultSummary.ItemSpecs)
+            {
+                // Create an item
+                using var settingsHandle = EntitySettingsPool.Get(out EntitySettings settings);
+                settings.EntityRef = itemSpec.ItemProtoRef;
+                settings.ItemSpec = itemSpec;
+
+                Item replacementItem = entityManager.CreateEntity(settings) as Item;
+                if (!Verify.IsNotNull(replacementItem))
+                {
+                    CleanUpReplaceSelfError(player, replacementItemList, oldCurrencyProperties, ref oldInvLoc);
+                    return false;
+                }
+
+                replacementItem.Properties[PropertyEnum.InventoryStackCount] = itemSpec.StackCount;
+
+                // Check if this item can be put into this inventory
+                InventoryResult canPlace = replacementItem.CanChangeInventoryLocation(inventory);
+                if (!Verify.IsTrue(canPlace == InventoryResult.Success, $"Replacement item [{replacementItem}] cannot be put into inventory {inventory}"))
+                {
+                    replacementItemList.Add((replacementItem.Id, replacementItem.CurrentStackSize));
+                    CleanUpReplaceSelfError(player, replacementItemList, oldCurrencyProperties, ref oldInvLoc);
+                    return false;
+                }
+
+                // Add this item to the inventory
+                bool wasAdded = false;
+                ulong? stackEntityId = 0;
+
+                // Try to stack it
+                uint slot = inventory.GetAutoStackSlot(replacementItem, true);
+                if (slot != Inventory.InvalidSlot && replacementItem.ChangeInventoryLocation(inventory, slot, ref stackEntityId, true) == InventoryResult.Success)
+                    wasAdded = true;
+
+                // Try to put it into the original item's slot
+                if (wasAdded == false && replacementItem.ChangeInventoryLocation(inventory, oldInvLoc.Slot, ref stackEntityId, true) == InventoryResult.Success)
+                    wasAdded = true;
+
+                // Try to put it into a free slot
+                if (wasAdded == false && replacementItem.ChangeInventoryLocation(inventory, Inventory.InvalidSlot, ref stackEntityId, true) == InventoryResult.Success)
+                    wasAdded = true;
+
+                // Try the delivery box as a fallback
+                if (wasAdded == false && replacementItem.ChangeInventoryLocation(deliveryBox, Inventory.InvalidSlot, ref stackEntityId, true) == InventoryResult.Success)
+                    wasAdded = true;
+
+                // Everything failed
+                if (!Verify.IsTrue(wasAdded, $"Failed to put replacement item [{replacementItem}] anywhere"))
+                {
+                    replacementItemList.Add((replacementItem.Id, replacementItem.CurrentStackSize));
+                    CleanUpReplaceSelfError(player, replacementItemList, oldCurrencyProperties, ref oldInvLoc);
+                    return false;
+                }
+
+                // Finalize this item
+                if (stackEntityId.Value == InvalidId)
+                {
+                    // The replacement was added as a new item
+                    replacementItemList.Add((replacementItem.Id, replacementItem.CurrentStackSize));
+
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+                    reportBuilder.AddItemSpecs(NetMessageLootEntity.CreateBuilder()
+                        .SetItemSpec(itemSpec.ToProtobuf())
+                        .SetItemId(replacementItem.Id));
+#endif
+
+                    replacementItem.SetRecentlyAdded(true);
+                }
+                else
+                {
+                    // The replacement got stacked
+                    replacementItemList.Add((stackEntityId.Value, itemSpec.StackCount));
+
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+                    reportBuilder.AddItemSpecs(NetMessageLootEntity.CreateBuilder()
+                        .SetItemSpec(itemSpec.ToProtobuf())
+                        .SetItemId(stackEntityId.Value));
+#endif
+
+                    Item stackEntity = entityManager.GetEntity<Item>(stackEntityId.Value);
+                    stackEntity?.SetRecentlyAdded(true);
+                }
+
+            }
+
+            using var replacementCurrencyPropertiesHandle = PropertyCollectionPool.Get(out PropertyCollection replacementCurrencyProperties);
+
+            foreach (CurrencySpec currencySpec in lootResultSummary.Currencies)
+            {
+                if (!Verify.IsTrue(currencySpec.IsItem, $"Attempted to replace item [{this}] with a non-item currency {currencySpec.AgentOrItemProtoRef.GetName()}"))
+                {
+                    CleanUpReplaceSelfError(player, replacementItemList, oldCurrencyProperties, ref oldInvLoc);
+                    return false;
+                }
+
+                currencySpec.ApplyCurrency(replacementCurrencyProperties);
+
+                using var settingsHandle = EntitySettingsPool.Get(out EntitySettings settings);
+                settings.EntityRef = currencySpec.AgentOrItemProtoRef;
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+                settings.ItemSpec = new(currencySpec.AgentOrItemProtoRef, GameDatabase.LootGlobalsPrototype.RarityDefault, 1);
+#else
+                settings.ItemSpec = new(currencySpec.AgentOrItemProtoRef, (PrototypeId)10195041726035595077, 1);  // V48_FIXME
+#endif
+                settings.Properties = replacementCurrencyProperties;
+
+                Item currencyItem = entityManager.CreateEntity(settings) as Item;
+                if (!Verify.IsNotNull(currencyItem))
+                {
+                    CleanUpReplaceSelfError(player, replacementItemList, oldCurrencyProperties, ref oldInvLoc);
+                    return false;
+                }
+
+                replacementCurrencyProperties.RemovePropertyRange(PropertyEnum.ItemCurrency);
+
+                bool acquired = player.AcquireCurrencyItem(currencyItem);
+                currencyItem.Destroy();
+
+                if (!Verify.IsTrue(acquired, $"Failed to acquire replacement currency from item [{currencyItem}]"))
+                {
+                    CleanUpReplaceSelfError(player, replacementItemList, oldCurrencyProperties, ref oldInvLoc);
+                    return false;
+                }
+
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+                reportBuilder.AddCurrencySpecs(currencySpec.ToProtobuf());
+#endif
+            }
+
+            // Scoring ItemCollected
+            foreach (var pair in replacementItemList)
+            {
+                var item = entityManager.GetEntity<Item>(pair.Item1);
+                if (item == null) continue;
+                int count = pair.Item2;
+                player.OnScoringEvent(new(ScoringEventType.ItemCollected, item.Prototype, item.RarityPrototype, count));
+            }
+
+            // Do callbacks
+            foreach (LootNodePrototype callbackNode in lootResultSummary.CallbackNodes)
+                callbackNode.OnResultsEvaluation(player, null);
+
+            // Grant vanity titles
+            foreach (PrototypeId vanityTitleProtoRef in lootResultSummary.VanityTitles)
+                player.UnlockVanityTitle(vanityTitleProtoRef);
+
+            // Consume a stack of this item
+            DecrementStack();
+
+            return true;
+        }
+
+        private void CleanUpReplaceSelfError(Player player, List<(ulong, int)> replacementItemList, PropertyCollection propertiesToRestore, ref InventoryLocation invLoc)
+        {
+            EntityManager entityManager = Game.EntityManager;
+
+            // Clean up partial item replacement
+            foreach (var entry in replacementItemList)
+            {
+                (ulong itemId, int count) = entry;
+                Item item = entityManager.GetEntity<Item>(itemId);
+                if (!Verify.IsNotNull(item))
+                    continue;
+
+                item.DecrementStack(count);
+            }
+
+            // Restore currency
+            player.Properties.CopyPropertyRange(propertiesToRestore, PropertyEnum.Currency);
+
+            // Return this item to its original location
+            if (InventoryLocation != invLoc)
+            {
+                InventoryResult result = ChangeInventoryLocation(invLoc.GetInventory(), invLoc.Slot);
+                if (!Verify.IsTrue(result == InventoryResult.Success, $"Failed to return item [{this}] to its original inventory location {invLoc}"))
+                    Destroy();
+            }
+        }
+    }
+}

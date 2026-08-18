@@ -1,0 +1,144 @@
+﻿using Google.ProtocolBuffers;
+using MHServerEmu.Core.Logging;
+using MHServerEmu.Core.Network;
+using MHServerEmu.DatabaseAccess;
+using MHServerEmu.DatabaseAccess.Models;
+
+namespace MHServerEmu.Grouping
+{
+    public class GroupingClientManager
+    {
+        private const ushort MuxChannel = 2;
+        private const int MaxMessageBuckets = 4096;
+
+        private static readonly Logger Logger = LogManager.CreateLogger();
+
+        // Need a name -> client lookup because tells sent by clients are addressed by name.
+        // We no longer need thread safety here because everything grouping manager related is now handled by a dedicated worker thread.
+
+        private readonly Dictionary<ulong, IFrontendClient> _clientsByDbId = new();
+        private readonly Dictionary<string, IFrontendClient> _clientsByName = new(StringComparer.OrdinalIgnoreCase);   // case insensitive
+
+        private readonly Stack<List<IMessage>> _freeMessageBuckets = new();
+        private readonly Dictionary<IFrontendClient, List<IMessage>> _pendingMessages = new();
+
+        private bool _hasPendingMessages;
+
+        public int Count { get => _clientsByDbId.Count; }
+
+        public GroupingClientManager()
+        {
+        }
+
+        public bool AddClient(IFrontendClient client)
+        {
+            DBAccount account = ((IDBAccountOwner)client).Account;
+            ulong playerDbId = (ulong)account.Id;
+            string playerName = account.PlayerName;
+
+            if (!Verify.IsTrue(_clientsByDbId.TryAdd(playerDbId, client), $"Account {account} is already added"))
+                return false;
+
+            _clientsByName.Add(playerName, client);
+
+            List<IMessage> messageBucket = _freeMessageBuckets.Count > 0 ? _freeMessageBuckets.Pop() : new();
+            _pendingMessages.Add(client, messageBucket);
+
+            Logger.Trace($"Added client [{client}]");
+            return true;
+        }
+
+        public bool RemoveClient(IFrontendClient client)
+        {
+            DBAccount account = ((IDBAccountOwner)client).Account;
+            ulong playerDbId = (ulong)account.Id;
+            string playerName = account.PlayerName;
+
+            Verify.IsTrue(_clientsByDbId.Remove(playerDbId), $"Account {account} not found");
+
+            _clientsByName.Remove(playerName);
+
+            if (_pendingMessages.Remove(client, out List<IMessage> messageBucket) && _freeMessageBuckets.Count < MaxMessageBuckets)
+            {
+                messageBucket.Clear();
+                _freeMessageBuckets.Push(messageBucket);
+            }
+
+            Logger.Trace($"Removed client [{client}]");
+            return true;
+        }
+
+        public void Flush()
+        {
+            if (_hasPendingMessages == false)
+                return;
+
+            foreach (var kvp in _pendingMessages)
+            {
+                IFrontendClient client = kvp.Key;
+                List<IMessage> messages = kvp.Value;
+
+                if (messages.Count == 0)
+                    continue;
+
+                client.SendMessageList(MuxChannel, messages);
+                messages.Clear();
+            }
+
+            _hasPendingMessages = false;
+        }
+
+        public void OnPlayerNameChanged(ulong playerDbId, string oldPlayerName, string newPlayerName)
+        {
+            // Update the currently logged in player name lookup
+            if (_clientsByDbId.TryGetValue(playerDbId, out IFrontendClient client) == false)
+                return;
+
+            Verify.IsTrue(_clientsByName.Remove(oldPlayerName), $"Player 0x{playerDbId:X} is logged in, but doesn't have a name lookup!");
+
+            _clientsByName.Add(newPlayerName, client);
+
+            Logger.Info($"Updated name for player 0x{playerDbId:X}: {oldPlayerName} => {newPlayerName}");
+        }
+
+        public bool TryGetClient(ulong playerDbId, out IFrontendClient client)
+        {
+            return _clientsByDbId.TryGetValue(playerDbId, out client);
+        }
+
+        public bool TryGetClient(string playerName, out IFrontendClient client)
+        {
+            return _clientsByName.TryGetValue(playerName, out client);
+        }
+
+        public void SendMessage(IMessage message, IFrontendClient client)
+        {
+            // We have this method to keep all message sending in one place.
+
+            // This will be flushed at the end of the Grouping Manager tick to keep the order consistent.
+            if (_pendingMessages.TryGetValue(client, out List<IMessage> messages) == false)
+                return;
+
+            messages.Add(message);
+
+            _hasPendingMessages = true;
+        }
+
+        public void SendMessageFiltered(IMessage message, List<ulong> playerDbIdFilter)
+        {
+            foreach (ulong playerDbId in playerDbIdFilter)
+            {
+                if (_clientsByDbId.TryGetValue(playerDbId, out IFrontendClient client) == false)
+                    continue;
+
+                SendMessage(message, client);
+            }
+        }
+
+        public void SendMessageToAll(IMessage message)
+        {
+            foreach (IFrontendClient client in _clientsByDbId.Values)
+                SendMessage(message, client);
+        }
+    }
+}

@@ -1,0 +1,35 @@
+# Normalise line endings in the repository, check out native on each platform.
+#
+# ⚑ WORTH HAVING FROM COMMIT ONE. Merging upstream into the server tree was nearly a
+# 1000-file conflict because one side had been normalised to LF and the other had not, with
+# no .gitattributes to reconcile them. Setting this now costs nothing; adding it after the
+# fact rewrites every file.
+* text=auto
+
+# Scripts whose line endings are load-bearing
+*.sh   text eol=lf
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+*.ps1  text eol=crlf
+
+# Binaries - never touch these
+*.png  binary
+*.jpg  binary
+*.ico  binary
+*.mp4  binary
+*.db   binary
+*.dll  binary
+*.lib  binary
+*.exe  binary
+*.pdb  binary
+*.zip  binary
+*.sip  binary
+*.tfc  binary
+*.upk  binary
+
+# The generated lookup tables are large and machine-written; a diff of them helps nobody.
+# ⛔ SCOPED TO data/ ON PURPOSE. A bare "*.json -diff" would also silence launchSettings.json,
+# the runtimeconfig files and every other project JSON, which are exactly the ones worth
+# reading in a diff.
+data/Costumes.json  -diff
+data/Effects.json   -diff

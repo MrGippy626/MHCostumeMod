@@ -1,0 +1,294 @@
+﻿<Page
+    x:Class="CostumeManager.Views.EffectsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:CostumeManager">
+
+    <Grid Margin="24,20,24,24" RowDefinitions="Auto,Auto,*">
+
+        <Grid Grid.Row="0" Margin="0,0,0,12" ColumnDefinitions="*,Auto">
+            <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                <TextBlock Text="Custom skill effects" FontWeight="SemiBold" FontSize="15" />
+                <TextBlock x:Name="TxtFxSub" FontSize="12" Margin="0,4,12,0" TextWrapping="Wrap"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                           Text="Redirects a costume's power, condition, hotspot and projectile effects to renamed copies — visible only to players wearing that costume. Stock effects are never overwritten." />
+            </StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+
+                <Button x:Name="BtnFxScan" Content="Scan folder…" Visibility="Collapsed"
+                        Margin="0,0,8,0" Click="FxScanFolder_Click"
+                        ToolTipService.ToolTip="Preview the effect UPKs beside the costume you are installing. Reads only — writes nothing." />
+                <Button x:Name="BtnFxPrune" Content="Prune missing FX" Margin="0,0,8,0" Click="FxPrune_Click"
+                        ToolTipService.ToolTip="Removes effect entries whose UPK is gone. A missing package stops the whole costume arming, so this is how you get one working again." />
+                <Button x:Name="BtnFxHotspots" Content="Sync hotspot ids" Margin="0,0,8,0" Click="FxSyncHotspots_Click"
+                        ToolTipService.ToolTip="Re-derives each costume's forged hotspot ids from its effects and rewrites ServerCostumes.json. Rebuilds no packages and touches no UPK." />
+                <Button x:Name="BtnFxExportAll" Content="Export all packs…" Margin="0,0,8,0"
+                        Click="FxExportAllPacks_Click"
+                        ToolTipService.ToolTip="One .mhbundle carrying every installed FX pack. A pack only becomes effects once a costume naming its token is installed too." />
+                <Button x:Name="BtnFxRefresh" Content="Refresh" Click="FxRefresh_Click" />
+            </StackPanel>
+        </Grid>
+
+        <Border Grid.Row="1" x:Name="FxBanner" Visibility="Collapsed" CornerRadius="8"
+                Padding="12,9" Margin="0,0,0,12" Style="{StaticResource WarnBanner}">
+            <TextBlock x:Name="TxtFxBanner" Foreground="{StaticResource WarnInk}" TextWrapping="Wrap" />
+        </Border>
+
+        <Grid Grid.Row="2" x:Name="FxListView" RowDefinitions="Auto,*">
+            <TextBox Grid.Row="0" x:Name="TxtFxSearch" Margin="0,0,0,10"
+                     PlaceholderText="Search packs or costumes…" TextChanged="FxSearch_Changed"
+                     ToolTipService.ToolTip="Matches BOTH sides of the join - a pack name, or the name of any costume using it. Typing a costume name selects the pack that holds it." />
+
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <ItemsControl x:Name="FxPackList">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Margin="0,0,0,10" Padding="0" CornerRadius="6"
+                                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                        BorderThickness="1"
+                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}">
+                                    <StackPanel>
+
+                                        <local:ClickableCard Padding="14"
+                                                HorizontalAlignment="Stretch"
+                                                HorizontalContentAlignment="Stretch"
+                                                Background="Transparent" BorderThickness="0"
+                                                Tag="{Binding Token}" Click="FxToggleGroup_Click"
+                                                AutomationProperties.Name="{Binding DisplayName}">
+
+                                            <local:ClickableCard.Resources>
+                                                <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#DCE9FF" />
+                                                <SolidColorBrush x:Key="ButtonBackgroundPressed"     Color="#C3D9FF" />
+                                            </local:ClickableCard.Resources>
+
+                                            <Grid ColumnDefinitions="Auto,*" IsHitTestVisible="False">
+                                                <TextBlock Grid.Column="0" Text="{Binding Chevron}"
+                                                           FontSize="13" Margin="0,0,10,0"
+                                                           VerticalAlignment="Center"
+                                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                                <StackPanel Grid.Column="1">
+                                                    <TextBlock Text="{Binding DisplayName}" FontSize="14"
+                                                               FontWeight="SemiBold" />
+                                                    <TextBlock Text="{Binding SubLabel}" FontSize="11.5"
+                                                               Margin="0,5,0,0" TextWrapping="Wrap"
+                                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                                    <TextBlock Text="{Binding ProblemText}" FontSize="11.5"
+                                                               Margin="0,5,0,0" TextWrapping="Wrap"
+                                                               Foreground="{StaticResource WarnInk}"
+                                                               Visibility="{Binding ProblemVisibility}" />
+                                                </StackPanel>
+                                            </Grid>
+                                        </local:ClickableCard>
+
+                                        <StackPanel Margin="14,0,14,12" Visibility="{Binding BodyVisibility}">
+
+                                            <ItemsControl ItemsSource="{Binding Users}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <local:ClickableCard Margin="0,0,0,6" Padding="10"
+                                                                CornerRadius="6"
+                                                                HorizontalAlignment="Stretch"
+                                                                HorizontalContentAlignment="Stretch"
+                                                                Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                                                                BorderThickness="1"
+                                                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                                                Tag="{Binding Enum}" Click="FxPickCostume_Click"
+                                                                AutomationProperties.Name="{Binding DisplayName}">
+                                                            <local:ClickableCard.Resources>
+                                                                <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#DCE9FF" />
+                                                                <SolidColorBrush x:Key="ButtonBackgroundPressed"     Color="#C3D9FF" />
+                                                                <SolidColorBrush x:Key="ButtonBorderBrushPointerOver" Color="#7FA8F5" />
+                                                                <SolidColorBrush x:Key="ButtonBorderBrushPressed"     Color="#5B8DEF" />
+                                                            </local:ClickableCard.Resources>
+                                                            <Grid ColumnDefinitions="Auto,*" IsHitTestVisible="False">
+                                                                <Border Grid.Column="0" Width="40" Height="40"
+                                                                        Margin="0,0,12,0" VerticalAlignment="Top"
+                                                                        CornerRadius="5" Background="#0A0B0D">
+                                                                    <Image Source="{Binding Thumb}" Stretch="Uniform" Margin="3" />
+                                                                </Border>
+                                                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                                    <TextBlock Text="{Binding DisplayName}" FontSize="13"
+                                                                               FontWeight="SemiBold" />
+                                                                    <TextBlock Text="{Binding SubLabel}" FontSize="11"
+                                                                               Margin="0,4,0,0" TextWrapping="Wrap"
+                                                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                                                    <TextBlock Text="{Binding ProblemText}" FontSize="11"
+                                                                               Margin="0,4,0,0" TextWrapping="Wrap"
+                                                                               Foreground="{StaticResource WarnInk}"
+                                                                               Visibility="{Binding ProblemVisibility}" />
+                                                                </StackPanel>
+                                                            </Grid>
+                                                        </local:ClickableCard>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+
+                                            <TextBlock Text="{Binding EmptyText}" FontSize="11.5"
+                                                       Margin="2,2,0,6" TextWrapping="Wrap"
+                                                       Visibility="{Binding EmptyVisibility}"
+                                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+
+                                            <Grid ColumnDefinitions="*,Auto,Auto" Margin="0,4,0,0"
+                                                  Visibility="{Binding AssignVisibility}">
+                                                <ComboBox Grid.Column="0" HorizontalAlignment="Stretch"
+                                                          ItemsSource="{Binding Candidates}"
+                                                          SelectedItem="{Binding PickedCandidate, Mode=TwoWay}"
+                                                          PlaceholderText="Give this pack to a costume…" />
+                                                <Button Grid.Column="1" Content="Assign" Margin="8,0,0,0"
+                                                        Tag="{Binding Token}" Click="FxAssignFromPack_Click" />
+                                                <Button Grid.Column="2" Content="Export…" Margin="8,0,0,0"
+                                                        Tag="{Binding Token}" Click="FxExportOnePack_Click" />
+                                            </Grid>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <TextBlock x:Name="TxtNoFx" Visibility="Collapsed" Margin="4,8,0,0" TextWrapping="Wrap"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               Text="No installed costumes found. Pick your game folder on the Settings tab." />
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+
+        <Grid Grid.Row="2" x:Name="FxDetailView" Visibility="Collapsed" RowDefinitions="Auto,Auto,Auto,*">
+
+            <Border Grid.Row="0" Margin="0,0,0,12" Padding="14" CornerRadius="6"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderThickness="1" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                        <TextBlock x:Name="TxtFxDetailName" FontWeight="SemiBold" FontSize="15" />
+                        <TextBlock x:Name="TxtFxDetailSub" FontSize="12" Margin="0,4,12,0" TextWrapping="Wrap"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button x:Name="BtnFxSelectFolder" Content="Scan folder…" Margin="0,0,8,0"
+                                Style="{StaticResource AccentButtonStyle}" Click="FxSelectFolder_Click" />
+                        <Button x:Name="BtnFxIsolation" Content="Isolation test" Margin="0,0,8,0"
+                                Click="FxIsolation_Click"
+                                ToolTipService.ToolTip="Writes only &quot;effects&quot;: [] — the costume gets its own forged asset with no effect redirected. Proves the forged id works before any effect package is involved. Reversible." />
+                        <Button x:Name="BtnFxTickNone" Content="Untick all" Margin="0,0,8,0" Visibility="Collapsed"
+                                Click="FxTickNone_Click"
+                                ToolTipService.ToolTip="Clears every tick. Applying then removes everything currently installed, so use it as a starting point for picking a few." />
+                        <Button x:Name="BtnFxTickInstalled" Content="Reset ticks" Margin="0,0,8,0"
+                                Click="FxTickInstalled_Click"
+                                ToolTipService.ToolTip="Ticks exactly what is installed right now — i.e. discard any pending changes." />
+                        <Button x:Name="BtnFxTickSuggested" Content="Tick suggested" Margin="0,0,8,0"
+                                Visibility="Collapsed" Click="FxTickSuggested_Click"
+                                ToolTipService.ToolTip="Ticks everything installable for this costume's hero, on top of what is already installed. Large chains have crashed the client — add a few at a time." />
+                        <Button x:Name="BtnFxInstall" Content="Apply changes" Margin="0,0,8,0"
+                                Visibility="Collapsed" Style="{StaticResource AccentButtonStyle}"
+                                Click="FxInstall_Click" />
+                        <Button x:Name="BtnFxRemoveAll" Content="Remove all FX" Margin="0,0,8,0"
+                                Visibility="Collapsed" Click="FxRemoveAll_Click" />
+                        <Button x:Name="BtnFxBack" Content="← Back" Click="FxBack_Click" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <Border Grid.Row="1" x:Name="FxPackCard" Margin="0,0,0,12" Padding="14" CornerRadius="6"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderThickness="1" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}">
+                <StackPanel>
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                            <TextBlock Text="SHARED FX PACK" Style="{StaticResource SectionHeader}" />
+                            <TextBlock x:Name="TxtFxPackState" FontSize="12" Margin="0,4,12,0"
+                                       TextWrapping="Wrap"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Button x:Name="BtnFxAssign" Content="Use this pack" Margin="0,0,8,0"
+                                    Style="{StaticResource AccentButtonStyle}" Click="FxAssign_Click" />
+                            <Button x:Name="BtnFxUnassign" Content="Stop using" Margin="0,0,8,0"
+                                    Visibility="Collapsed" Click="FxUnassign_Click" />
+
+                            <Button x:Name="BtnFxExportPack" Content="Export pack…" Margin="0,0,8,0"
+                                    Click="FxExportPack_Click" />
+                            <Button x:Name="BtnFxDeletePack" Content="Delete pack" Click="FxDeletePack_Click" />
+                        </StackPanel>
+                    </Grid>
+
+                    <TextBox x:Name="TxtFxPackSearch" Margin="0,10,0,8"
+                             PlaceholderText="Search packs…" TextChanged="FxPackSearch_Changed" />
+
+                    <ListView x:Name="ListFxPacks" MaxHeight="150" SelectionMode="Single"
+                              SelectionChanged="FxPack_Changed"
+                              BorderThickness="1" CornerRadius="4"
+                              BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}">
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Padding="0,4">
+                                    <TextBlock Text="{Binding DisplayName}" FontSize="13" />
+                                    <TextBlock Text="{Binding SubLabel}" FontSize="11"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+
+                    <TextBlock x:Name="TxtNoPacks" Margin="2,8,0,0" FontSize="12" TextWrapping="Wrap"
+                               Visibility="Collapsed"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                </StackPanel>
+            </Border>
+            <Border Grid.Row="2" x:Name="FxCompatBanner" Visibility="Collapsed" CornerRadius="8"
+                    Padding="12,9" Margin="0,0,0,12" Style="{StaticResource WarnBanner}">
+                <TextBlock x:Name="TxtFxCompat" Foreground="{StaticResource WarnInk}" TextWrapping="Wrap" />
+            </Border>
+
+            <ScrollViewer Grid.Row="3" VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <TextBlock x:Name="TxtFxDetailHint" FontSize="12" TextWrapping="Wrap" Margin="2,0,0,10"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    <ItemsControl x:Name="FxCandidateList">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Margin="0,0,0,10" Padding="14" CornerRadius="6"
+                                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                        BorderThickness="1"
+                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}">
+                                    <Grid ColumnDefinitions="Auto,*,Auto">
+                                        <CheckBox Grid.Column="0" Margin="0,0,12,0" VerticalAlignment="Top"
+                                                  MinWidth="0"
+                                                  IsChecked="{Binding Selected, Mode=TwoWay}"
+                                                  IsEnabled="{Binding CanSelect}" />
+
+                                        <StackPanel Grid.Column="1">
+                                            <TextBlock Text="{Binding Title}" FontSize="13.5" FontWeight="SemiBold" />
+                                            <TextBlock Text="{Binding FileName}" FontFamily="Consolas" FontSize="10.5"
+                                                       Margin="0,5,0,0" TextTrimming="CharacterEllipsis"
+                                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                            <TextBlock Text="{Binding Detail}" FontSize="12" Margin="0,4,0,0"
+                                                       TextWrapping="Wrap"
+                                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                            <TextBlock Text="{Binding WarnText}" Foreground="{StaticResource WarnInk}"
+                                                       FontSize="11.5" Margin="0,4,0,0" TextWrapping="Wrap"
+                                                       Visibility="{Binding WarnVisibility}" />
+
+                                            <CheckBox Margin="0,6,0,0"
+                                                      Visibility="{Binding SiblingVisibility}"
+                                                      IsChecked="{Binding SiblingEnabled, Mode=TwoWay}"
+                                                      ToolTipService.ToolTip="{Binding SiblingTooltip}">
+                                                <TextBlock FontSize="11.5" TextWrapping="Wrap"
+                                                           Text="{Binding SiblingLabel}" />
+                                            </CheckBox>
+                                        </StackPanel>
+
+                                        <TextBlock Grid.Column="2" Text="{Binding StateText}" FontSize="11.5"
+                                                   VerticalAlignment="Top" Margin="10,0,0,0"
+                                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+</Page>

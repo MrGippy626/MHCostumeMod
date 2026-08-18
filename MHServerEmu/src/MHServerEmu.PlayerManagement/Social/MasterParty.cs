@@ -1,0 +1,358 @@
+﻿using Gazillion;
+using MHServerEmu.Core.Logging;
+using MHServerEmu.Core.Memory;
+using MHServerEmu.Core.Network;
+using MHServerEmu.Games.GameData;
+using MHServerEmu.PlayerManagement.Players;
+using MHServerEmu.PlayerManagement.Regions;
+
+namespace MHServerEmu.PlayerManagement.Social
+{
+    /// <summary>
+    /// The authoritative representation of a party on the server (as apposed to local parties in game instances).
+    /// </summary>
+    public class MasterParty
+    {
+        private static readonly Logger Logger = LogManager.CreateLogger();
+
+        // We are not using a HashSet here because this is a small collection (<= 10 elements),
+        // and we need the order of joining to pass leadership when the current leader leaves.
+        private readonly List<PlayerHandle> _members = new();
+        private readonly HashSet<PlayerHandle> _pendingMembers = new();
+
+        public ulong Id { get; }
+        public GroupType Type { get; private set; } = GroupType.GroupType_Party;
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+        public PrototypeId DifficultyTierProtoRef { get; private set; }
+#endif
+        public PlayerHandle Leader { get; private set; }
+
+        public WorldView WorldView { get; } = new();
+
+        public int MemberCount { get => _members.Count; }
+        public bool HasEnoughMembersOrInvitations { get => _members.Count > 1 || (_members.Count == 1 && _pendingMembers.Count > 0); }
+
+        public MasterParty(ulong id, PlayerHandle creator)
+        {
+            Id = id;
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+            DifficultyTierProtoRef = creator.DifficultyTierPreference;
+#endif
+
+            WorldView.AddRegionsFrom(creator.WorldView);
+
+            AddMember(creator);
+            SetLeader(creator);
+        }
+
+        public override string ToString()
+        {
+            return $"id={Id}";
+        }
+
+        public List<PlayerHandle>.Enumerator GetEnumerator()
+        {
+            return _members.GetEnumerator();
+        }
+
+        public void GetMembers(HashSet<PlayerHandle> members)
+        {
+            foreach (PlayerHandle member in _members)
+                members.Add(member);
+        }
+
+        public bool HasMember(PlayerHandle player)
+        {
+            return _members.Contains(player);
+        }
+
+        public bool IsFull()
+        {
+            int max = 0;
+            switch (Type)
+            {
+                case GroupType.GroupType_Party:
+                    max = GameDatabase.GlobalsPrototype.PlayerPartyMaxSize;
+                    break;
+
+                case GroupType.GroupType_Raid:
+                    max = GameDatabase.GlobalsPrototype.PlayerRaidMaxSize;
+                    break;
+            }
+
+            return _members.Count >= max;
+        }
+
+        public bool AddMember(PlayerHandle player)
+        {
+            if (!Verify.IsNotNull(player)) return false;
+
+            bool added = false;
+
+            if (_members.Contains(player) == false)
+            {
+                // V48_FIXME
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+                // Send update to existing players (the player we are adding will get this in the party info sync below)
+                SendPartyMemberInfoUpdate(player, PartyMemberEvent.ePME_Add, _members);
+#endif
+
+                _pendingMembers.Remove(player);
+                player.PendingParty = null;
+
+                _members.Add(player);
+                player.CurrentParty = this;
+                player.AddToChatRoom(ChatRoomTypes.CHAT_ROOM_TYPE_PARTY, Id);
+
+                WorldView.AddOwner(player);
+
+                Logger.Trace($"AddMember(): party=[{this}], player=[{player}]");
+
+                added = true;
+            }
+
+            // Something may have gone out of sync if we got here when the player is already in this party, so sync anyway.
+            SyncPartyInfo(player);
+            return added;
+        }
+
+        public bool RemoveMember(PlayerHandle player, GroupLeaveReason leaveReason)
+        {
+            if (!Verify.IsNotNull(player)) return false; 
+
+            // V48_FIXME
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+            // Send this before removing so that the player we are removing gets the message as well.
+            SendPartyMemberInfoUpdate(player, PartyMemberEvent.ePME_Remove, _members);
+#endif
+
+            if (_members.Remove(player) == false)
+                return false;
+
+            player.CurrentParty = null;
+            player.RemoveFromChatRoom(ChatRoomTypes.CHAT_ROOM_TYPE_PARTY, Id);
+
+            WorldView.RemoveOwner(player);
+
+            // Remove access to private regions of this party from the leaving member
+            WorldView removedMemberWorldView = player.WorldView;
+
+            foreach (RegionHandle region in WorldView)
+            {
+                if (region.IsPrivate)
+                    removedMemberWorldView.RemoveRegion(region);
+            }
+
+            // Handle the region the removed player is currently in
+            RegionHandle removedMemberRegion = player.TargetRegion;
+
+            if (removedMemberRegion != null)
+            {
+                // Grant ownership of the current region to the last remaining party member.
+                if (_members.Count == 0 && WorldView.ContainsRegion(removedMemberRegion.Id))
+                {
+                    RegionHandle existingRegion = removedMemberWorldView.GetMatchingRegion(removedMemberRegion.RegionProtoRef, removedMemberRegion.CreateParams);
+                    if (existingRegion != null && existingRegion != removedMemberRegion)
+                        removedMemberWorldView.RemoveRegion(existingRegion);
+
+                    removedMemberWorldView.AddRegion(removedMemberRegion);
+                }
+
+                // Set up a grace period to delay removal from the current region if it still belong to the party.
+                if (removedMemberWorldView.ContainsRegion(removedMemberRegion.Id) == false)
+                    player.SetGracePeriodRegion(removedMemberRegion, leaveReason);
+            }
+
+            Logger.Trace($"RemoveMember(): party=[{this}], player=[{player}]");
+
+            return true;
+        }
+
+        public bool UpdateMember(PlayerHandle player)
+        {
+            if (!Verify.IsTrue(HasMember(player), $"Attempting to update player [{player}] who is not a member of party [{this}]"))
+                return false;
+
+            // V48_FIXME
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+            SendPartyMemberInfoUpdate(player, PartyMemberEvent.ePME_Update, _members);
+#endif
+            return true;
+        }
+
+        public bool SetLeader(PlayerHandle player)
+        {
+            if (!Verify.IsNotNull(player)) return false;
+
+            if (!Verify.IsTrue(HasMember(player), $"Attempting to set player [{player}] as the leader of party [{this}], but this player is not in this party"))
+                return false;
+
+            Leader = player;
+            SendPartyInfo(false, _members);
+
+            Logger.Trace($"SetLeader(): party=[{this}], player=[{player}]");
+
+            return true;
+        }
+
+        public PlayerHandle GetNextLeader()
+        {
+            // Leadership is passed in the order of joining the party, which is reflected in the member index.
+            if (_members.Count == 0)
+                return null;
+
+            return _members[0];
+        }
+
+        public bool SetType(GroupType type)
+        {
+            if (Type == type)
+                return false;
+
+            Type = type;
+            SendPartyInfo(false, _members);
+
+            return true;
+        }
+
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+        public bool SetDifficultyTier(PrototypeId difficultyTierProtoRef)
+        {
+            if (difficultyTierProtoRef == DifficultyTierProtoRef)
+                return false;
+
+            DifficultyTierProtoRef = difficultyTierProtoRef;
+            SendPartyInfo(false, _members);
+
+            return true;
+        }
+#endif
+
+        public bool HasInvite(PlayerHandle player)
+        {
+            return _pendingMembers.Contains(player);
+        }
+
+        public void AddInvite(PlayerHandle player)
+        {
+            _pendingMembers.Add(player);
+            player.PendingParty = this;
+        }
+
+        public void RemoveInvite(PlayerHandle player)
+        {
+            _pendingMembers.Remove(player);
+            player.PendingParty = null;
+        }
+
+        public void CancelAllInvites()
+        {
+            foreach (PlayerHandle player in _pendingMembers)
+            {
+                if (!Verify.IsTrue(player.PendingParty == null || player.PendingParty == this, $"Player pending party desync (expected [{this}], got [{player.PendingParty}])"))
+                    continue;
+
+                player.PendingParty = null;
+
+                // Notify the player of cancellation if in-game
+                if (player.CurrentGame == null)
+                    continue;
+
+                // V48_FIXME
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+                var request = PartyOperationPayload.CreateBuilder()
+                    .SetRequestingPlayerDbId(player.PlayerDbId)
+                    .SetRequestingPlayerName(player.PlayerName)
+                    .SetOperation(GroupingOperationType.eGOP_ServerNotification)
+                    .Build();
+
+                ServiceMessage.PartyOperationRequestServerResult message = new(player.CurrentGame.Id, player.PlayerDbId,
+                    request, GroupingOperationResult.eGOPR_PendingPartyDisbanded);
+                ServerManager.Instance.SendMessageToService(GameServiceType.GameInstance, message);
+#endif
+            }
+
+            _pendingMembers.Clear();
+        }
+
+        public void SyncPartyInfo(PlayerHandle player)
+        {
+            using var recipientsHandle = ListPool<PlayerHandle>.Get(out List<PlayerHandle> recipients);
+            recipients.Add(player);
+            SendPartyInfo(true, recipients);
+        }
+
+        private void SendPartyInfo(bool includeMemberInfo, List<PlayerHandle> recipients)
+        {
+            // V48_FIXME
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+            if (recipients.Count == 0)
+                return;
+
+            var partyInfoBuilder = PartyInfo.CreateBuilder()
+                .SetGroupId(Id)
+                .SetType(Type)
+                .SetLeaderDbId(Leader != null ? Leader.PlayerDbId : 0)
+                .SetDifficultyTierProtoId((ulong)DifficultyTierProtoRef);
+
+            if (includeMemberInfo)
+            {
+                foreach (PlayerHandle player in _members)
+                {
+                    PartyMemberInfo memberInfo = BuildPartyMemberInfo(player);
+                    partyInfoBuilder.AddMembers(memberInfo);
+                }
+            }
+
+            PartyInfo partyInfo = partyInfoBuilder.Build();
+
+            foreach (PlayerHandle player in recipients)
+            {
+                if (player.CurrentGame == null)
+                    continue;
+
+                ServiceMessage.PartyInfoServerUpdate message = new(player.CurrentGame.Id, player.PlayerDbId, Id, partyInfo);
+                ServerManager.Instance.SendMessageToService(GameServiceType.GameInstance, message);
+            }
+#endif
+        }
+
+        // V48_FIXME
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+        private void SendPartyMemberInfoUpdate(PlayerHandle member, PartyMemberEvent memberEvent, List<PlayerHandle> recipients)
+        {
+            // This is valid (e.g. when adding the first member)
+            if (recipients.Count == 0)
+                return;
+
+            PartyMemberInfo memberInfo = null;
+            if (memberEvent != PartyMemberEvent.ePME_Remove)
+                memberInfo = BuildPartyMemberInfo(member);
+
+            foreach (PlayerHandle player in recipients)
+            {
+                if (player.CurrentGame == null)
+                    continue;
+
+                ServiceMessage.PartyMemberInfoServerUpdate message = new(player.CurrentGame.Id, player.PlayerDbId,
+                    Id, member.PlayerDbId, memberEvent, memberInfo);
+                ServerManager.Instance.SendMessageToService(GameServiceType.GameInstance, message);
+            }
+        }
+#endif
+
+        // V48_FIXME
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+        private static PartyMemberInfo BuildPartyMemberInfo(PlayerHandle member)
+        {
+            var builder = PartyMemberInfo.CreateBuilder()
+                .SetPlayerDbId(member.PlayerDbId)
+                .SetPlayerName(member.PlayerName);
+
+            member.GetPartyBoosts(builder);
+
+            return builder.Build();
+        }
+#endif
+    }
+}

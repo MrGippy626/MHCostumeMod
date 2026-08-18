@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Local copy of MHTexLib, owned by the Costume Manager.
+
+    WHY A COPY, not a ProjectReference to modmanager\code\texlib: that tree is a
+    decompiled dump we do not control, and its csproj carries <LangVersion>15.0</LangVersion>
+    which is not a valid value for this SDK and fails the build outright.
+
+    WHY THIS LIBRARY AT ALL: UpkManager's RenameEngine cannot write a package that
+    contains INLINE bulk data. UE3 stores BulkDataOffsetInFile as an ABSOLUTE file
+    offset inside each mip, the rebuild relays the file out (it decompresses), and
+    UpkManager has no fixup - the package it produces CRASHES the client on load.
+    MHTexLib carries ExportEntry.BulkFixups and rewrites each offset in
+    UpkFile.Rebuild(), which is what makes custom icon packages possible.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <AssemblyName>MHTexLib</AssemblyName>
+    <RootNamespace>MHTexLib</RootNamespace>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <LangVersion>latest</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
+    <Nullable>disable</Nullable>
+    <!-- Decompiled source: it is noisy but it works. Don't drown the real build output. -->
+    <NoWarn>$(NoWarn);CS0168;CS0219;CS0414;CS8509;CS0162</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      MHTexLib P/Invokes lzo2_64.dll by bare name (LzoHelper: [DllImport("lzo2_64.dll")]),
+      so it must sit next to the running exe or every Load() throws
+      "lzo2_64.dll not found. Place it next to the executable."
+
+      UpkManager ships the binary but marks it CopyToOutputDirectory=Never, so the copy
+      that currently sits in CostumeManager\bin was placed by hand - a clean clone would
+      not have it. Copying it here makes the dependency explicit and survives a fresh
+      build, and it flows transitively to anything referencing this project.
+    -->
+    <None Include="..\UpkManager\Compression\lib64\lzo2_64.dll" Link="lzo2_64.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

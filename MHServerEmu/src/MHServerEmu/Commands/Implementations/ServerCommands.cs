@@ -1,0 +1,175 @@
+﻿using System.Text;
+using MHServerEmu.Commands.Attributes;
+using MHServerEmu.Core.Logging;
+using MHServerEmu.Core.Network;
+using MHServerEmu.DatabaseAccess.Models;
+using MHServerEmu.DatabaseAccess.SQLite;
+using MHServerEmu.Games.GameData.LiveTuning;
+using MHServerEmu.Games.MTXStore;
+using MHServerEmu.PlayerManagement.Players;
+using MHServerEmu.WebFrontend;
+
+namespace MHServerEmu.Commands.Implementations
+{
+    [CommandGroup("server")]
+    [CommandGroupDescription("Server management commands.")]
+    public class ServerCommands : CommandGroup
+    {
+        private static readonly Logger Logger = LogManager.CreateLogger();
+
+        [Command("status")]
+        [CommandDescription("Prints server status.")]
+        [CommandUsage("server status")]
+        public string Status(string[] @params, NetClient client)
+        {
+            StringBuilder sb = new();
+            sb.AppendLine("Server Status");
+            sb.AppendLine(ServerApp.VersionInfo);
+            sb.Append(ServerManager.Instance.GetServerStatusString());
+            string status = sb.ToString();
+
+            // Display in the console as is
+            if (client == null)
+                return status;
+
+            // Split for the client chat window
+            CommandHelper.SendMessageSplit(client, status, false);
+            return string.Empty;
+        }
+
+        [Command("broadcast")]
+        [CommandDescription("Broadcasts a notification to all players.")]
+        [CommandUsage("server broadcast")]
+        [CommandUserLevel(AccountUserLevel.Admin)]
+        [CommandParamCount(1)]
+        public string Broadcast(string[] @params, NetClient client)
+        {
+            string notificationText = string.Join(' ', @params);
+
+            ServiceMessage.GroupingManagerServerNotification message = new(notificationText);
+            ServerManager.Instance.SendMessageToService(GameServiceType.GroupingManager, message);
+
+            return string.Empty;
+        }
+
+        [Command("reloadlivetuning")]
+        [CommandDescription("Reloads live tuning settings.")]
+        [CommandUsage("server reloadlivetuning")]
+        [CommandUserLevel(AccountUserLevel.Admin)]
+        [CommandInvokerType(CommandInvokerType.ServerConsole)]
+        public string ReloadLiveTuning(string[] @params, NetClient client)
+        {
+            LiveTuningManager.Instance.LoadLiveTuningData(true);
+            return string.Empty;
+        }
+
+        [Command("reloadcatalog")]
+        [CommandDescription("Reloads MTX store catalog.")]
+        [CommandUsage("server reloadcatalog")]
+        [CommandUserLevel(AccountUserLevel.Admin)]
+        [CommandInvokerType(CommandInvokerType.ServerConsole)]
+        public string ReloadCatalog(string[] @params, NetClient client)
+        {
+            CatalogManager.Instance.LoadEntries();
+            return string.Empty;
+        }
+
+        [Command("reloaddashboard")]
+        [CommandDescription("Reloads the web dashboard.")]
+        [CommandUserLevel(AccountUserLevel.Admin)]
+        [CommandInvokerType(CommandInvokerType.ServerConsole)]
+        public string ReloadDashboard(string[] @params, NetClient client)
+        {
+            WebFrontendService webFrontend = ServerManager.Instance.GetGameService(GameServiceType.WebFrontend) as WebFrontendService;
+            webFrontend?.ReloadDashboard();
+            return string.Empty;
+        }
+
+        [Command("reloadaddg")]
+        [CommandDescription("Reloads the Add G page.")]
+        [CommandUserLevel(AccountUserLevel.Admin)]
+        [CommandInvokerType(CommandInvokerType.ServerConsole)]
+        public string ReloadAddG(string[] @params, NetClient client)
+        {
+            WebFrontendService webFrontend = ServerManager.Instance.GetGameService(GameServiceType.WebFrontend) as WebFrontendService;
+            webFrontend?.ReloadAddGPage();
+            return string.Empty;
+        }
+
+        [Command("reloadplayernameblacklist")]
+        [CommandDescription("Reloads the player name blacklist.")]
+        [CommandUserLevel(AccountUserLevel.Admin)]
+        [CommandInvokerType(CommandInvokerType.ServerConsole)]
+        public string ReloadPlayerNameBlacklist(string[] @params, NetClient client)
+        {
+            PlayerNameValidator.Instance.Initialize();
+            return string.Empty;
+        }
+
+        [Command("whitelist")]
+        [CommandDescription("Enables or disables account whitelist for logins.")]
+        [CommandParamCount(1)]
+        [CommandUserLevel(AccountUserLevel.Admin)]
+        [CommandInvokerType(CommandInvokerType.ServerConsole)]
+        public string Whitelist(string[] @params, NetClient client)
+        {
+            bool enable;
+
+            if (bool.TryParse(@params[0], out enable) == false)
+            {
+                if (int.TryParse(@params[0], out int value) == false)
+                    return "Invalid parameter. Please use boolean or integer values.";
+
+                enable = value != 0;
+            }
+
+            ServiceMessage.SetWhitelistEnabled message = new(enable);
+            ServerManager.Instance.SendMessageToService(GameServiceType.PlayerManager, message);
+
+            return $"Sent a request to {(enable ? "enable" : "disable")} whitelist.";
+        }
+
+        [Command("shutdown")]
+        [CommandDescription("Shuts the server down.")]
+        [CommandUsage("server shutdown")]
+        [CommandUserLevel(AccountUserLevel.Admin)]
+        public string Shutdown(string[] @params, NetClient client)
+        {
+            string shutdownRequester = client == null ? "the server console" : client.ToString();
+            Logger.Info($"Server shutdown request received from {shutdownRequester}");
+
+            // We need to run shutdown as a separate task in case this command is invoked from the game.
+            // Otherwise, the game thread is going to break, and we are not going to be able to clean up.
+            Task.Run(() => ServerApp.Instance.Shutdown());
+            return string.Empty;
+        }
+
+        [Command("importdb")]
+        [CommandDescription("Imports data from the specified SQLite database file.")]
+        [CommandParamCount(2)]
+        [CommandUserLevel(AccountUserLevel.Admin)]
+        [CommandInvokerType(CommandInvokerType.ServerConsole)]
+        public string ImportDB(string[] @params, NetClient client)
+        {
+            try
+            {
+                string fileName = @params[0];
+                string emailSuffix = @params[1];
+
+                SQLiteImporter importer = new(fileName, emailSuffix);
+                SQLiteImportResult result = importer.Import();
+
+                // force shutdown to make sure guilds are reloaded
+                if (result == SQLiteImportResult.Success)
+                    Shutdown(@params, null);
+                
+                return string.Empty;
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e.ToString());
+                return e.Message;
+            }
+        }
+    }
+}

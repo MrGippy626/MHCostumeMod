@@ -1,0 +1,138 @@
+﻿using System.Collections;
+using Google.ProtocolBuffers;
+using MHServerEmu.Core.Logging;
+using MHServerEmu.Core.Memory;
+using MHServerEmu.Core.Network.Tcp;
+using MHServerEmu.Core.Serialization;
+
+namespace MHServerEmu.Core.Network
+{
+    /// <summary>
+    /// Represents a packet to be sent over a mux connection.
+    /// </summary>
+    public readonly struct MuxPacket : IPacket
+    {
+        // Packets apparently go as high as 2800+ messages based on logs, so we presize pooled lists to 4096 to fit that and extra.
+        private static readonly ConcurrentPool<List<MessagePackageOut>> MessageListPool = new(4096, static () => new(4096));
+
+        private readonly List<MessagePackageOut> _outboundMessageList = null;
+
+        public ushort MuxId { get; }
+        public MuxCommand Command { get; }
+
+        /// <summary>
+        /// Returns <see langword="true"/> if this <see cref="MuxPacket"/> contains <see cref="MessageBuffer"/> instances.
+        /// </summary>
+        public bool IsDataPacket { get => Command == MuxCommand.Data || Command == MuxCommand.ConnectWithData; }
+
+        /// <summary>
+        /// Returns the full serialized size of this <see cref="MuxPacket"/>.
+        /// </summary>
+        public int SerializedSize { get => MuxHeader.Size + CalculateSerializedDataSize(); }
+
+        /// <summary>
+        /// Constructs a <see cref="MuxPacket"/> to be serialized and sent out.
+        /// </summary>
+        public MuxPacket(ushort muxId, MuxCommand command)
+        {
+            MuxId = muxId;
+            Command = command;
+
+            if (IsDataPacket)
+                _outboundMessageList = MessageListPool.Get();
+        }
+
+        public void Dispose()
+        {
+            if (IsDataPacket)
+            {
+                _outboundMessageList.Clear();
+                MessageListPool.Return(_outboundMessageList);
+            }
+        }
+
+        /// <summary>
+        /// Adds a new <see cref="IMessage"/> to this <see cref="MuxPacket"/>.
+        /// </summary>
+        public void AddMessage(IMessage message)
+        {
+            if (!Verify.IsTrue(IsDataPacket)) return;
+
+            MessagePackageOut messagePackage = new(message);
+            _outboundMessageList.Add(messagePackage);
+        }
+
+        /// <summary>
+        /// Adds an <see cref="List{T}"/> collection of <see cref="MessageBuffer"/> instances to this <see cref="MuxPacket"/>.
+        /// </summary>
+        public void AddMessageList(List<IMessage> messageList)
+        {
+            if (!Verify.IsTrue(IsDataPacket)) return;
+
+            foreach (IMessage message in messageList)
+            {
+                MessagePackageOut messagePackage = new(message);
+                _outboundMessageList.Add(messagePackage);
+            }
+        }
+
+        /// <summary>
+        /// Serializes this <see cref="MuxPacket"/> to an existing <see cref="byte"/> buffer.
+        /// </summary>
+        public int Serialize(byte[] buffer)
+        {
+            using (MemoryStream ms = new(buffer))
+                return Serialize(ms);
+        }
+
+        /// <summary>
+        /// Serializes this <see cref="MuxPacket"/> to a <see cref="Stream"/>.
+        /// </summary>
+        public int Serialize(Stream stream)
+        {
+            int dataSize = CalculateSerializedDataSize();
+
+            MuxHeader header = MuxHeader.FromData(MuxId, dataSize, Command);
+            header.WriteTo(stream);
+
+            SerializeData(stream);
+
+            return MuxHeader.Size + dataSize;
+        }
+
+        /// <summary>
+        /// Returns the combined serialized size of all messages in this <see cref="MuxPacket"/>.
+        /// </summary>
+        private int CalculateSerializedDataSize()
+        {
+            int bodySize = 0;
+
+            if (IsDataPacket)
+            {
+                foreach (MessagePackageOut messagePackage in _outboundMessageList)
+                    bodySize += messagePackage.GetSerializedSize();
+            }
+
+            return bodySize;
+        }
+
+        /// <summary>
+        /// Serializes all messages contained in this <see cref="MuxPacket"/> to a <see cref="Stream"/>.
+        /// </summary>
+        private bool SerializeData(Stream stream)
+        {
+            // If this is not a data packet we don't need to write a body
+            if (IsDataPacket == false)
+                return false;
+
+            if (!Verify.IsTrue(_outboundMessageList.Count > 0)) return false;
+
+            using RecyclableCodedOutputStream cos = RecyclableCodedOutputStream.CreateInstance(stream);
+
+            foreach (MessagePackageOut messagePackage in _outboundMessageList)
+                messagePackage.WriteTo(cos);
+
+            return true;
+        }
+    }
+}

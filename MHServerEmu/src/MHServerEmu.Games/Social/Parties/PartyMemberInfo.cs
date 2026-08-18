@@ -1,0 +1,46 @@
+﻿using MHServerEmu.Core.Logging;
+using MHServerEmu.Games.GameData;
+
+namespace MHServerEmu.Games.Social.Parties
+{
+    public class PartyMemberInfo
+    {
+        public ulong PlayerDbId { get; private set; }
+        public string PlayerName { get; private set; }
+        public HashSet<PrototypeId> Boosts { get; } = new();    // the client uses a sorted map here
+        public ulong ConsoleAccountId { get; private set; }
+        public ulong SecondaryConsoleAccountId { get; private set; }
+        public string SecondaryPlayerName { get; private set; }
+
+        public PartyMemberInfo()
+        {
+        }
+
+        public override string ToString()
+        {
+            return $"{PlayerName}, PlayerDbGuid=0x{PlayerDbId:X}";
+        }
+
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+        // V48_FIXME
+        public void SetFromMsg(Gazillion.PartyMemberInfo protobuf)
+        {
+            PlayerDbId = protobuf.PlayerDbId;
+            PlayerName = protobuf.PlayerName;
+            ConsoleAccountId = protobuf.HasConsoleAccountId ? protobuf.ConsoleAccountId : 0;
+            SecondaryConsoleAccountId = protobuf.HasSecondaryConsoleAccountId ? protobuf.SecondaryConsoleAccountId : 0;
+            SecondaryPlayerName = protobuf.HasSecondaryPlayerName ? protobuf.SecondaryPlayerName : string.Empty;
+
+            Boosts.Clear();
+            for (int i = 0; i < protobuf.BoostsCount; i++)
+            {
+                PrototypeId boostRef = GameDatabase.GetDataRefByPrototypeGuid((PrototypeGuid)protobuf.BoostsList[i]);
+                if (!Verify.IsTrue(boostRef != PrototypeId.Invalid))
+                    continue;
+
+                Boosts.Add(boostRef);
+            }
+        }
+#endif
+    }
+}

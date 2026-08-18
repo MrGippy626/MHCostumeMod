@@ -1,0 +1,202 @@
+[
+    {
+        "Enabled": true,
+        "Prototype": "Missions/Prototypes/Story/CH04EastSide/TreasureRooms/CH04TR07Basement.prototype",
+        "Path": "Objectives[0].SuccessConditions.Conditions[0].Region",
+        "Description": "Fix Chest mission Region to CH04TR07Basement",
+        "ValueType": "PrototypeId",
+        "Value": 3901343846271426331
+    },
+    {
+        "Enabled": true,
+        "Prototype": "Missions/Prototypes/Story/CH04EastSide/TreasureRooms/CH04TR07Basement.prototype",
+        "Path": "Objectives[1].SuccessConditions.Conditions[0].TargetFilter.Filters[0].Keyword",
+        "Description": "Fix Chest mission Keyword to Mob",
+        "ValueType": "PrototypeId",
+        "Value": 6870096780498112679
+    },
+    {
+        "Enabled": true,
+        "Prototype": "Missions/Prototypes/PVEEndgame/AgeOfUltron/AgeOfUltronKismetController.prototype",
+        "Path": "Objectives[0].OnSuccessActions[1].DelayInSeconds",
+        "Description": "Fix Delay for AgeOfUltronBossSpawner",
+        "ValueType": "Float",
+        "Value": 12.5
+    },
+    {
+        "Enabled": true,
+        "Prototype": "Missions/Prototypes/Story/CH04EastSide/TreasureRooms/CH04TR05Barber.prototype",
+        "Path": "PopulationSpawns[2].Population.UsePopulationMarker",
+        "Description": "Fix DeadEndChestMarker for CH04TR05Barber",
+        "ValueType": "PrototypeId",
+        "Value": 17169140681234780994
+    },
+    {
+        "Enabled": true,
+        "Prototype": "Entity/Spawners/Mission/TRBonusChestSpawner.prototype",
+        "Path": "SpawnSequence[0].Object.Entity",
+        "Description": "Fix Hidden Chest for TRTavernRegion / LegendaryCH08Doomstadt2",
+        "ValueType": "PrototypeId",
+        "Value": 9710110594970293035
+    },
+    {
+        "Enabled": true,
+        "Prototype": "Resource/Encounters/CH09Norway/OM_ForgottenPyre_Reward.encounter",
+        "Path": "MarkerSet.Markers[1].EncounterSpawnPhase",
+        "Description": "Fix phase for SHIELDAgentForgottenPyreEvent",
+        "ValueType": "Integer",
+        "Value": 0
+    },
+    {
+        "Enabled": true,
+        "Prototype": "Missions/Prototypes/Story/CH09Asgard/Events/MetaGame/MGForgottenPyre/MGForgottenPyre.prototype",
+        "Path": "Objectives[0].Name",
+        "Description": "Fix long name for MGForgottenPyre",
+        "ValueType": "LocaleStringId",
+        "Value": 6053780125440214290
+    },
+    {
+        "Enabled": true,
+        "Prototype": "Regions/EndGame/TierX/PatrolMidtown/ConnectionTargets/ConnectionNodes/XManhattanToHellsKitchenNode.prototype",
+        "Path": "Target",
+        "Description": "Fix Cosmic Midtown elevator",
+        "ValueType": "PrototypeId",
+        "Value": 17615247274427293857
+    },
+    {
+        "Enabled": true,
+        "Prototype": "Entity/Alliances/Overrides/Controlled.prototype",
+        "Path": "HostileTo[]",
+        "Description": "Add [GangBiker, GangShocker, GangHellbane, GangElectro, EnemyToEveryone] to Controlled Keywords",
+        "ValueType": "PrototypeId[]",
+        "Value": [ 3046566727234031236, 11722709847486435174, 1849637429396115378, 3414168095237017445, 4627307232939675976 ]
+    },
+    {
+        "Enabled": true,
+        "Prototype": "Missions/Prototypes/LegendaryQuests/LQStory/LegendaryCH07DinosaurJungle2.prototype",
+        "Path": "Objectives[2].SuccessConditions.Conditions[0].EntityFilter.Filters[0].EntityPrototype",
+        "Description": "Fix Raptor in Egg Hunt Legendary Mission",
+        "ValueType": "PrototypeId",
+        "Value": 16615558941252196555
+    },
+    {
+        "Enabled": true,
+        "Prototype": "Entity/Characters/Mobs/Moloids/MoloidCrawlerBase.prototype",
+        "Path": "StealablePower",
+        "Description": "Add Mole Man Power for Moloid Crawler",
+        "ValueType": "PrototypeId",
+        "Value": 10167535038344338060
+    },
+    {
+        "Enabled": true,
+        "Prototype": "Populations/Clusters/Generic/SelectAct/SelectActGenericVendor.prototype",
+        "Path": "AIOverrides[0]",
+        "Description": "Fix T-Pose Replace AIAmbientHawkingWares to AIAmbientHawkingWaresV04",
+        "ValueType": "PrototypeId",
+        "Value": 13070352796777912918
+    },
+    {
+        "Enabled": true,
+        "Prototype": "Populations/Clusters/Generic/SelectAct/SelectActGenericWorking.prototype",
+        "Path": "AIOverrides[0]",
+        "Description": "Fix T-Pose Replace AIAmbientWorkingOnHigh to AIAmbientUnloadingCratesV02",
+        "ValueType": "PrototypeId",
+        "Value": 3362272330190363532
+    },
+    {
+        "Enabled": true,
+        "Prototype": "Loot/Tables/MysteryChest/RandomFortuneCardTable.prototype",
+        "Path": "PickMethod",
+        "Description": "Fix reward for ICPPhaseMissionDay1-7.",
+        "ValueType": "Enum",
+        "Value": "PickWeightTryAll"
+    },
+    {
+        "Enabled": true,
+        "Prototype": "Missions/Prototypes/Achievements/Challenges/AchievementPunisherMidtownTimed.prototype",
+        "Path": "Objectives[1].Required",
+        "Description": "Fix for AchievementPunisherMidtownTimed",
+        "ValueType": "Boolean",
+        "Value": false
+    },
+    {
+        "Enabled": true,
+        "Prototype": "Missions/Prototypes/Achievements/Challenges/AchievementPunisherMidtownTimed.prototype",
+        "Path": "Objectives[2].Required",
+        "Description": "Fix for AchievementPunisherMidtownTimed",
+        "ValueType": "Boolean",
+        "Value": false
+    },
+    {
+        "Enabled": true,
+        "Prototype": "Missions/Prototypes/BonusMissions/AccountMissions/PvPBreadcrumb.prototype",
+        "Path": "PrereqConditions.Conditions[0].MissionPrototype",
+        "Description": "Fix old CH09Main2BattleForAsgard",
+        "ValueType": "PrototypeId",
+        "Value": 17539112805425617594
+    },
+    {
+        "Enabled": true,
+        "Prototype": "Missions/Prototypes/Act0/CH00Raft/Controllers/RaftNPEQuinjetKismetController.prototype",
+        "Path": "ResetsWithRegion",
+        "Description": "Enable ResetsWithRegion for RaftNPEQuinjetKismetController. This has to be applied with the version increment patch below.",
+        "ValueType": "PrototypeId",
+        "Value": 11602117409128454445
+    },
+    {
+        "Enabled": true,
+        "Prototype": "Missions/Prototypes/Act0/CH00Raft/Controllers/RaftNPEQuinjetKismetController.prototype",
+        "Path": "Version",
+        "Description": "Increment version for RaftNPEQuinjetKismetController to be able to save ResetsWithRegionId.",
+        "ValueType": "Integer",
+        "Value": 2
+    },
+    {
+        "Enabled": true,
+        "Prototype": "Entity/Items/Consumables/Prototypes/GShop/SHIELDSupplyBoost/ComboBar1HComboEnablerPower.prototype",
+        "Path": "CooldownTimeMS",
+        "Description": "Add cooldown to Combination Boost",
+        "ValueType": "Prototype",
+        "Value": {
+            "ParentDataRef": 5074715296837012907,
+            "Value": 1500,
+			"Op": "LoadFloat"
+        }
+    },
+	{
+        "Enabled": true,
+        "Prototype": "Entity/Items/Consumables/Prototypes/GShop/SHIELDSupplyBoost/CurrencyBoostComboEnablerPower.prototype",
+        "Path": "CooldownTimeMS",
+        "Description": "Add cooldown to Currency Boost",
+        "ValueType": "Prototype",
+        "Value": {
+            "ParentDataRef": 5074715296837012907,
+            "Value": 1500,
+			"Op": "LoadFloat"
+        }
+    },
+	{
+        "Enabled": true,
+        "Prototype": "Entity/Items/Consumables/Prototypes/GShop/ZZZDeprecated/DeprecatedConsumables/SpecialItemFind/Powers/XPBoostComboEnablerPower.prototype",
+        "Path": "CooldownTimeMS",
+        "Description": "Add cooldown to Experience Boost",
+        "ValueType": "Prototype",
+        "Value": {
+            "ParentDataRef": 5074715296837012907,
+            "Value": 1500,
+			"Op": "LoadFloat"
+        }
+    },
+	{
+        "Enabled": true,
+        "Prototype": "Entity/Items/Consumables/Prototypes/GShop/SHIELDSupplyBoost/SHIELDSupplyBoostComboEnablerPower.prototype",
+        "Path": "CooldownTimeMS",
+        "Description": "Add cooldown to S.H.I.E.L.D. Supply Boost",
+        "ValueType": "Prototype",
+        "Value": {
+            "ParentDataRef": 5074715296837012907,
+            "Value": 1500,
+			"Op": "LoadFloat"
+        }
+    }
+]

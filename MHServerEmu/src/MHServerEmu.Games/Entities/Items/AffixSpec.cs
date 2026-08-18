@@ -1,0 +1,443 @@
+﻿using Gazillion;
+using MHServerEmu.Core.Collections;
+using MHServerEmu.Core.Extensions;
+using MHServerEmu.Core.Logging;
+using MHServerEmu.Core.Memory;
+using MHServerEmu.Core.Serialization;
+using MHServerEmu.Core.System.Random;
+using MHServerEmu.Games.Common;
+using MHServerEmu.Games.GameData;
+using MHServerEmu.Games.GameData.Calligraphy;
+using MHServerEmu.Games.GameData.Prototypes;
+using MHServerEmu.Games.Loot;
+using MHServerEmu.Games.Powers;
+using MHServerEmu.Games.Properties.Evals;
+
+namespace MHServerEmu.Games.Entities.Items
+{
+    public class AffixSpec : ISerialize
+    {
+        private PrototypeId _scopeProtoRef;
+        private int _seed;
+
+        public AffixPrototype AffixProto { get; set; }
+        public PrototypeId ScopeProtoRef { get => _scopeProtoRef; set => _scopeProtoRef = value; }
+        public int Seed { get => _seed; set => _seed = value; }
+
+        public bool IsValid { get => AffixProto != null && _seed != 0; }
+
+        public AffixSpec() { }
+
+        public AffixSpec(AffixPrototype affixProto, PrototypeId scopeProtoRef, int seed)
+        {
+            AffixProto = affixProto;
+            _scopeProtoRef = scopeProtoRef;
+            _seed = seed;
+        }
+
+        public AffixSpec(AffixSpec other)
+        {
+            AffixProto = other.AffixProto;
+            _scopeProtoRef = other._scopeProtoRef;
+            _seed = other._seed;
+        }
+
+        public AffixSpec(NetStructAffixSpec protobuf)
+        {
+            AffixProto = GameDatabase.GetPrototype<AffixPrototype>((PrototypeId)protobuf.AffixProtoRef);
+            _scopeProtoRef = (PrototypeId)protobuf.ScopeProtoRef;
+            _seed = protobuf.Seed;
+        }
+
+        public bool Serialize(Archive archive)
+        {
+            bool success = true;
+
+            PrototypeId affixProtoRef = AffixProto != null ? AffixProto.DataRef : PrototypeId.Invalid;
+            success &= Serializer.Transfer(archive, ref affixProtoRef);
+
+            if (archive.IsUnpacking)
+                AffixProto = affixProtoRef.As<AffixPrototype>();
+
+            success &= Serializer.Transfer(archive, ref _scopeProtoRef);
+            success &= Serializer.Transfer(archive, ref _seed);
+            return success;
+        }
+
+        public NetStructAffixSpec ToProtobuf()
+        {
+            return NetStructAffixSpec.CreateBuilder()
+                .SetAffixProtoRef((ulong)AffixProto.DataRef)
+                .SetScopeProtoRef((ulong)_scopeProtoRef)
+                .SetSeed(_seed)
+                .Build();
+        }
+
+        public override string ToString()
+        {
+            return $"AffixSpec [{AffixProto}] scope=[{_scopeProtoRef.GetName()}] seed=[{_seed}]";
+        }
+
+        /// <summary>
+        /// Rolls this <see cref="AffixSpec"/> using the provided data.
+        /// </summary>
+        public MutationResults RollAffix(GRandom random, PrototypeId rollFor, ItemSpec itemSpec,
+            Picker<AffixPrototype> affixPicker, HashSet<ScopedAffixRef> affixSet)
+        {
+            AffixPrototype prevAffixProto = AffixProto;
+            PrototypeId prevScopeProtoRef = _scopeProtoRef;
+
+            MutationResults result = MutationResults.None;
+
+            while (affixPicker.PickRemove(out AffixPrototype pickedAffixProto))
+            {
+                if (!Verify.IsNotNull(pickedAffixProto))
+                    continue;
+
+                AffixProto = pickedAffixProto;
+                result |= SetScope(random, rollFor, itemSpec, affixSet, BehaviorOnPowerMatch.Ignore);
+
+                if (result.HasFlag(MutationResults.Error) == false)
+                {
+                    // Skip duplicate affixes
+                    if (affixSet.Contains(new(AffixProto.DataRef, _scopeProtoRef)))
+                        continue;
+
+                    // Roll seed for this affix
+                    _seed = random.Next(1, int.MaxValue);
+
+                    // Remember this affix / scope combo so we don't get it again
+                    affixSet.Add(new(AffixProto.DataRef, _scopeProtoRef));
+
+                    // Re-add affix to the pool if needed
+                    if (pickedAffixProto.DuplicateHandlingBehavior == DuplicateHandlingBehavior.Append)
+                        affixPicker.Add(pickedAffixProto, pickedAffixProto.Weight);
+
+                    result |= MutationResults.AffixChange;
+                    break;
+                }
+                else
+                {
+                    // Clean up if failed to set scope
+                    AffixProto = prevAffixProto;
+                    ScopeProtoRef = prevScopeProtoRef;
+                }
+            }
+
+            // Final validation
+            if (IsValid == false)
+                result |= MutationResults.Error;
+
+            return result;
+        }
+
+        /// <summary>
+        /// Assigns a scope parameter for this <see cref="AffixSpec"/> if needed.
+        /// </summary>
+        public MutationResults SetScope(GRandom random, PrototypeId rollFor, ItemSpec itemSpec,
+            HashSet<ScopedAffixRef> affixSet, BehaviorOnPowerMatch behaviorOnPowerMatch)
+        {
+            if (!Verify.IsNotNull(AffixProto)) return MutationResults.Error;
+
+            if (AffixProto is AffixPowerModifierPrototype powerAffixProto)
+            {
+                if (powerAffixProto.IsForSinglePowerOnly)
+                    return SetAffixScopePower(random, rollFor, itemSpec, affixSet, behaviorOnPowerMatch);
+
+                return SetAffixPowerForPowerGroupBonus(powerAffixProto, rollFor, affixSet);
+            }
+            else if (AffixProto is AffixRegionModifierPrototype regionAffixProto)
+            {
+                return SetAffixScopeRegionAffix(random, itemSpec, affixSet);
+            }
+
+            return MutationResults.None;
+        }
+
+        /// <summary>
+        /// Assigns a scope parameter for affixes that affects a single power (e.g. +x rank for power).
+        /// </summary>
+        private MutationResults SetAffixScopePower(GRandom random, PrototypeId rollFor, ItemSpec itemSpec,
+            HashSet<ScopedAffixRef> affixSet, BehaviorOnPowerMatch behaviorOnPowerMatch)
+        {
+            if (!Verify.IsNotNull(AffixProto)) return MutationResults.Error;
+
+            AffixPowerModifierPrototype powerAffixProto = AffixProto as AffixPowerModifierPrototype;
+            if (!Verify.IsNotNull(powerAffixProto)) return MutationResults.Error;
+            if (!Verify.IsTrue(powerAffixProto.IsForSinglePowerOnly)) return MutationResults.Error;
+
+            AvatarPrototype avatarProto = rollFor.As<AvatarPrototype>();
+            if (!Verify.IsNotNull(avatarProto)) return MutationResults.Error;
+
+            // Run evals
+            using var evalContextHandle = EvalContextDataPool.Get(out EvalContextData evalContext);
+            evalContext.SetVar_Int(EvalContext.Var1, itemSpec.ItemLevel);
+
+            int powerUnlockLevelMin = Eval.RunInt(powerAffixProto.PowerUnlockLevelMin, evalContext);
+            int powerUnlockLevelMax = Eval.RunInt(powerAffixProto.PowerUnlockLevelMax, evalContext);
+            powerUnlockLevelMax = Math.Max(powerUnlockLevelMin, powerUnlockLevelMax);
+
+            using var powerProgEntriesHandle = ListPool<PowerProgressionEntryPrototype>.Get(out List<PowerProgressionEntryPrototype> powerProgEntries);
+            if (avatarProto.GetPowersUnlockedAtLevel(powerProgEntries, powerUnlockLevelMax, true) == false)
+                return MutationResults.Error | MutationResults.ErrorReasonAffixScopePower;
+
+            // Build scope picker
+            Picker<PrototypeId> scopePicker = new(random);
+
+            foreach (PowerProgressionEntryPrototype entryProto in powerProgEntries)
+            {
+                if (!Verify.IsNotNull(entryProto.PowerAssignment))
+                    continue;
+
+                if (!Verify.IsTrue(entryProto.PowerAssignment.Ability != PrototypeId.Invalid))
+                    continue;
+
+                PowerPrototype powerProto = entryProto.PowerAssignment.Ability.As<PowerPrototype>();
+                if (!Verify.IsNotNull(powerProto))
+                    continue;
+
+                // Skip irrelevant entries
+                if (Power.IsUltimatePower(powerProto))
+                    continue;
+
+                if (Power.IsTalentPower(powerProto))
+                    continue;
+
+                if (Power.IsTravelPower(powerProto))
+                    continue;
+
+#if GAME_VERSION_1_52
+                if (entryProto.IsTrait)
+                    continue;
+#elif GAME_VERSION_1_53
+                if (entryProto.TraitCategory != TraitCategory.None)
+                    continue;
+#endif
+
+                if (affixSet.Contains(new(powerAffixProto.DataRef, powerProto.DataRef)))
+                    continue;
+
+                if (powerAffixProto.PowerKeywordFilter != null && powerProto.HasKeyword(powerAffixProto.PowerKeywordFilter) == false)
+                    continue;
+
+                if (entryProto.Antirequisites.HasValue())
+                {
+                    if (powerAffixProto.PowerGrantRankMax != null)
+                    {
+                        EvalPrototype eval = powerAffixProto.PowerGrantRankMax;
+                        LoadFloatPrototype loadFloatEval = eval as LoadFloatPrototype;
+                        LoadIntPrototype loadIntEval = eval as LoadIntPrototype;
+
+                        if ((loadFloatEval == null && loadIntEval == null) ||
+                            (loadFloatEval != null && loadFloatEval.Value > 0f) ||
+                            (loadIntEval != null && loadIntEval.Value > 0))
+                        {
+                            continue;
+                        }
+                    }
+                }
+
+                Curve maxRankCurve = entryProto.MaxRankForPowerAtCharacterLevel.AsCurve();
+                if (!Verify.IsNotNull(maxRankCurve))
+                    continue;
+
+                if (maxRankCurve.GetIntAt(maxRankCurve.MaxPosition) <= 1)
+                    continue;
+
+                if (powerProto.DataRef == _scopeProtoRef)
+                {
+                    if (behaviorOnPowerMatch == BehaviorOnPowerMatch.Cancel)
+                        return MutationResults.None;
+                    
+                    if (behaviorOnPowerMatch == BehaviorOnPowerMatch.Skip)
+                        continue;
+                }
+
+                scopePicker.Add(powerProto.DataRef, 1);
+            }
+
+            // Pick affix scope
+            PrototypeId scopeProtoRefBefore = _scopeProtoRef;
+            if (scopePicker.Empty() || scopePicker.Pick(out _scopeProtoRef) == false)
+                return MutationResults.Error | MutationResults.ErrorReasonAffixScopePower;
+
+            if (_scopeProtoRef == scopeProtoRefBefore)
+                return MutationResults.None;
+
+            return MutationResults.Changed;
+        }
+
+        /// <summary>
+        /// Assigns a scope parameter for affixes that affect a power group (e.g. +x rank for area / tab1 powers).
+        /// </summary>
+        private MutationResults SetAffixPowerForPowerGroupBonus(AffixPowerModifierPrototype powerAffixProto,
+            PrototypeId rollFor, HashSet<ScopedAffixRef> affixSet)
+        {
+            if (!Verify.IsTrue(powerAffixProto.IsForSinglePowerOnly == false)) return MutationResults.Error;
+
+            if (powerAffixProto.PowerKeywordFilter != null)
+            {
+                // Keyword scope (applies to powers that match the keyword filter)
+
+                // These affixes don't use scope param, so we check for invalid scope
+                if (affixSet.Contains(new(powerAffixProto.DataRef, PrototypeId.Invalid)))
+                    return MutationResults.Error | MutationResults.ErrorReasonAffixScopePowerGroup;
+
+                if (_scopeProtoRef != PrototypeId.Invalid)
+                {
+                    _scopeProtoRef = PrototypeId.Invalid;
+                    return MutationResults.Changed;
+                }
+            }
+            else if (powerAffixProto.PowerProgTableTabRef != PrototypeId.Invalid)
+            {
+                // Power tab scope (applies to powers in the specified power tab)
+                if (!Verify.IsTrue(rollFor != PrototypeId.Invalid, $"Trying to SetAffixPower() for a power mod affix that grants a bonus to power progression table page, but there is not rollFor avatar!\n[{powerAffixProto}]"))
+                    return MutationResults.Error;
+
+                AvatarPrototype avatarProto = rollFor.As<AvatarPrototype>();
+                if (!Verify.IsNotNull(avatarProto)) return MutationResults.Error;
+
+                PowerProgTableTabRefPrototype powerProgTableTabRefProto = powerAffixProto.PowerProgTableTabRef.As<PowerProgTableTabRefPrototype>();
+                if (!Verify.IsNotNull(powerProgTableTabRefProto)) return MutationResults.Error;
+
+                PowerProgressionTablePrototype powerProgTableProto = avatarProto.GetPowerProgressionTableAtIndex(powerProgTableTabRefProto.PowerProgTableTabIndex);
+                if (avatarProto.ApprovedForUse())   // Fail loudly or silently depending on avatar approval state
+                {
+                    if (!Verify.IsNotNull(powerProgTableProto, $"Trying to SetAffixPower() for a power mod affix that grants a bonus to power progression table page for a shipping avatar, but the avatar does not have a power progression table at the specified index!\nAvatar: [{avatarProto}]\nAffix: [{powerAffixProto}]\nIndex: [{powerProgTableTabRefProto.PowerProgTableTabIndex}]"))
+                        return MutationResults.Error;
+                }
+                else
+                {
+                    if (powerProgTableProto == null)
+                        return MutationResults.Error | MutationResults.ErrorReasonAffixScopePowerGroup;
+                }
+
+                // NOTE: The client checks for invalid scope rather than rollFor, which may be a bug
+                if (affixSet.Contains(new(powerAffixProto.DataRef, PrototypeId.Invalid)))
+                    return MutationResults.Error | MutationResults.ErrorReasonAffixScopePowerGroup;
+
+                if (_scopeProtoRef != rollFor)
+                {
+                    _scopeProtoRef = rollFor;
+                    return MutationResults.Changed;
+                }
+            }
+            else
+            {
+                // Global scope (applies to all powers)
+                if (_scopeProtoRef != PrototypeId.Invalid)
+                {
+                    _scopeProtoRef = PrototypeId.Invalid;
+                    return MutationResults.Changed;
+                }
+            }
+
+            return MutationResults.None;
+        }
+
+        /// <summary>
+        /// Assigns a scope parameter for region affixes (e.g. affixes on Danger Room scenarios).
+        /// </summary>
+        private MutationResults SetAffixScopeRegionAffix(GRandom random, ItemSpec itemSpec, HashSet<ScopedAffixRef> affixSet)
+        {
+            using var regionAffixCategoryPicksHandle = DictionaryPool<RegionAffixCategoryPrototype, int>.Get(
+                out Dictionary<RegionAffixCategoryPrototype, int> regionAffixCategoryPicks);
+            
+            foreach (PrototypeId regionAffixCategoryProtoRef in DataDirectory.Instance.IteratePrototypesInHierarchy<RegionAffixCategoryPrototype>(PrototypeIterateFlags.NoAbstractApprovedOnly))
+            {
+                RegionAffixCategoryPrototype regionAffixCategoryProto = regionAffixCategoryProtoRef.As<RegionAffixCategoryPrototype>();
+                regionAffixCategoryPicks.Add(regionAffixCategoryProto, 0);
+            }
+
+            // Filter out scopes that are already in use or mutually exclusive with existing ones
+            using var scopeFilterHandle = HashSetPool<PrototypeId>.Get(out HashSet<PrototypeId> scopeFilter);
+            foreach (ScopedAffixRef scopedAffixRef in affixSet)
+            {
+                if (AffixProto.DataRef != scopedAffixRef.AffixProtoRef)
+                    continue;
+
+                scopeFilter.Add(scopedAffixRef.ScopeProtoRef);
+
+                RegionAffixPrototype regionAffixProto = scopedAffixRef.ScopeProtoRef.As<RegionAffixPrototype>();
+                if (!Verify.IsNotNull(regionAffixProto))
+                    continue;
+
+                if (regionAffixProto.RestrictsAffixes.HasValue())
+                {
+                    foreach (PrototypeId restrictedAffixRef in regionAffixProto.RestrictsAffixes)
+                        scopeFilter.Add(restrictedAffixRef);
+                }
+
+                if (Verify.IsNotNull(regionAffixProto.Category))
+                    regionAffixCategoryPicks[regionAffixProto.Category]++;
+            }
+
+            // Pick categories to use
+            using var essentialCategoriesHandle = ListPool<RegionAffixCategoryPrototype>.Get(out List<RegionAffixCategoryPrototype> essentialCategories);
+            using var extraCategoriesHandle = ListPool<RegionAffixCategoryPrototype>.Get(out List<RegionAffixCategoryPrototype> extraCategories);
+
+            foreach (var kvp in regionAffixCategoryPicks)
+            {
+                RegionAffixCategoryPrototype categoryProto = kvp.Key;
+                int numPicks = kvp.Value;
+
+                if (numPicks < categoryProto.MinPicks)
+                    essentialCategories.Add(categoryProto);
+                else if (numPicks < categoryProto.MaxPicks || categoryProto.MaxPicks == 0)
+                    extraCategories.Add(categoryProto);
+            }
+
+            // Prioritize essential categories
+            List<RegionAffixCategoryPrototype> pickCategories = essentialCategories.Count != 0
+                ? essentialCategories
+                : extraCategories;
+
+            // Validation
+            if (!Verify.IsNotNull(AffixProto)) return MutationResults.Error;
+
+            AffixRegionModifierPrototype affixRegionModifierProto = AffixProto as AffixRegionModifierPrototype;
+            if (!Verify.IsNotNull(affixRegionModifierProto)) return MutationResults.Error;
+            if (!Verify.IsTrue(affixRegionModifierProto.AffixTable != PrototypeId.Invalid)) return MutationResults.Error;
+
+            RegionAffixTablePrototype regionAffixTableProto = affixRegionModifierProto.AffixTable.As<RegionAffixTablePrototype>();
+            if (!Verify.IsNotNull(regionAffixTableProto)) return MutationResults.Error;
+            if (!Verify.IsTrue(regionAffixTableProto.RegionAffixes.HasValue())) return MutationResults.Error;
+
+            // Build affix scope picker
+            Picker<PrototypeId> scopePicker = new(random);
+
+            foreach (RegionAffixWeightedEntryPrototype entryProto in regionAffixTableProto.RegionAffixes)
+            {
+                if (!Verify.IsTrue(entryProto.Affix != PrototypeId.Invalid))
+                    continue;
+
+                if (!Verify.IsTrue(entryProto.Weight != 0))
+                    continue;
+
+                if (scopeFilter.Contains(entryProto.Affix))
+                    continue;
+
+                var regionAffixProto = entryProto.Affix.As<RegionAffixPrototype>();
+
+                if (pickCategories.Contains(regionAffixProto.Category) == false)
+                    continue;
+
+                if (regionAffixProto.AffixRarityRestrictions != null && regionAffixProto.AffixRarityRestrictions.Contains(itemSpec.RarityProtoRef))
+                    continue;
+
+                scopePicker.Add(entryProto.Affix, entryProto.Weight);
+            }
+
+            // Pick affix scope
+            PrototypeId scopeProtoRefBefore = _scopeProtoRef;
+            if (scopePicker.Empty() || scopePicker.Pick(out _scopeProtoRef) == false)
+                return MutationResults.Error;
+
+            if (_scopeProtoRef == scopeProtoRefBefore)
+                return MutationResults.None;
+
+            return MutationResults.Changed;
+        }
+    }
+}

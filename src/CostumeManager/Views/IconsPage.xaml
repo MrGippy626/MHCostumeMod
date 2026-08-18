@@ -1,0 +1,107 @@
+﻿<Page
+    x:Class="CostumeManager.Views.IconsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid Margin="24,20,24,24" RowDefinitions="Auto,Auto,*">
+
+        <TextBlock Grid.Row="0" TextWrapping="Wrap" Margin="0,0,0,10"
+                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                   Text="Any image works (PNG/JPG/DDS) — it is scaled and compressed to match the game's own icon for that slot. Leave a role empty to keep the donor's icon." />
+
+        <Border Grid.Row="1" Margin="0,0,0,12" Padding="14" CornerRadius="6"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderThickness="1"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}">
+            <StackPanel>
+                <TextBlock Text="Update an installed costume" FontSize="13" FontWeight="SemiBold" />
+                <TextBlock Margin="0,4,0,10" TextWrapping="Wrap" FontSize="12"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                           Text="Rebuilds only the icon package and its JSON entries. The costume UPK, TFC aliases and ledger are untouched — no reinstall needed." />
+
+                <TextBox x:Name="TxtIconSearch" Margin="0,0,0,8"
+                         PlaceholderText="Search by hero or name…"
+                         TextChanged="IconSearch_Changed"
+                         ToolTipService.ToolTip="Filter by hero, donor costume or in-game name." />
+
+                <ListView x:Name="ListUpdateTargets" MaxHeight="188" SelectionMode="Single"
+                          SelectionChanged="UpdateTarget_Changed"
+                          BorderThickness="1" CornerRadius="4"
+                          BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}">
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <Grid ColumnDefinitions="Auto,*" Padding="0,4">
+                                <Border Grid.Column="0" Width="34" Height="34" Margin="0,0,10,0"
+                                        CornerRadius="4" Background="#0A0B0D">
+                                    <Image Source="{Binding Thumb}" Stretch="Uniform" Margin="2" />
+                                </Border>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding DisplayName}" FontSize="13" />
+                                    <TextBlock Text="{Binding SubLabel}" FontSize="11"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                </StackPanel>
+                            </Grid>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+
+                <TextBlock x:Name="TxtNoTargets" Margin="2,8,0,0" FontSize="12"
+                           TextWrapping="Wrap" Visibility="Collapsed"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+
+                <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                    <Button x:Name="BtnRefreshUpdateTargets" Content="Refresh"
+                            Click="RefreshUpdateTargets_Click" />
+                    <Button x:Name="BtnUpdateIcons" Margin="8,0,0,0" Content="Update icons"
+                            Style="{StaticResource AccentButtonStyle}"
+                            Click="UpdateIcons_Click" />
+                </StackPanel>
+                <TextBlock x:Name="TxtIconUpdateBlocked" Margin="0,10,0,0" FontSize="12"
+                           TextWrapping="Wrap" Visibility="Collapsed"
+                           Foreground="{StaticResource WarnInk}"
+                           Text="A UPK is selected on the Install tab, so you are picking art for the costume you are about to INSTALL — press Install there to apply it. Clear the UPK to re-skin an already-installed costume instead." />
+            </StackPanel>
+        </Border>
+
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+            <ItemsControl x:Name="IconRoleList">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Margin="0,0,0,12" Padding="14" CornerRadius="6"
+                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                BorderThickness="1"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+
+                                <Border Grid.Column="0" Width="120" Height="120" Margin="0,0,16,0"
+                                        CornerRadius="8" Background="#0A0B0D">
+                                    <Image Source="{Binding Image}" Stretch="Uniform" Margin="10" />
+                                </Border>
+
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding RoleName}" FontSize="14" FontWeight="SemiBold" />
+                                    <TextBlock Text="{Binding Surfaces}" FontSize="12" Margin="0,3,0,0"
+                                               TextWrapping="Wrap"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                    <TextBlock Text="{Binding FileName}" FontFamily="Consolas" FontSize="11"
+                                               Margin="0,8,0,0" TextTrimming="CharacterEllipsis"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                    <TextBlock Text="{Binding Detail}" FontSize="12" Margin="0,4,0,0"
+                                               TextWrapping="Wrap"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                                    <Button Content="Browse…" Width="92" Tag="{Binding Role}"
+                                            Click="BrowseIcon_Click" />
+                                    <Button Content="Clear" Width="92" Margin="0,8,0,0" Tag="{Binding Role}"
+                                            Click="ClearIcon_Click" />
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </Grid>
+</Page>

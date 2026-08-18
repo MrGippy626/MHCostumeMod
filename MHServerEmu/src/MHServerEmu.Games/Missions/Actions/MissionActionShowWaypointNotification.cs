@@ -1,0 +1,28 @@
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+using MHServerEmu.Core.Memory;
+using MHServerEmu.Games.Entities;
+using MHServerEmu.Games.GameData.Prototypes;
+
+namespace MHServerEmu.Games.Missions.Actions
+{
+    public class MissionActionShowWaypointNotification : MissionAction
+    {
+        private MissionActionShowWaypointNotificationPrototype _proto;
+        public MissionActionShowWaypointNotification(IMissionActionOwner owner, MissionActionPrototype prototype) : base(owner, prototype)
+        {
+            // DailyBugleBreadcrumb
+            _proto = prototype as MissionActionShowWaypointNotificationPrototype;
+        }
+
+        public override void Run()
+        {
+            using var playersHandle = ListPool<Player>.Get(out List<Player> players);
+            if (GetDistributors(_proto.SendTo, players))
+            {
+                foreach (Player player in players)
+                    player.SendWaypointNotification(_proto.Waypoint);
+            }
+        }
+    }
+}
+#endif

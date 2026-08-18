@@ -1,0 +1,116 @@
+﻿<Page
+    x:Class="CostumeManager.Views.RepairPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ScrollViewer Padding="24">
+        <StackPanel Spacing="14" MaxWidth="1000" HorizontalAlignment="Left">
+
+            <StackPanel Spacing="2">
+                <TextBlock Text="Repair" Style="{StaticResource SubtitleTextBlockStyle}" />
+                <TextBlock TextWrapping="Wrap"
+                           Style="{StaticResource CaptionTextBlockStyle}"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                           Text="Recover the two files an install writes. Everything here backs up before it changes anything, and the manifest repair only ever ADDS rows." />
+            </StackPanel>
+
+            <Border Padding="16" CornerRadius="6" BorderThickness="1"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="TEXTURE MANIFEST" Style="{StaticResource SectionHeader}" />
+                    <TextBlock TextWrapping="Wrap" Style="{StaticResource CaptionTextBlockStyle}"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               Text="TextureFileCacheManifest.bin is stock game data that every install rewrites. If stock rows go missing the client dies while streaming textures — a silent close about a second after the login screen, with nothing in any log. This compares it against the pristine backup taken before your first install." />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button x:Name="BtnManifestCheck" Content="Check manifest" Click="ManifestCheck_Click" />
+                        <Button x:Name="BtnManifestRepair" Content="Restore missing rows" IsEnabled="False"
+                                Style="{StaticResource AccentButtonStyle}" Click="ManifestRepair_Click" />
+                    </StackPanel>
+                    <TextBlock x:Name="TxtManifestResult" TextWrapping="Wrap"
+                               Style="{StaticResource CaptionTextBlockStyle}"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               Text="Not checked yet." />
+                    <ItemsControl x:Name="ManifestProblems">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding}" TextWrapping="Wrap" Margin="0,2,0,0"
+                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                           Foreground="{StaticResource WarnInk}" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <Border Padding="16" CornerRadius="6" BorderThickness="1"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="LOAD CHAINS" Style="{StaticResource SectionHeader}" />
+                    <TextBlock TextWrapping="Wrap" Style="{StaticResource CaptionTextBlockStyle}"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               Text="A costume built on top of ANOTHER costume's class needs that costume's package loaded first, or equipping it kills the client with an Array.h:575 assert. This re-scans every installed UPK's imports and rewrites its chain. Costumes installed before this check existed are the ones that need it." />
+                    <Button x:Name="BtnRebuildChains" Content="Rebuild load chains"
+                            HorizontalAlignment="Left" Click="RebuildChains_Click" />
+                    <TextBlock x:Name="TxtChainResult" TextWrapping="Wrap"
+                               Style="{StaticResource CaptionTextBlockStyle}"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               Text="Not checked yet." />
+                </StackPanel>
+            </Border>
+
+            <Border Padding="16" CornerRadius="6" BorderThickness="1"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="ORPHANED IMPORTS (WHITE MESH)" Style="{StaticResource SectionHeader}" />
+                    <TextBlock TextWrapping="Wrap" Style="{StaticResource CaptionTextBlockStyle}"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               Text="Some mods don't carry every texture — they import a few from a stock package. If the rename changed a name one of those imports depends on, it resolves to nothing and that material renders WHITE, with no error anywhere. A flagged costume is not necessarily broken: an import the mesh never samples is harmless, so check the model in game." />
+                    <Button x:Name="BtnAuditImports" Content="Check costume imports"
+                            HorizontalAlignment="Left" Click="AuditImports_Click" />
+                    <TextBlock x:Name="TxtAuditResult" TextWrapping="Wrap"
+                               Style="{StaticResource CaptionTextBlockStyle}"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               Text="Not checked yet." />
+                </StackPanel>
+            </Border>
+
+            <Border Padding="16" CornerRadius="6" BorderThickness="1"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="COSTUME CONFIG" Style="{StaticResource SectionHeader}" />
+                    <TextBlock TextWrapping="Wrap" Style="{StaticResource CaptionTextBlockStyle}"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               Text="Rebuild CustomCostumes.mhc from a backup, the plain JSON, or the readable snapshot kept next to this program. Each candidate is opened and its costume count shown, so you can pick on content rather than filename." />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+
+                        <ComboBox x:Name="CmbRestoreSource" Width="430" />
+                        <Button x:Name="BtnScanRestore"  Content="Scan"    Click="ScanRestore_Click" />
+                        <Button x:Name="BtnRestoreConfig" Content="Restore" IsEnabled="False"
+                                Style="{StaticResource AccentButtonStyle}" Click="RestoreConfig_Click" />
+                    </StackPanel>
+                    <TextBlock x:Name="TxtRestoreResult" TextWrapping="Wrap"
+                               Style="{StaticResource CaptionTextBlockStyle}"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               Text="Press Scan to find candidates." />
+                </StackPanel>
+            </Border>
+
+            <Border Padding="16" CornerRadius="6" BorderThickness="1"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="VERIFY EVERY INSTALL" Style="{StaticResource SectionHeader}" />
+                    <TextBlock TextWrapping="Wrap" Style="{StaticResource CaptionTextBlockStyle}"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               Text="Checks each installed costume's UPK, config entry and manifest rows are all still present and consistent." />
+                    <Button x:Name="BtnVerifyAll" Content="Verify all"
+                            HorizontalAlignment="Left" Click="VerifyAll_Click" />
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

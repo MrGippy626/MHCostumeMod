@@ -1,0 +1,52 @@
+﻿<Page
+    x:Class="CostumeManager.Views.HomePage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,*" Padding="24" RowSpacing="12">
+
+        <StackPanel Grid.Row="0">
+            <TextBlock Text="Marvel Heroes Costume Manager" FontSize="20" FontWeight="SemiBold" />
+            <TextBlock Margin="0,4,0,0" TextWrapping="Wrap"
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                       Text="Installs custom costumes, icons and skill effects that coexist with the stock ones — no game file is ever overwritten." />
+        </StackPanel>
+
+        <Border Grid.Row="1" Padding="14" CornerRadius="6"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderThickness="1" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}">
+            <StackPanel Spacing="6">
+                <TextBlock x:Name="TxtGameDir" FontFamily="Consolas" FontSize="12" TextWrapping="Wrap" />
+                <TextBlock x:Name="TxtServerDir" FontFamily="Consolas" FontSize="12" TextWrapping="Wrap" />
+                <TextBlock x:Name="TxtConfig" FontFamily="Consolas" FontSize="12" TextWrapping="Wrap"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            </StackPanel>
+        </Border>
+
+        <InfoBar Grid.Row="2" x:Name="BarLedger" IsOpen="False" IsClosable="False"
+                 Severity="Informational" Title="Install ledger" />
+
+        <InfoBar Grid.Row="3" x:Name="BarPacks" IsOpen="False" IsClosable="False"
+                 Severity="Informational" Title="FX packs" />
+
+        <ScrollViewer Grid.Row="4">
+            <StackPanel Spacing="8">
+                <TextBlock x:Name="TxtListHeader" Text="Installed costumes"
+                           Style="{StaticResource BodyStrongTextBlockStyle}" />
+                <ItemsControl x:Name="ListCostumes">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Padding="10,7" Margin="0,0,0,4" CornerRadius="4"
+                                    BorderThickness="1"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+
+                                <TextBlock Text="{Binding}" Style="{StaticResource BodyTextBlockStyle}" />
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Page>

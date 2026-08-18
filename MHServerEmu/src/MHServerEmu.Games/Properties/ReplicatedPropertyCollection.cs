@@ -1,0 +1,184 @@
+﻿using Gazillion;
+using MHServerEmu.Core.Extensions;
+using MHServerEmu.Core.Logging;
+using MHServerEmu.Core.Memory;
+using MHServerEmu.Core.Serialization;
+using MHServerEmu.Games.Common;
+using MHServerEmu.Games.Entities;
+using MHServerEmu.Games.GameData;
+using MHServerEmu.Games.GameData.Prototypes;
+using MHServerEmu.Games.Network;
+
+namespace MHServerEmu.Games.Properties
+{
+    public class ReplicatedPropertyCollection : PropertyCollection, IArchiveMessageHandler
+    {
+        private IArchiveMessageDispatcher _messageDispatcher = null;
+        private AOINetworkPolicyValues _interestPolicies;
+        private ulong _replicationId = IArchiveMessageDispatcher.InvalidReplicationId;
+        private static readonly Logger Logger = LogManager.CreateLogger();
+        public ulong ReplicationId { get => _replicationId; }
+        public bool IsBound { get => _replicationId != IArchiveMessageDispatcher.InvalidReplicationId && _messageDispatcher != null; }
+
+        public ReplicatedPropertyCollection() { }
+
+        public override string ToString()
+        {
+            return $"{nameof(_replicationId)}: {_replicationId}\n{base.ToString()}";
+        }
+
+        public void Bind(IArchiveMessageDispatcher messageDispatcher, AOINetworkPolicyValues interestPolicies)
+        {
+            if (!Verify.IsNotNull(messageDispatcher)) return;
+
+            if (IsBound)
+            {
+                Verify.IsTrue(_messageDispatcher == messageDispatcher, $"Already bound with replicationId {_replicationId} to {_messageDispatcher}");
+                return;
+            }
+
+            _messageDispatcher = messageDispatcher;
+            _interestPolicies = interestPolicies;
+            _replicationId = messageDispatcher.RegisterMessageHandler(this, ref _replicationId);
+        }
+
+        public void Unbind()
+        {
+            _messageDispatcher?.UnregisterMessageHandler(this);
+            _messageDispatcher = null;
+            _replicationId = IArchiveMessageDispatcher.InvalidReplicationId;
+        }
+
+        public override void ResetForPool()
+        {
+            base.ResetForPool();
+
+            Unbind();
+            _interestPolicies = AOINetworkPolicyValues.AOIChannelNone;
+        }
+
+        public override bool SerializeWithDefault(Archive archive, PropertyCollection defaultCollection)
+        {
+            bool success = true;
+
+            if (archive.IsReplication)
+                success &= Serializer.Transfer(archive, ref _replicationId);
+            
+            success &= base.SerializeWithDefault(archive, defaultCollection);
+            return success;
+        }
+
+        public void OnEntityChangePlayerAOI(Player player, InterestTrackOperation operation,
+            AOINetworkPolicyValues newInterestPolicies, AOINetworkPolicyValues previousInterestPolicies, AOINetworkPolicyValues archiveInterestPolicies)
+        {
+            // When an entity is added to AOI, its properties are serialized in the archive data.
+            // Previous interest policies in this case would be none, so we need to add policies
+            // from the archive to avoid sending the same data twice.
+            previousInterestPolicies |= archiveInterestPolicies;
+           
+            // Check if any interest policies have been added
+            AOINetworkPolicyValues addedInterestPolicies = newInterestPolicies & ~previousInterestPolicies;
+            if (addedInterestPolicies == AOINetworkPolicyValues.AOIChannelNone)
+                return;
+
+            PropertyInfoTable propertyInfoTable = GameDatabase.PropertyInfoTable;
+
+            foreach (var kvp in this)
+            {
+                PropertyId id = kvp.Key;
+                PropertyValue value = kvp.Value;
+                PropertyInfo propertyInfo = propertyInfoTable.LookupPropertyInfo(id.Enum);
+                PropertyInfoPrototype propertyInfoProto = propertyInfo.Prototype;
+
+                // Skip properties that don't match the new interest policies
+                if ((propertyInfoProto.RepNetwork & addedInterestPolicies) == AOINetworkPolicyValues.AOIChannelNone)
+                    continue;
+
+                // Skip properties that were already known with previous interest policies
+                if ((propertyInfoProto.RepNetwork & previousInterestPolicies) != AOINetworkPolicyValues.AOIChannelNone)
+                    continue;
+
+                // Send newly applicable properties
+
+                player.SendMessage(NetMessageSetProperty.CreateBuilder()
+                    .SetReplicationId(ReplicationId)
+                    .SetPropertyId(id.Raw.ReverseBits())
+                    .SetValueBits(ConvertValueToBits(value, propertyInfo.DataType))
+                    .Build());
+
+                // NOTE: Properties that are no longer applicable are removed by the client on its own
+            }
+        }
+
+        public override bool RemoveProperty(PropertyId id)
+        {
+            bool removed = base.RemoveProperty(id);
+            if (removed) MarkPropertyRemoved(id);
+            return removed;
+        }
+
+        public void SyncProperty(PropertyId id, out PropertyValue value)
+        {
+            // TODO: Figure out a way to fix mana getting out of sync properly and remove this kludge.
+            value = this[id];
+            MarkPropertyChanged(id, value, SetPropertyFlags.None);
+        }
+
+        protected override bool SetPropertyValue(PropertyId id, PropertyValue value, SetPropertyFlags flags = SetPropertyFlags.None)
+        {
+            bool changed = base.SetPropertyValue(id, value, flags);
+            if (changed) MarkPropertyChanged(id, value, flags);
+            return changed;
+        }
+
+        private void MarkPropertyChanged(PropertyId id, PropertyValue value, SetPropertyFlags flags)
+        {
+            if (_messageDispatcher == null || _messageDispatcher.CanSendArchiveMessages == false) return;
+
+            // Get replication policy for this property
+            PropertyInfo propertyInfo = GameDatabase.PropertyInfoTable.LookupPropertyInfo(id.Enum);
+            AOINetworkPolicyValues interestFilter = propertyInfo.Prototype.RepNetwork & _interestPolicies;
+            if (interestFilter == AOINetworkPolicyValues.AOIChannelNone) return;
+
+            // Check if any there are any interested clients
+            using var interestedClientListHandle = ListPool<PlayerConnection>.Get(out List<PlayerConnection> interestedClientList);
+            if (_messageDispatcher.GetInterestedClients(interestedClientList, interestFilter))
+            {
+
+                ulong value1 = ConvertValueToBits(value, propertyInfo.DataType);
+
+                // Send update to interested
+                var setPropertyMessage = NetMessageSetProperty.CreateBuilder()
+                    .SetReplicationId(ReplicationId)
+                    .SetPropertyId(id.Raw.ReverseBits())    // In NetMessageSetProperty all bits are reversed rather than bytes
+                    .SetValueBits(value1)
+                    .Build();
+
+                _messageDispatcher.Game.NetworkManager.SendMessageToMultiple(interestedClientList, setPropertyMessage);
+            }
+        }
+
+        private void MarkPropertyRemoved(PropertyId id)
+        {
+            if (_messageDispatcher == null || _messageDispatcher.CanSendArchiveMessages == false) return;
+
+            // Get replication policy for this property
+            PropertyInfo propertyInfo = GameDatabase.PropertyInfoTable.LookupPropertyInfo(id.Enum);
+            AOINetworkPolicyValues interestFilter = propertyInfo.Prototype.RepNetwork;
+            if (interestFilter == AOINetworkPolicyValues.AOIChannelNone) return;
+
+            // Check if any there are any interested clients
+            using var interestedClientListHandle = ListPool<PlayerConnection>.Get(out List<PlayerConnection> interestedClientList);
+            if (_messageDispatcher.GetInterestedClients(interestedClientList, interestFilter))
+            {
+                // Send update to interested
+                var removePropertyMessage = NetMessageRemoveProperty.CreateBuilder()
+                    .SetReplicationId(ReplicationId)
+                    .SetPropertyId(id.Raw.ReverseBits())    // In NetMessageRemoveProperty all bits are reversed rather than bytes
+                    .Build();
+
+                _messageDispatcher.Game.NetworkManager.SendMessageToMultiple(interestedClientList, removePropertyMessage);
+            }
+        }
+    }
+}
