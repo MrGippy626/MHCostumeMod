@@ -5,11 +5,16 @@ today on the [MHServerEmu](https://github.com/Crypto137/MHServerEmu) private ser
 **coexist with the stock ones**. Nothing is overwritten. A costume you add sits alongside the
 originals, and a player without the mod still sees a normal game.
 
+> **New here? Start with [docs/INTRO.md](docs/INTRO.md).**
+>
+> **This is not a costume** — it is the framework that makes custom costumes possible.
+> INTRO.md explains what that means in practice, what you get as a player versus as a
+> server owner, and how the pieces fit, without assuming you have modded this game before.
+
 ![The launcher](docs/media/launcher-main.png)
 
-**[docs/SHOWCASE.md](docs/SHOWCASE.md)** — every page of both tools, plus gameplay footage:
-two clients side by side proving a custom costume's effects belong only to its wearer, and a
-costume bought from the in-game store and equipped.
+*Both tools in full, and gameplay footage of two clients proving a custom costume's effects
+belong only to its wearer — **[docs/SHOWCASE.md](docs/SHOWCASE.md)**.*
 
 ## The four pieces
 
@@ -49,6 +54,19 @@ so the system fabricates an identity for it at every layer:
    costume's textures are found without touching the stock ones.
 
 The same shape covers icons, display names and per-costume visual effects.
+
+## Documentation
+
+| | |
+|---|---|
+| **[INTRO.md](docs/INTRO.md)** | **Start here.** What this is and is not, the donor concept, every feature, both audiences, distribution, safety guarantees, troubleshooting, glossary |
+| [SHOWCASE.md](docs/SHOWCASE.md) | Every page of both tools, and three gameplay clips demonstrating coexistence and per-costume effect scoping in a live game |
+| [GUIDE-LAUNCHER.md](docs/GUIDE-LAUNCHER.md) | Player walkthrough: first run, installing content, launching, troubleshooting |
+| [GUIDE-COSTUME-MANAGER.md](docs/GUIDE-COSTUME-MANAGER.md) | Author walkthrough: install a costume, set icons, add effects, share a pack, uninstall, repair |
+| [DLL.md](docs/DLL.md) | How the client mod works — hooks, the config contract, the log, the quarantine net |
+| [COSTUME-MANAGER.md](docs/COSTUME-MANAGER.md) | The install pipeline: donor detection, collision renaming, TFC aliasing, icons, FX packs, the ledger |
+| [LAUNCHER.md](docs/LAUNCHER.md) | What the launcher does and why it deliberately has zero project references |
+| [SERVER-CHANGES.md](docs/SERVER-CHANGES.md) | Statement of modifications to MHServerEmu, as the AGPL requires |
 
 ## Building
 
@@ -94,14 +112,9 @@ by then.
 - Bundled third-party code keeps its own terms: **[THIRD-PARTY.md](THIRD-PARTY.md)**. Read the
   note about LZO there before distributing any binary built from this tree.
 
-## Screenshots and video
-
-**[docs/SHOWCASE.md](docs/SHOWCASE.md)** — every page of both tools, and three gameplay clips
-demonstrating coexistence and per-costume effect scoping in a live game.
-
 ## Status
 
 The costume, icon, name and per-costume effect systems all work in game. This is a hobby
-project against a sealed 2017 client; expect sharp edges, and read the docs above before
+project against a sealed 2017 client; expect sharp edges, and read the documentation above before
 changing anything in the install pipeline — most of what looks arbitrary in there is a fix for
 a specific way the client crashes.
