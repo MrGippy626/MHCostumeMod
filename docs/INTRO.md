@@ -210,8 +210,9 @@ something the client can paper over — it is where the identity comes from.
 
 So:
 
-- **Every player on that server needs the launcher**, including the server owner playing
-  locally. Launch through `MHLauncher` or you will not see custom costumes.
+- **You need the launcher to see custom costumes** — including the server owner playing
+  locally. A player who does not want them can keep launching the game however they normally
+  do: they see the stock donor costume and stock effects, and everything else works as usual.
 - **You cannot use this on a server that has not installed it.** You will connect and play
   normally; there simply are no custom costumes to see.
 - **The server owner builds the server mod** from source in the repository. It ships as source
@@ -221,7 +222,7 @@ So:
 
 | File | Who needs it | Notes |
 |---|---|---|
-| **`MHLauncher.zip`** | **Everyone** on a server using this | Self-contained, no prerequisites. Includes the client mod and the bundle installer. |
+| **`MHLauncher.zip`** | Any player who wants custom costumes | Self-contained, no prerequisites. Includes the client mod and the bundle installer. |
 | **`CostumeManager.zip`** | **Server owners** who author costumes | Needs the .NET 8 Desktop Runtime and the Windows App Runtime |
 | `CostumeDLL.zip` | Rarely — replacing just the client mod | The launcher already contains it |
 
@@ -499,7 +500,9 @@ When reporting anything, `CostumeMod.log` is the single most useful file to incl
 Stated plainly, because finding these out yourself is worse:
 
 - **No multi-server profiles.** Uninstall before switching between servers that both use this.
-- **Everyone on the server needs the launcher**, not only the people who want custom costumes.
+- **Only players using the launcher see custom costumes.** Anyone launching the game another
+  way sees you in the donor costume with stock effects. That is deliberate and harmless — but it
+  does mean your costume is not visible to them.
 - **A custom costume belongs to one hero** — its donor's hero, permanently.
 - **Not every effect can be made per-costume.** Some art is shared between powers at a level the
   game resolves globally. Where that happens, the honest options are stock-for-everyone or
