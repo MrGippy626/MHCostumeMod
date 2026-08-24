@@ -47,9 +47,24 @@ namespace CostumeManager.Core
                                                    StringComparer.OrdinalIgnoreCase);
                 int adopted = 0, assigned = 0, skipped = 0;
 
+                string cookedDir = GamePaths.Resolve(gameRoot).cooked;
+
                 foreach (InstallRecord rec in ledger)
                 {
                     if (rec.FxPackages == null || rec.FxPackages.Count == 0) continue;
+
+                    int onDisk = rec.FxPackages.Count(
+                        f => !string.IsNullOrWhiteSpace(f.Package)
+                          && File.Exists(Path.Combine(cookedDir, f.Package + ".upk")));
+                    if (onDisk == 0)
+                    {
+                        res.Steps.Add("skipped \"" + rec.Name + "\": the ledger lists "
+                                    + rec.FxPackages.Count + " effect package(s) and NONE are "
+                                    + "on disk - that pack was deleted, so it is not adopted "
+                                    + "and no costume is assigned to it");
+                        skipped++;
+                        continue;
+                    }
                     if (string.IsNullOrWhiteSpace(rec.Name))
                     {
                         res.Steps.Add("⚠ ledger record for enum " + rec.Enum

@@ -272,6 +272,16 @@ namespace CostumeManager.Core
                 res.Steps.Add("\"" + target["name"] + "\" no longer uses "
                             + (had != null ? "pack \"" + had + "\"" : "any FX pack")
                             + " - its packages were left on disk for whoever else uses them");
+
+                InstallRecord lrec = InstallLedger.Read().FirstOrDefault(r => r.Enum == enumId);
+                if (lrec != null && lrec.FxPackages != null && lrec.FxPackages.Count > 0)
+                {
+                    res.Steps.Add("ledger: cleared " + lrec.FxPackages.Count
+                                + " effect-package record(s) from this costume");
+                    lrec.FxPackages.Clear();
+                    InstallLedger.Upsert(lrec);
+                }
+
                 PushHotspotsToServer(jsonPath, serverDir, res, log);
                 res.Ok = true;
             }
@@ -314,6 +324,23 @@ namespace CostumeManager.Core
                 }
 
                 FxPackRegistry.Remove(token, registryPath);
+
+                var gone = new HashSet<string>(
+                    (pack.Effects ?? new List<FxRecord>())
+                        .Select(f => f.Package)
+                        .Where(x => !string.IsNullOrWhiteSpace(x)),
+                    StringComparer.OrdinalIgnoreCase);
+                int cleared = 0;
+                foreach (InstallRecord lrec in InstallLedger.Read())
+                {
+                    if (lrec.FxPackages == null || lrec.FxPackages.Count == 0) continue;
+                    int before = lrec.FxPackages.Count;
+                    lrec.FxPackages.RemoveAll(f => f.Package != null && gone.Contains(f.Package));
+                    if (lrec.FxPackages.Count != before) { InstallLedger.Upsert(lrec); cleared++; }
+                }
+                if (cleared > 0)
+                    res.Steps.Add("ledger: cleared these packages from " + cleared + " record(s)");
+
                 res.Steps.Add("pack \"" + token + "\" deleted: " + deleted + " package(s) removed"
                             + (refused > 0 ? ", " + refused + " refused" : ""));
                 res.Ok = true;
