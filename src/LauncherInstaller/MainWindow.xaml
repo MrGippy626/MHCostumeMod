@@ -51,6 +51,13 @@
                     <Button x:Name="BtnCheck" Content="Check install" Click="Check_Click" />
                     <Button x:Name="BtnRefresh" Content="Refresh" Click="Refresh_Click" />
                 </StackPanel>
+
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <Button x:Name="BtnRemoveAll" Content="Remove all content…"
+                            Click="RemoveAll_Click" />
+                    <TextBlock VerticalAlignment="Center" Opacity="0.7" TextWrapping="Wrap"
+                               Text="Removes every custom costume and effects pack. The costumes the game came with are never touched." />
+                </StackPanel>
             </StackPanel>
         </Border>
 

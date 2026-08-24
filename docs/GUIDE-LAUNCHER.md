@@ -71,6 +71,14 @@ and ask for those files. **Recheck** after installing them.
 In **Tools**: select it and press *Remove selected costume* or *Remove selected pack*. That
 takes out its files, its texture rows and its configuration entry.
 
+To clear everything at once, use **Remove all content…**. It removes every custom costume and
+every effects pack, reporting how many of each it took out and naming anything it could not.
+The costumes the game came with are never touched, and this only changes your own copy — not
+the server, and not other players.
+
+⚠ **Restart the game after any removal.** The mod reads its configuration once, at startup, so
+a running game carries on using content whose files have just been deleted.
+
 **Check install** verifies what is there is intact — worth running if something looks wrong
 after a game update or a manual file copy.
 

@@ -601,6 +601,109 @@ namespace LauncherInstaller
             Log("removed. Restart the game to see the change.");
         }
 
+        async void RemoveAll_Click(object sender, RoutedEventArgs e)
+        {
+            if (!await RequireGameDir()) return;
+
+            string root = GameDir;
+            string registry = FxRegistryPath();
+
+            List<InstalledCostume> costumes = null;
+            List<FxPack> packs = null;
+            string readError = null;
+            await Task.Run(() =>
+            {
+                try
+                {
+                    costumes = CostumeLibrary.ListInstalled(root);
+                    packs = registry != null ? FxPackRegistry.Read(registry) : new List<FxPack>();
+                }
+                catch (Exception ex) { readError = ex.Message; }
+            });
+
+            if (readError != null)
+            {
+                await AppDialog.ShowAsync(
+                    "Could not read what is installed, so nothing was removed."
+                    + Environment.NewLine + Environment.NewLine + readError,
+                    "Remove all content", DialogButtons.OK, DialogKind.Error);
+                return;
+            }
+
+            if (costumes.Count == 0 && packs.Count == 0)
+            {
+                await AppDialog.ShowAsync("There is no custom content installed to remove.",
+                    "Remove all content", DialogButtons.OK, DialogKind.Info);
+                return;
+            }
+
+            if (await AppDialog.ShowAsync(
+                    "Remove ALL custom content from your game?"
+                    + Environment.NewLine + Environment.NewLine
+                    + $"    {costumes.Count} costume(s)" + Environment.NewLine
+                    + $"    {packs.Count} effects pack(s)"
+                    + Environment.NewLine + Environment.NewLine
+                    + "The costumes the game came with are never touched, and this only changes "
+                    + "your own copy - it does not affect the server or other players. You can "
+                    + "install everything again later.",
+                    "Remove all content", DialogButtons.OKCancel, DialogKind.Warning,
+                    primaryText: "Remove everything", closeText: "Keep") != DialogResult.OK)
+                return;
+
+            Log("");
+            Log($"-- removing all content: {costumes.Count} costume(s), "
+                + $"{packs.Count} effects pack(s) --");
+
+            var failed = new List<string>();
+            int okCostumes = 0, okPacks = 0;
+
+            foreach (InstalledCostume c in costumes)
+            {
+                uint enumId = c.Enum;
+                string label = string.IsNullOrWhiteSpace(c.DisplayName)
+                    ? "costume " + enumId : c.DisplayName;
+                Log("");
+                Log($"-- removing {label} --");
+
+                PlayerResult r = await Task.Run(() => PlayerInstall.Uninstall(root, enumId, Log));
+                if (r.Ok) okCostumes++;
+                else failed.Add(label + " (" + (r.FailedStep ?? "failed") + ")");
+            }
+
+            foreach (FxPack p in packs)
+            {
+                string token = p.Token;
+                string label = p.DisplayName ?? p.Token;
+                Log("");
+                Log($"-- removing effects pack {label} --");
+
+                FxPackInstall.Result r = await Task.Run(() => FxPackInstall.Remove(root, token, Log));
+                if (r.Ok) okPacks++;
+                else failed.Add(label + " (" + (r.FailedStep ?? "failed") + ")");
+            }
+
+            LoadInstalled();
+            LoadFxPacks();
+
+            string msg = $"Removed {okCostumes} of {costumes.Count} costume(s) and "
+                       + $"{okPacks} of {packs.Count} effects pack(s).";
+            if (failed.Count > 0)
+                msg += Environment.NewLine + Environment.NewLine
+                     + "These could not be removed:" + Environment.NewLine + "  - "
+                     + string.Join(Environment.NewLine + "  - ", failed);
+
+            msg += Environment.NewLine + Environment.NewLine
+                 + "Restart the game (fully close it) to see the change.";
+
+            Log("");
+            Log(failed.Count == 0
+                ? "removed everything. Restart the game to see the change."
+                : $"finished with {failed.Count} failure(s) - named above.");
+
+            await AppDialog.ShowAsync(msg, "Remove all content", DialogButtons.OK,
+                failed.Count > 0 ? DialogKind.Warning : DialogKind.Info);
+        }
+
         async void Check_Click(object sender, RoutedEventArgs e)
         {
             if (!await RequireGameDir()) return;
