@@ -64,6 +64,44 @@
                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                     Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
                 <StackPanel Spacing="8">
+                    <TextBlock Text="SERVER CONFIG" Style="{StaticResource SectionHeader}" />
+                    <TextBlock TextWrapping="Wrap" Style="{StaticResource CaptionTextBlockStyle}"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               Text="ServerCostumes.json is normally rewritten whenever you install or remove a costume. If your library has not been touched since the server gained a new field, it is still on the old shape - and the symptom is silence: the server just does not use the feature, so it looks unimplemented rather than out of date. This rewrites it from your costume config without changing anything you have installed." />
+                    <Button x:Name="BtnRegenServer" Content="Update ServerCostumes.json"
+                            HorizontalAlignment="Left" Click="RegenServer_Click" />
+                    <TextBlock x:Name="TxtRegenResult" TextWrapping="Wrap"
+                               Style="{StaticResource CaptionTextBlockStyle}"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               Text="Not run yet." />
+                </StackPanel>
+            </Border>
+
+            <Border Padding="16" CornerRadius="6" BorderThickness="1"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="TOKENS IN THE DATABASE" Style="{StaticResource SectionHeader}" />
+                    <TextBlock TextWrapping="Wrap" Style="{StaticResource CaptionTextBlockStyle}"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               Text="Shows what the server's database holds for each installed costume: tokens players bought, and which avatars are wearing it. It also lists ORPHANED ids - costumes that were removed but whose tokens are still in the database, which leaves a player holding an item the client cannot resolve. Start the server once to run any pending purge. This only reads; it never changes the database, and it is safe while the server is running." />
+                    <Button x:Name="BtnInspectTokens" Content="Check tokens"
+                            HorizontalAlignment="Left" Click="InspectTokens_Click" />
+                    <ScrollViewer MaxHeight="260" HorizontalScrollBarVisibility="Auto"
+                                  VerticalScrollBarVisibility="Auto">
+                        <TextBlock x:Name="TxtTokenReport" TextWrapping="NoWrap"
+                                   FontFamily="Consolas"
+                                   Style="{StaticResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                   Text="Not run yet." />
+                    </ScrollViewer>
+                </StackPanel>
+            </Border>
+
+            <Border Padding="16" CornerRadius="6" BorderThickness="1"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                <StackPanel Spacing="8">
                     <TextBlock Text="ORPHANED IMPORTS (WHITE MESH)" Style="{StaticResource SectionHeader}" />
                     <TextBlock TextWrapping="Wrap" Style="{StaticResource CaptionTextBlockStyle}"
                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"

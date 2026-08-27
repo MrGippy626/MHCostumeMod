@@ -944,6 +944,29 @@ namespace MHServerEmu.Games.Powers.Conditions
 
         private static AssetId DetermineAssetRefByOwner(WorldEntity owner, ConditionPrototype conditionProto)
         {
+            // ⚑ THIS FIELD IS THE CLIENT'S CONDITION KEY. It is what arrives at
+            // ConditionPrototype::GetUnrealClass (RVA 0x1592B80) as the asset the override
+            // table is matched against - the method below is this function's twin. Because it
+            // defaults to the owner's world asset, a custom costume and the stock costume it
+            // was built from send the SAME value, so the client cannot tell them apart and a
+            // per-costume condition effect can only be redirected client-wide.
+            //
+            // Sending the costume's forged asset instead makes the match exact and therefore
+            // per-avatar by construction: the value travels with the condition instance, which
+            // belongs to exactly one owner. Same shape as the forged hotspot prototype ref -
+            // the client cannot infer this, and the server already knows it.
+            //
+            // ⚠ The client resolves the DEFAULT variant for a forged key (no override entry
+            // matches it), so the redirect must be configured against the default effect id,
+            // not the donor-suffixed variant's.
+            if (owner != null && conditionProto != null)
+            {
+                PrototypeId costumeId = owner.Properties[PropertyEnum.CostumeCurrent];
+                if (costumeId != PrototypeId.Invalid &&
+                    CustomCostumeLoader.TryGetForgedCostumeAsset(costumeId, out AssetId forged))
+                    return forged;
+            }
+
             AssetId entityWorldAssetRef = owner.GetEntityWorldAsset();
             if (conditionProto.GetUnrealClass(entityWorldAssetRef, false) != AssetId.Invalid)
                 return entityWorldAssetRef;

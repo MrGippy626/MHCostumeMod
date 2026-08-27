@@ -340,6 +340,48 @@ namespace MHServerEmu.DatabaseAccess.SQLite
             }
         }
 
+        /// <summary>
+        /// Every custom costume id referenced anywhere in the Player table.
+        /// </summary>
+        /// <remarks>
+        /// Used to find ORPHANS - ids no installed costume claims any more. The column is a
+        /// semicolon-separated list where "avatarProtoId:customId" is a per-avatar override and
+        /// "I&lt;itemGuid&gt;:&lt;customId&gt;" is an item stamp; both end in the id, so one rule reads both.
+        /// </remarks>
+        public HashSet<ulong> GetReferencedCustomCostumeIds()
+        {
+            var ids = new HashSet<ulong>();
+            try
+            {
+                using SQLiteConnection connection = GetConnection();
+                var rows = connection.Query<string>(
+                    "SELECT CustomCostumes FROM Player WHERE CustomCostumes IS NOT NULL AND CustomCostumes != ''");
+
+                foreach (string value in rows)
+                {
+                    if (string.IsNullOrWhiteSpace(value)) continue;
+                    foreach (string part in value.Split(';', StringSplitOptions.RemoveEmptyEntries))
+                    {
+                        int colon = part.LastIndexOf(':');
+                        if (colon <= 0 || colon + 1 >= part.Length) continue;
+                        if (ulong.TryParse(part.Substring(colon + 1),
+                                           System.Globalization.NumberStyles.HexNumber, null, out ulong id)
+                            && id != 0)
+                            ids.Add(id);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                // ⛔ RETURN EMPTY ON FAILURE, AND THE CALLER MUST TREAT EMPTY AS "COULD NOT
+                // ANSWER". Reporting no ids as though the table were clean would let an orphan
+                // sweep conclude there is nothing to keep - and delete everything.
+                Logger.ErrorException(e, "GetReferencedCustomCostumeIds(): failed");
+                return new HashSet<ulong>();
+            }
+            return ids;
+        }
+
         public bool PurgeCustomCostume(ulong customId, ulong forgedGuid, ulong donorGuid,
                                        out int itemsAffected, out int recordsStripped)
         {

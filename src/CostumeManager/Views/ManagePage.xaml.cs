@@ -273,6 +273,108 @@ namespace CostumeManager.Views
                 "Export", DialogButtons.OK);
         }
 
+        async void ImportPack_Click(object sender, RoutedEventArgs e)
+        {
+
+            string dir = AppState.GameDir;
+            string serverDir = AppState.ServerDir;
+
+            if (!GamePaths.LooksLikeGameFolder(dir))
+            {
+                await AppDialog.ShowAsync("Pick your game folder first (Settings tab).",
+                    "Import", DialogButtons.OK, DialogKind.Warning);
+                return;
+            }
+
+            var picker = new FileOpenPicker();
+            picker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
+
+            picker.FileTypeFilter.Add(Installer.PackExtension);
+            picker.FileTypeFilter.Add(BulkPack.Extension);
+
+            Window w = App.MainWindowRef;
+            if (w == null) return;
+            WinRT.Interop.InitializeWithWindow.Initialize(
+                picker, WinRT.Interop.WindowNative.GetWindowHandle(w));
+
+            StorageFile file = await picker.PickSingleFileAsync();
+            if (file == null) return;
+            string path = file.Path;
+
+            if (path.EndsWith(BulkPack.Extension, StringComparison.OrdinalIgnoreCase))
+            {
+                AppState.Log("");
+                AppState.Log("── importing bundle " + Path.GetFileName(path) + " ──");
+
+                BulkPack.BulkResult br = await Task.Run(
+                    () => BulkPack.ImportBundle(dir, path, AppState.Logger));
+
+                Load();
+                await AppDialog.ShowAsync(
+                    $"Imported {br.OkCostumes} costume(s) and {br.OkFxPacks} FX pack(s)."
+                    + (br.Failed > 0 ? $" {br.Failed} member(s) FAILED - see the log." : "")
+                    + Environment.NewLine + Environment.NewLine
+                    + "Restart the client, and restart the server so it reloads "
+                    + "ServerCostumes.json.",
+                    "Import bundle", DialogButtons.OK,
+                    br.Failed > 0 ? DialogKind.Warning : DialogKind.Info);
+                return;
+            }
+
+            CostumePackInfo info = CostumePackFile.Read(path, out string err);
+            if (info == null)
+            {
+                await AppDialog.ShowAsync("Cannot read this pack:" + Environment.NewLine
+                    + Environment.NewLine + err,
+                    "Import", DialogButtons.OK, DialogKind.Error);
+                return;
+            }
+
+            string nl = Environment.NewLine;
+            string summary =
+                $"{info.DisplayName}  ({info.Name})" + nl + nl
+                + $"donor:    {info.DonorClass}" + nl
+                + $"enum:     {info.Enum}" + nl
+                + $"package:  {info.UpkFileName}" + nl
+                + $"icons:    {(info.IconArt.Count == 0 ? "none (uses the donor's)" : info.IconArt.Count + " role(s)")}" + nl
+                + $"tfc:      {info.TfcAliasPairs.Count} alias pair(s)" + nl
+
+                + $"condition effects: {(info.ConditionUpks.Count == 0 ? "none" : info.ConditionUpks.Count.ToString())}" + nl
+                + $"fx pack:  {(string.IsNullOrWhiteSpace(info.FxPackToken) ? "none" : info.FxPackToken)}" + nl + nl
+                + "Install it?";
+
+            if (await AppDialog.ShowAsync(summary, "Import costume pack",
+                    DialogButtons.OKCancel, DialogKind.Info) != DialogResult.OK)
+                return;
+
+            AppState.Log("");
+            AppState.Log("── importing " + info.DisplayName + " ──");
+
+            Installer.PackResult res = await Task.Run(
+                () => Installer.ImportPack(dir, path, serverDir, AppState.Logger));
+
+            if (!res.Ok)
+            {
+                await AppDialog.ShowAsync(
+                    "Import failed at step: " + res.FailedStep + Environment.NewLine
+                    + Environment.NewLine + "See the log for details.",
+                    "Import", DialogButtons.OK, DialogKind.Error);
+                return;
+            }
+
+            Load();
+
+            string msg = $"\"{info.DisplayName}\" installed on enum {res.Enum}." + nl + nl
+                       + "Restart the client, and restart the server so it reloads "
+                       + "ServerCostumes.json.";
+            if (res.Warnings.Count > 0)
+                msg += nl + nl + "Warnings:" + nl + "  • "
+                     + string.Join(nl + "  • ", res.Warnings);
+
+            await AppDialog.ShowAsync(msg, "Import", DialogButtons.OK,
+                res.Warnings.Count > 0 ? DialogKind.Warning : DialogKind.Info);
+        }
+
         void BulkExport_Click(object sender, RoutedEventArgs e) => SetExporting(true);
 
         void ExportCancel_Click(object sender, RoutedEventArgs e)

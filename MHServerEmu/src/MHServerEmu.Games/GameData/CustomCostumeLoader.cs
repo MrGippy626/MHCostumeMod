@@ -142,6 +142,36 @@ namespace MHServerEmu.Games.GameData
 
         private const int CustomEnumFloor = 100000;
 
+        /// <summary>
+        /// The costume's forged CostumeUnrealClass, as written by the Costume Manager into
+        /// ServerCostumes.json. Sending this as a Condition's owner asset ref is what makes a
+        /// per-costume condition effect resolve PER AVATAR: the client matches it exactly
+        /// against its own forged-asset table, instead of falling back to the donor asset which
+        /// the custom costume and the stock costume share.
+        /// </summary>
+        /// <remarks>
+        /// ⛔ READ, NEVER DERIVE. An earlier version computed this from the enum, duplicating
+        /// ForgeCostumeAssetId in dllmain.cpp - the shape this project already pays for twice
+        /// with CostumeConfig.Transform / DeobfuscateConfig. Worse, the enum cannot express the
+        /// GATE: the DLL mints a forged asset only for a costume that opted into effects, so
+        /// deriving handed mesh-only customs a key their client could not resolve and the engine
+        /// rendered the DEFAULT variant - measured in game as a bare diamond body with no
+        /// costume clothing. The Manager knows which costumes have one; the enum does not.
+        ///
+        /// Absent = false, which is the pre-feature behaviour.
+        /// </remarks>
+        public static bool TryGetForgedCostumeAsset(PrototypeId costumeId, out AssetId forged)
+        {
+            forged = AssetId.Invalid;
+            if (costumeId == PrototypeId.Invalid) return false;
+            lock (_forgedAssetLock)
+                return _forgedCostumeAssets.TryGetValue(costumeId, out forged) &&
+                       forged != AssetId.Invalid;
+        }
+
+        private static readonly Dictionary<PrototypeId, AssetId> _forgedCostumeAssets = new();
+        private static readonly object _forgedAssetLock = new();
+
         private static readonly Dictionary<(ulong, ulong), ulong> _overrides = new();
         private static readonly object _overrideLock = new();
 
@@ -347,6 +377,18 @@ namespace MHServerEmu.Games.GameData
 
                 RegisterHotspots(entry, protoId, display);
 
+                // The forged CostumeUnrealClass, if this costume opted into effects. Absent for
+                // a mesh-only custom, and that absence is load-bearing: sending a key the client
+                // has no entry for makes its condition resolve the DEFAULT variant instead of
+                // the donor's.
+                if (TryParseHex(entry.ForgedAsset, out ulong rawForged) && rawForged != 0)
+                {
+                    lock (_forgedAssetLock)
+                        _forgedCostumeAssets[protoId] = (AssetId)rawForged;
+                    Logger.Info($"'{display}': forged CostumeUnrealClass 0x{rawForged:X16} - " +
+                                $"its per-costume condition effects resolve per-avatar");
+                }
+
                 DataDirectory.Instance.InjectCustomCostume(protoId, entry.Enum, donorId);
 
                 Logger.Info($"Loaded custom costume: {entry.Name} (0x{rawId:X}) -> enum {entry.Enum}");
@@ -498,6 +540,76 @@ namespace MHServerEmu.Games.GameData
             Logger.Info($"{PendingPurgeFileName} processed and removed - those enums are now free to reuse.");
         }
 
+        /// <summary>
+        /// Delete token data for custom costumes that no longer exist.
+        /// </summary>
+        /// <remarks>
+        /// ProcessPendingPurges only handles costumes uninstalled through the Manager, which
+        /// queues a purge file. Anything removed another way - by hand, before that machinery
+        /// existed, or with the queue file lost - leaves ORPHANED rows: a player holding an item
+        /// whose prototype the client cannot resolve, and nothing anywhere that can clean it.
+        /// Measured on the live database: 3 orphaned ids across 4 rows, unreachable by any tool.
+        ///
+        /// ⛔⛔ THE GUARD IS THE WHOLE FEATURE. This decides what to DELETE by what is
+        /// ABSENT from CustomInfo - so if ServerCostumes.json is missing, empty or failed to
+        /// parse, EVERY id in the database looks orphaned and this would wipe every token every
+        /// player owns. It therefore refuses to run on an empty costume set, and says why.
+        /// That is not a theoretical risk: this project has already shipped a config writer that
+        /// silently emptied a file, and an installer that regenerated one from a stale source.
+        ///
+        /// ⛑ SAFE MOMENT ONLY. Like ProcessPendingPurges, this runs at startup after the
+        /// database is up and BEFORE anyone logs in - the only point at which player rows have
+        /// no live writer. The server holds player state in memory and writes it back on save,
+        /// so an edit made underneath a logged-in player is silently overwritten.
+        /// </remarks>
+        public static void PurgeOrphanedCostumes()
+        {
+            if (IDBManager.Instance is not SQLiteDBManager sqlite)
+                return;
+
+            // ⛔ FAIL CLOSED. An empty CustomInfo means the costume config did not load, not
+            // that every costume was uninstalled.
+            if (CustomInfo.Count == 0)
+            {
+                Logger.Warn("PurgeOrphanedCostumes(): no custom costumes are loaded, so every id in " +
+                            "the database would look orphaned - refusing to run. If you really have " +
+                            "no custom costumes, there is nothing to purge either.");
+                return;
+            }
+
+            HashSet<ulong> referenced = sqlite.GetReferencedCustomCostumeIds();
+            if (referenced.Count == 0)
+                return;                                  // nothing stored, or unreadable - either way, nothing to do
+
+            var orphans = new List<ulong>();
+            foreach (ulong id in referenced)
+                if (CustomInfo.ContainsKey((PrototypeId)id) == false)
+                    orphans.Add(id);
+
+            if (orphans.Count == 0)
+            {
+                // ⛑ Log the NEGATIVE too. Silence here is indistinguishable from never running,
+                // and this is a routine that deletes player data - it should always account for
+                // itself.
+                Logger.Info($"PurgeOrphanedCostumes(): {referenced.Count} custom costume id(s) in the " +
+                            $"database, all of them installed - nothing to purge.");
+                return;
+            }
+
+            Logger.Info($"PurgeOrphanedCostumes(): {orphans.Count} of {referenced.Count} custom costume " +
+                        $"id(s) in the database are not installed - purging their tokens.");
+
+            foreach (ulong customId in orphans)
+            {
+                ulong forgedGuid = DataDirectory.ForgeCustomCostumeGuid(customId);
+                if (sqlite.PurgeCustomCostume(customId, forgedGuid, 0, out int items, out int records))
+                {
+                    Logger.Info($"  purged orphan 0x{customId:X16}: {items} token(s) deleted, " +
+                                $"{records} stamp/override record(s) removed.");
+                }
+            }
+        }
+
         private sealed class PendingPurgeEntry
         {
             [JsonPropertyName("name")]
@@ -615,6 +727,11 @@ namespace MHServerEmu.Games.GameData
 
             [JsonPropertyName("hotspots")]
             public List<ServerHotspotEntry> Hotspots { get; set; }
+
+            // The costume's forged CostumeUnrealClass, written by the Costume Manager ONLY for
+            // a costume that opted into effects. Absent = leave the owner asset ref alone.
+            [JsonPropertyName("forgedAsset")]
+            public string ForgedAsset { get; set; }
         }
 
         private sealed class ServerHotspotEntry

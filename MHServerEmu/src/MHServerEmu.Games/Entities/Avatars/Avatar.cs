@@ -4857,6 +4857,28 @@ namespace MHServerEmu.Games.Entities.Avatars
             PrototypeId stampedCustomId = CustomCostumeLoader.GetItemStamp(costumeOwner.DatabaseUniqueId, item.DatabaseUniqueId);
             bool isCustom = stampedCustomId != PrototypeId.Invalid;
 
+            // ⛔ A TOKEN CARRIES THE FORGED customId AS ITS OWN PROTOTYPE REF, AND THAT IS THE
+            // PRIMARY IDENTITY - THE STAMP IS SECONDARY. SetItemStamp runs only at PURCHASE
+            // (CatalogManager), and a token purge STRIPS the stamps, so a token can be sitting
+            // in the slot working perfectly with no stamp at all.
+            //
+            // ⚑ AND THE FAILURE IS SILENT AND SELF-CONTRADICTORY: ChangeCostume below is passed
+            // item.PrototypeDataRef and renders the RIGHT costume, while isCustom stays false so
+            // this method takes the else-branch and CLEARS the override. The costume looks
+            // correct until the next login, when nothing is persisted to re-apply it and the
+            // avatar falls back to whatever CostumeCurrent was last saved.
+            //
+            // Measured: token "emma dark" equipped, log shows "override cleared" in the same
+            // millisecond as CostumeRefresh with costume=0x5C5D17D338CF066A - the custom id it
+            // had just claimed was not custom. The database confirmed it: no override and no
+            // item stamp for that costume, while the stale Frost1 override survived.
+            if (isCustom == false &&
+                CustomCostumeLoader.CustomInfo.ContainsKey(item.PrototypeDataRef))
+            {
+                stampedCustomId = item.PrototypeDataRef;
+                isCustom = true;
+            }
+
             bool wasCustom = ClientOnCustomCostume;
 
             ChangeCostume(isCustom ? stampedCustomId : item.PrototypeDataRef);
@@ -7593,6 +7615,54 @@ namespace MHServerEmu.Games.Entities.Avatars
             player.TryDoVendorXPCapRollover();
 
             PrototypeId customOverride = CustomCostumeLoader.GetOverride(player.DatabaseUniqueId, PrototypeDataRef);
+
+            // ⛔ AN EQUIPPED TOKEN OUTRANKS THE PERSISTED OVERRIDE, AND UNTIL NOW IT DID NOT.
+            // The override exists for costumes with NO backing item (the chat command). A token
+            // is a real item in the Costume slot, and it is the ground truth for what is worn.
+            //
+            // ChangeCostumeForEquippedItem cannot keep the override in step during the login
+            // inventory restore: it returns early while the avatar is not in world, deliberately,
+            // because that restore runs the live branch for EVERY avatar the account owns. So a
+            // stale override - left by an earlier costume - survived the restore and was applied
+            // here, overwriting the costume the equipped token had just set.
+            //
+            // ⚑ THE SYMPTOM IS PARTICULARLY MISLEADING: the token in the slot is correct, the
+            // character sheet agrees, and the wrong costume renders - so it reads as a client or
+            // DLL fault. Measured: token "emma dark" (100025) equipped, reassert applying
+            // 0xC647BD4626A80556 (Frost1), and re-equipping fixed it only until the next login.
+            PrototypeId equippedStamp = PrototypeId.Invalid;
+            Inventory costumeInv = GetInventory(InventoryConvenienceLabel.Costume);
+            if (costumeInv != null)
+            {
+                ulong costumeItemId = costumeInv.GetAnyEntity();
+                if (costumeItemId != Entity.InvalidId &&
+                    Game.EntityManager.GetEntity<Item>(costumeItemId) is Item costumeItem)
+                {
+                    equippedStamp = CustomCostumeLoader.GetItemStamp(
+                        player.DatabaseUniqueId, costumeItem.DatabaseUniqueId);
+
+                    // Same rule as ChangeCostumeForEquippedItem: the token's OWN prototype
+                    // ref is the primary identity, the stamp is secondary and may be absent
+                    // entirely (purged, or acquired without a purchase). Keying only on the
+                    // stamp made this whole check inert for exactly the token that needed it.
+                    if (equippedStamp == PrototypeId.Invalid &&
+                        CustomCostumeLoader.CustomInfo.ContainsKey(costumeItem.PrototypeDataRef))
+                    {
+                        equippedStamp = costumeItem.PrototypeDataRef;
+                    }
+                }
+            }
+
+            if (equippedStamp != PrototypeId.Invalid && equippedStamp != customOverride)
+            {
+                // Bring the override into line rather than just ignoring it, or the next login
+                // fights the same battle again.
+                Logger.Info($"[CostumeReassert] equipped token wins: stamp 0x{(ulong)equippedStamp:X} " +
+                            $"replaces stale override 0x{(ulong)customOverride:X} for [{this}]");
+                CustomCostumeLoader.SetOverride(player.DatabaseUniqueId, PrototypeDataRef, equippedStamp);
+                customOverride = equippedStamp;
+            }
+
             if (customOverride != PrototypeId.Invalid && EquippedCostumeRef != customOverride)
             {
                 if (ChangeCostume(customOverride) == false)

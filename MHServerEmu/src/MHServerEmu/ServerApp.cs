@@ -266,6 +266,11 @@ namespace MHServerEmu
 
             CustomCostumeLoader.ProcessPendingPurges();
 
+            // Queued purges first: a costume uninstalled this session is removed from the
+            // costume set by that pass, so the orphan sweep below then agrees with it rather
+            // than racing it.
+            CustomCostumeLoader.PurgeOrphanedCostumes();
+
             return true;
         }
     }

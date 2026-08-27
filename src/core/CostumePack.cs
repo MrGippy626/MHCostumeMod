@@ -363,15 +363,29 @@ namespace CostumeManager.Core
 
             if (info.Entry?["effects"] is JsonArray fxArr && fxArr.Count > 0)
             {
-                if (string.IsNullOrWhiteSpace(info.FxPackToken))
-                    res.Warnings.Add($"this costume has {fxArr.Count} custom effect(s) but is not "
+
+                var carried = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (FxRecord cr in rec?.ConditionPackages ?? new List<FxRecord>())
+                    if (!string.IsNullOrWhiteSpace(cr.Package)) carried.Add(cr.Package);
+
+                int notCarried = 0;
+                foreach (JsonNode fe in fxArr)
+                    if (fe is JsonObject fo && !carried.Contains((string)fo["package"] ?? ""))
+                        notCarried++;
+
+                if (notCarried == 0)
+                {
+
+                }
+                else if (string.IsNullOrWhiteSpace(info.FxPackToken))
+                    res.Warnings.Add($"this costume has {notCarried} custom effect(s) but is not "
                                    + "assigned to an FX pack, so there is nothing to export them "
                                    + "with. Players will get the costume with STOCK effects. "
                                    + "Assign it to a pack on the Effects tab first.");
                 else
-                    res.Warnings.Add($"this costume's effects live in FX pack \"{info.FxPackToken}\" "
-                                   + "- export that separately and ship both files, or players "
-                                   + "get the costume with stock effects.");
+                    res.Warnings.Add($"{notCarried} of this costume's effects live in FX pack "
+                                   + $"\"{info.FxPackToken}\" - export that separately and ship both "
+                                   + "files, or players get the costume with stock effects.");
             }
 
             EnsureDonorAsset(info.Entry, info.DonorClass, res, log);
@@ -410,6 +424,26 @@ namespace CostumeManager.Core
 
                 zip.CreateEntryFromFile(upkPath, info.UpkFileName, CompressionLevel.Optimal);
                 res.Steps.Add($"costume UPK: {info.UpkFileName} ({new FileInfo(upkPath).Length:N0} bytes)");
+
+                foreach (FxRecord cr in rec?.ConditionPackages ?? new List<FxRecord>())
+                {
+                    string cp = cr.UpkPath;
+                    if (string.IsNullOrWhiteSpace(cp) || !File.Exists(cp))
+                        cp = Path.Combine(cooked, (cr.Package ?? "") + "_SF.upk");
+                    if (!File.Exists(cp))
+                    {
+
+                        res.Warnings.Add($"condition effect package for \"{cr.EffectName}\" is missing "
+                                       + "from CookedPCConsole, so it is not in this pack - importers "
+                                       + "will see the donor's transform art");
+                        continue;
+                    }
+                    string inZip = CostumePackFile.ConditionDir + Path.GetFileName(cp);
+                    zip.CreateEntryFromFile(cp, inZip, CompressionLevel.Optimal);
+                    info.ConditionUpks.Add(inZip);
+                    res.Steps.Add($"condition effect: {Path.GetFileName(cp)} "
+                                + $"({new FileInfo(cp).Length:N0} bytes)");
+                }
 
                 if (builtIcon != null)
                 {
@@ -526,6 +560,26 @@ namespace CostumeManager.Core
                 using var zip = ZipFile.OpenRead(packPath);
 
                 zip.GetEntry(info.UpkFileName).ExtractToFile(upkOut, false);
+
+                var condInstalled = new List<FxRecord>();
+                foreach (string cz in info.ConditionUpks)
+                {
+                    ZipArchiveEntry ce = zip.GetEntry(cz);
+                    if (ce == null)
+                    {
+                        res.Warnings.Add($"pack lists condition effect \"{cz}\" but does not contain "
+                                       + "it - that effect will render the donor's art");
+                        continue;
+                    }
+                    string cOut = Path.Combine(cooked, Path.GetFileName(cz));
+                    ce.ExtractToFile(cOut, true);
+                    res.Steps.Add("wrote " + Path.GetFileName(cz));
+                    condInstalled.Add(new FxRecord
+                    {
+                        UpkPath = cOut,
+                        Package = Path.GetFileNameWithoutExtension(cz).ToLowerInvariant(),
+                    });
+                }
                 res.Steps.Add($"wrote {info.UpkFileName}");
                 log?.Invoke($"[1/5] wrote {info.UpkFileName}");
 
@@ -651,6 +705,8 @@ namespace CostumeManager.Core
                         TfcPackage = info.TfcAliasPairs.FirstOrDefault()?.To,
                         TfcAliasPairs = info.TfcAliasPairs,
                         IconUpkPath = iconUpkPath,
+
+                        ConditionPackages = condInstalled,
                         IconPackage = iconPackage,
                     });
                     res.Steps.Add("ledger: recorded");
@@ -678,7 +734,7 @@ namespace CostumeManager.Core
 
         static bool EnumInUse(string jsonPath, uint enumId) => CostumeLibrary.FindByEnum(jsonPath, enumId) != null;
 
-        static string[] PendingPurgePathsFor(string serverDir)
+        public static string[] PendingPurgePathsFor(string serverDir)
         {
             var paths = new List<string> { Path.Combine(AppContext.BaseDirectory, PendingPurgeFileName) };
             if (!string.IsNullOrWhiteSpace(serverDir))

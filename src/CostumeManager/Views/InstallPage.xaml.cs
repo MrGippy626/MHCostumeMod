@@ -171,13 +171,8 @@ namespace CostumeManager.Views
                 var (_, _, bin) = GamePaths.Resolve(dir);
                 string cfg = CostumeConfig.ExistingPath(bin);
 
-                string purge = string.IsNullOrWhiteSpace(AppState.ServerDir)
-                    ? null
-                    : Path.Combine(AppState.ServerDir, "PendingCostumePurges.json");
-
-                TxtEnum.Text = (purge == null
-                    ? EnumAllocator.NextFree(cfg)
-                    : EnumAllocator.NextFree(cfg, purge)).ToString();
+                TxtEnum.Text = EnumAllocator.NextFree(
+                    cfg, Installer.PendingPurgePathsFor(AppState.ServerDir)).ToString();
             }
             catch (Exception ex)
             {

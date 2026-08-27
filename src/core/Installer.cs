@@ -61,6 +61,8 @@ namespace CostumeManager.Core
         public string IconUpkPath   { get; set; }
         public string IconPackage   { get; set; }
         public List<IconPack.Core.IconPatch> IconPatches { get; set; } = new();
+
+        public List<FxRecord> ConditionPackages { get; set; } = new();
         public AliasPair IconTfcAlias { get; set; }
 
         public bool FxOptIn { get; set; }
@@ -162,6 +164,20 @@ namespace CostumeManager.Core
             InstallPlan plan, string sourceUpkPath, Action<string> log = null)
         {
             var result = new InstallResult();
+
+            try
+            {
+                StockCheckResult stockCheck =
+                    await StockCostumeCheck.EvaluateAsync(
+                        sourceUpkPath, plan.CookedPcConsole,
+                        InstallLedger.Read().Select(x => x.UpkPath).Where(x => x != null));
+                if (stockCheck.LooksStock)
+                {
+                    result.Steps.Add("  ⚠ " + stockCheck.Reason);
+                    log?.Invoke("  ⚠ WARNING: " + stockCheck.Reason);
+                }
+            }
+            catch (Exception ex) { log?.Invoke("  (stock check skipped: " + ex.Message + ")"); }
 
             try
             {
@@ -427,6 +443,94 @@ namespace CostumeManager.Core
 
             AfterTfc:
 
+            try
+            {
+                string srcFolder = Path.GetDirectoryName(sourceUpkPath);
+                EffectTables condTables = null;
+                try { condTables = EffectTables.Load(Path.Combine(AppContext.BaseDirectory, "Effects.json")); }
+                catch {  }
+
+                List<ConditionVariant> variants = ConditionVariants.Find(
+                    srcFolder, plan.DonorClass, condTables, plan.CookedPcConsole,
+                    s => result.Steps.Add(s));
+
+                if (variants.Any(x => x.Installable))
+                {
+                    string dHero  = ConditionVariants.DonorHero(plan.DonorClass);
+                    string dToken = ConditionVariants.DonorToken(plan.DonorClass);
+                    if (!ConditionFamilies.Loaded)
+                        result.Steps.Add("  ⚠ ConditionFamilies.json not found - cannot say which "
+                                       + "other condition families this donor token affects");
+                    else
+                    {
+                        var shipped = new HashSet<string>(
+                            variants.Where(x => x.Installable).Select(x => x.DefaultStem),
+                            StringComparer.OrdinalIgnoreCase);
+                        List<ConditionFamily> touched = ConditionFamilies.For(dHero, dToken);
+                        var bare = touched.Where(f => !shipped.Contains(f.Name)).ToList();
+                        if (bare.Count > 0)
+                            result.Steps.Add($"  ⚠ this costume also resolves the DEFAULT for "
+                                           + $"{bare.Count} other condition family(ies) of {dHero}/"
+                                           + $"{dToken} that it ships no art for: "
+                                           + string.Join(", ", bare.Select(f => f.Name))
+                                           + " - those will look generic rather than like the donor.");
+                    }
+                }
+
+                foreach (ConditionVariant v in variants.Where(x => x.Installable))
+                {
+
+                    string stockCounterpart = Path.Combine(plan.CookedPcConsole, v.FileName);
+
+                    var cand = new FxCandidate
+                    {
+                        SourcePath  = v.SourcePath,
+                        StockStem   = v.VariantStem,
+                        StockPath   = File.Exists(stockCounterpart) ? stockCounterpart : null,
+                        StockExists = File.Exists(stockCounterpart),
+                        Record     = condTables?.ByUpkFileName.TryGetValue(
+                                         ConditionVariants.Prefix + v.DefaultStem.Substring("MarvelConditionEffect_".Length)
+                                         + ConditionVariants.Suffix, out EffectRecord dr) == true ? dr : null,
+                    };
+                    if (cand.Record == null) continue;
+
+                    FxBuildResult b = await FxPackBuilder.BuildAsync(cand, plan.CustomName,
+                                                                 plan.CookedPcConsole, log);
+                    foreach (string s in b.Steps) result.Steps.Add("  condition: " + s);
+
+                    if (!b.Ok)
+                    {
+
+                        result.Steps.Add($"  ⚠ condition effect {v.FileName} not installed: {b.Error}");
+                        log?.Invoke("  condition effect skipped: " + b.Error);
+                        continue;
+                    }
+
+                    plan.Effects.Add(new FxEffect
+                    {
+                        From       = v.FromAsset,
+                        Package    = b.Package,
+                        ClassPath  = b.ClassPath,
+                        EffectName = v.DefaultStem,
+                    });
+                    plan.ConditionPackages.Add(new FxRecord
+                    {
+                        UpkPath    = b.OutputPath,
+                        Package    = b.Package,
+                        ClassPath  = b.ClassPath,
+                        FromAsset  = "0x" + v.FromAsset.ToString("X16"),
+                        EffectName = v.DefaultStem,
+                    });
+
+                    plan.FxOptIn = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                result.Steps.Add("  ⚠ condition-effect scan failed: " + ex.Message);
+                log?.Invoke("  condition-effect scan failed: " + ex.Message);
+            }
+
             if (plan.IconSources is { Count: > 0 })
             {
                 try
@@ -484,7 +588,10 @@ namespace CostumeManager.Core
                     result.JsonBackup = TimestampedBackup(CostumeConfig.ExistingPath(plan.CustomCostumesJson));
 
                 AppendCostumeEntry(plan);
-                AppendServerEntry(plan);
+
+                RegenerateServerFromClient(plan.CustomCostumesJson, plan.ServerCostumesJson, log);
+
+                CancelPendingPurge(plan.ServerCostumesJson, plan.CustomId, log);
                 result.Steps.Add($"JSON: entry \"{plan.CustomName}\" (enum {plan.Enum})");
                 result.Steps.Add($"server: ServerCostumes.json updated (copy to the server)");
 
@@ -516,6 +623,8 @@ namespace CostumeManager.Core
                     TfcAliasRows = new List<string>(result.TfcAliasRows),
                     IconUpkPath = plan.IconUpkPath,
                     IconPackage = plan.IconPackage,
+
+                    ConditionPackages = new List<FxRecord>(plan.ConditionPackages),
 
                     TfcAliasPairs = (plan.TfcAliases ?? new List<AliasPair>())
                         .Select(p => new AliasPair(p.From, p.To)).ToList(),
@@ -795,6 +904,39 @@ namespace CostumeManager.Core
                     res.Steps.Add("deleted icon UPK");
                 }
 
+                foreach (FxRecord c in ledgerRec?.ConditionPackages ?? new List<FxRecord>())
+                {
+                    string p = c?.UpkPath;
+                    if (string.IsNullOrWhiteSpace(p) && !string.IsNullOrWhiteSpace(c?.Package))
+                        p = Path.Combine(cooked, c.Package + ".upk");
+                    if (string.IsNullOrWhiteSpace(p) || !File.Exists(p)) continue;
+
+                    string full, cookedRoot;
+                    try
+                    {
+                        full = Path.GetFullPath(p);
+                        cookedRoot = Path.GetFullPath(cooked);
+                    }
+                    catch { continue; }
+                    if (!full.StartsWith(cookedRoot.TrimEnd(Path.DirectorySeparatorChar)
+                                         + Path.DirectorySeparatorChar,
+                                         StringComparison.OrdinalIgnoreCase))
+                    {
+                        res.Steps.Add("skipped condition package outside this game folder: " + p);
+                        continue;
+                    }
+                    try
+                    {
+                        File.Delete(p);
+                        log?.Invoke($"[1c/4] deleted condition effect: {Path.GetFileName(p)}");
+                        res.Steps.Add("deleted condition effect " + Path.GetFileName(p));
+                    }
+                    catch (Exception ex)
+                    {
+                        res.Steps.Add("⚠ could not delete " + Path.GetFileName(p) + ": " + ex.Message);
+                    }
+                }
+
                 string manifestPath = ledgerRec?.ManifestPath ?? manifest;
                 var exactRows = ledgerRec?.TfcAliasRows;
                 string customPkg = ledgerRec?.TfcPackage;
@@ -925,6 +1067,69 @@ namespace CostumeManager.Core
             return true;
         }
 
+        static void CancelPendingPurge(string serverJsonPath, ulong customId, Action<string> log = null)
+        {
+            if (string.IsNullOrWhiteSpace(serverJsonPath) || customId == 0) return;
+            string dir = Path.GetDirectoryName(serverJsonPath);
+            if (string.IsNullOrEmpty(dir)) return;
+            string path = Path.Combine(dir, PendingPurgeFileName);
+            if (!File.Exists(path)) return;
+
+            JsonArray prev;
+            try { prev = JsonNode.Parse(File.ReadAllText(path)) as JsonArray; }
+            catch { return; }
+            if (prev == null) return;
+
+            var kept = new JsonArray();
+            int dropped = 0;
+            foreach (JsonNode n in prev)
+            {
+                ulong id = n is JsonObject o ? CostumeLibrary.ParseHex(o["prototypeId"]) : 0;
+                if (id != 0 && id == customId) { dropped++; continue; }
+                kept.Add(n.DeepClone());
+            }
+            if (dropped == 0) return;
+
+            if (kept.Count == 0)
+            {
+                File.Delete(path);
+                log?.Invoke($"  cancelled the queued token purge (this costume is being reinstalled)");
+                return;
+            }
+            var opt = new JsonSerializerOptions
+            {
+                WriteIndented = true,
+                TypeInfoResolver = new System.Text.Json.Serialization.Metadata.DefaultJsonTypeInfoResolver()
+            };
+            File.WriteAllText(path, kept.ToJsonString(opt));
+            log?.Invoke($"  cancelled {dropped} queued token purge(s) for this costume (being reinstalled)");
+        }
+
+        public static UninstallResult RegenerateServerCostumes(string gameRoot, string serverDir,
+                                                               Action<string> log = null)
+        {
+            var res = new UninstallResult();
+            try
+            {
+                string clientJsonPath = CostumeLibrary.CustomCostumesJson(gameRoot);
+                if (!CostumeConfig.Exists(clientJsonPath))
+                { res.Error = "no costume config found under " + gameRoot; return res; }
+
+                string serverJsonPath = !string.IsNullOrWhiteSpace(serverDir)
+                    ? Path.Combine(serverDir, "ServerCostumes.json")
+                    : Path.Combine(AppContext.BaseDirectory, "ServerCostumes.json");
+
+                if (File.Exists(serverJsonPath)) Backup.Timestamped(serverJsonPath);
+                RegenerateServerFromClient(clientJsonPath, serverJsonPath, log);
+
+                res.Steps.Add("regenerated " + serverJsonPath);
+                res.Steps.Add("read from " + clientJsonPath);
+                res.Ok = true;
+            }
+            catch (Exception ex) { res.Error = ex.Message; }
+            return res;
+        }
+
         static void RegenerateServerFromClient(string clientJsonPath, string serverJsonPath,
                                                Action<string> log = null)
         {
@@ -956,6 +1161,13 @@ namespace CostumeManager.Core
                 {
                     try { entry["storePrice"] = c["storePrice"].GetValue<long>(); }
                     catch {  }
+                }
+
+                if (c["effects"] is JsonArray)
+                {
+                    ulong forgedAsset = FxHotspots.CostumeAssetIdFor(en.GetValue<uint>());
+                    if (forgedAsset != 0)
+                        entry["forgedAsset"] = "0x" + forgedAsset.ToString("X16");
                 }
 
                 if (c["hotspots"] is JsonArray hs && hs.Count > 0)
@@ -1159,52 +1371,6 @@ namespace CostumeManager.Core
                 });
             }
             return arr;
-        }
-
-        static void AppendServerEntry(InstallPlan plan)
-        {
-
-            if (!CostumeConfig.Exists(plan.CustomCostumesJson)) return;
-
-            JsonNode clientRoot;
-            try { clientRoot = JsonNode.Parse(CostumeConfig.ReadAllText(plan.CustomCostumesJson)); }
-            catch { return; }
-
-            if (clientRoot?["costumes"] is not JsonArray clientArr) return;
-
-            var outArr = new JsonArray();
-            foreach (var node in clientArr)
-            {
-                if (node is not JsonObject c) continue;
-
-                var    en    = c["enum"];
-                var    cid   = c["customId"];
-
-                if (en == null) continue;
-
-                string searchName = InternalNameFromClass((string)c["class"]);
-
-                string display    = (string)c["displayName"] ?? (string)c["name"] ?? searchName;
-                if (string.IsNullOrEmpty(searchName)) searchName = display;
-
-                outArr.Add(new JsonObject
-                {
-                    ["name"]        = searchName,
-                    ["displayName"] = display,
-                    ["prototypeId"] = cid != null ? (string)cid : null,
-
-                    ["donorId"]     = c["donorId"] != null ? (string)c["donorId"] : null,
-                    ["enum"]        = en.GetValue<uint>(),
-                });
-            }
-
-            var root = new JsonObject { ["costumes"] = outArr };
-            var opts = new JsonSerializerOptions
-            {
-                WriteIndented = true,
-                TypeInfoResolver = new System.Text.Json.Serialization.Metadata.DefaultJsonTypeInfoResolver()
-            };
-            File.WriteAllText(plan.ServerCostumesJson, root.ToJsonString(opts));
         }
 
         static void CopyCostumesTableIfNeeded(InstallPlan plan, Action<string> log, InstallResult result)

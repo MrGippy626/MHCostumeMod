@@ -870,11 +870,36 @@ namespace CostumeManager.Core
 
             public List<string> ParticleSystems { get; } = new List<string>();
 
+        public List<string> StandaloneObjects { get; } = new List<string>();
+
             public List<string> RefusedClasses { get; } = new List<string>();
 
             public List<string> AlreadyUnique { get; } = new List<string>();
             public List<string> Skipped { get; } = new List<string>();
             public bool Ok { get { return Pairs.Count > 0 && ClassLeaf != null; } }
+        }
+
+        static bool IsStandaloneRenameable(string cls)
+        {
+            if (string.IsNullOrWhiteSpace(cls)) return false;
+            switch (cls.ToLowerInvariant())
+            {
+                case "skeletalmesh":
+                case "staticmesh":
+                case "material":
+                case "materialinstanceconstant":
+                case "materialinstancetimevarying":
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        static string LeafOf(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path)) return null;
+            int i = path.LastIndexOf('.');
+            return i >= 0 && i + 1 < path.Length ? path.Substring(i + 1) : path;
         }
 
         public static FxRenamePlan Build(UnrealHeader header, string stockStem, string customName,
@@ -972,13 +997,37 @@ namespace CostumeManager.Core
             }
 
             var systems = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var standalone = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             int deeper = 0;
             foreach (FxEditedObject ed in edited ?? Enumerable.Empty<FxEditedObject>())
             {
                 if (ed == null) continue;
                 if (ed.DeeperCandidate) { deeper++; continue; }
                 string sys = ed.ParticleSystem;
-                if (!string.IsNullOrEmpty(sys)) systems.Add(sys);
+                if (!string.IsNullOrEmpty(sys)) { systems.Add(sys); continue; }
+
+                if (IsStandaloneRenameable(ed.Class))
+                {
+                    string leaf = LeafOf(ed.Path);
+                    if (!string.IsNullOrEmpty(leaf)) standalone.Add(leaf);
+                }
+            }
+
+            foreach (string leaf in standalone.OrderBy(s => s, StringComparer.OrdinalIgnoreCase))
+            {
+                string low = leaf.ToLowerInvariant();
+                if (low.EndsWith("_" + customName.ToLowerInvariant(), StringComparison.Ordinal))
+                {
+                    plan.AlreadyUnique.Add(leaf);
+                    continue;
+                }
+                if (!names.Contains(leaf))
+                {
+                    plan.Skipped.Add(leaf + " (edited object not in the name table)");
+                    continue;
+                }
+                add(leaf, leaf + "_" + customName.ToLowerInvariant());
+                plan.StandaloneObjects.Add(leaf);
             }
 
             foreach (string sys in systems.OrderBy(s => s, StringComparer.OrdinalIgnoreCase))
@@ -1008,6 +1057,9 @@ namespace CostumeManager.Core
                 if (plan.ParticleSystems.Count > 0)
                     log("      edited particle system(s) uniquified: " +
                         string.Join(", ", plan.ParticleSystems));
+                if (plan.StandaloneObjects.Count > 0)
+                    log("      edited mesh/material(s) uniquified: " +
+                        string.Join(", ", plan.StandaloneObjects));
                 foreach (string s in plan.RefusedClasses) log("      refused: " + s);
                 if (plan.AlreadyUnique.Count > 0)
                     log("      already unique (source may be an installed file): " +

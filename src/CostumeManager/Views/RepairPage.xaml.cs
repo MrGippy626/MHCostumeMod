@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -94,6 +95,107 @@ namespace CostumeManager.Views
                      : "Nothing was restored — see the log.",
                 "Repair manifest", DialogButtons.OK,
                 done ? DialogKind.Info : DialogKind.Warning);
+        }
+
+        async void RegenServer_Click(object sender, RoutedEventArgs e)
+        {
+
+            string dir = AppState.GameDir;
+            string serverDir = AppState.ServerDir;
+
+            if (!GamePaths.LooksLikeGameFolder(dir))
+            {
+                await AppDialog.ShowAsync("Pick your game folder first (Settings tab).",
+                    "Server config", DialogButtons.OK, DialogKind.Warning);
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(serverDir))
+            {
+                if (await AppDialog.ShowAsync(
+                        "No server folder is set (Settings tab), so this will write "
+                        + "ServerCostumes.json next to the Costume Manager instead of into your "
+                        + "server - where the server will never read it."
+                        + Environment.NewLine + Environment.NewLine + "Write it anyway?",
+                        "Server config", DialogButtons.OKCancel, DialogKind.Warning,
+                        primaryText: "Write anyway", closeText: "Cancel") != DialogResult.OK)
+                    return;
+            }
+
+            BtnRegenServer.IsEnabled = false;
+            try
+            {
+                Installer.UninstallResult r = await Task.Run(
+                    () => Installer.RegenerateServerCostumes(dir, serverDir, AppState.Logger));
+
+                foreach (string step in r.Steps) AppState.Log("  " + step);
+
+                TxtRegenResult.Text = r.Ok
+                    ? "Rewritten. Restart the server - it reads this file once, at startup."
+                    : "Failed: " + (r.Error ?? "unknown");
+
+                if (!r.Ok)
+                    await AppDialog.ShowAsync(r.Error ?? "failed", "Server config",
+                        DialogButtons.OK, DialogKind.Error);
+            }
+            catch (Exception ex)
+            {
+                TxtRegenResult.Text = "Failed: " + ex.Message;
+                AppState.Log("regenerate ServerCostumes.json failed: " + ex.Message);
+            }
+            finally { BtnRegenServer.IsEnabled = true; }
+        }
+
+        async void InspectTokens_Click(object sender, RoutedEventArgs e)
+        {
+
+            string serverDir = AppState.ServerDir;
+            string gameDir   = AppState.GameDir;
+
+            if (string.IsNullOrWhiteSpace(serverDir))
+            {
+                await AppDialog.ShowAsync(
+                    "Set your server folder on the Settings tab first - that is where "
+                    + "Account.db lives.",
+                    "Tokens", DialogButtons.OK, DialogKind.Warning);
+                return;
+            }
+
+            BtnInspectTokens.IsEnabled = false;
+            try
+            {
+
+                string report = await Task.Run(() =>
+                {
+                    var known = new List<(string, uint, ulong)>();
+                    try
+                    {
+                        var (_, _, bin) = GamePaths.Resolve(gameDir);
+                        string cfg = CostumeConfig.ExistingPath(bin);
+                        if (CostumeConfig.Exists(cfg) &&
+                            JsonNode.Parse(CostumeConfig.ReadAllText(cfg)) is JsonObject root &&
+                            root["costumes"] is JsonArray arr)
+                        {
+                            foreach (JsonNode n in arr)
+                                if (n is JsonObject o && o["enum"] != null)
+                                    known.Add(((string)o["name"], o["enum"].GetValue<uint>(),
+                                               CostumeLibrary.ParseHex(o["customId"])));
+                        }
+                    }
+                    catch {  }
+
+                    TokenInspection ti = TokenInspector.Inspect(serverDir, known, AppState.Logger);
+                    return TokenInspector.Format(ti);
+                });
+
+                TxtTokenReport.Text = report;
+            }
+            catch (Exception ex)
+            {
+                TxtTokenReport.Text = "Failed: " + ex.Message;
+                AppState.Log("token inspection failed: " + ex.Message);
+            }
+            finally { BtnInspectTokens.IsEnabled = true; }
         }
 
         async void RebuildChains_Click(object sender, RoutedEventArgs e)

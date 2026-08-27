@@ -617,6 +617,8 @@ namespace CostumeManager.Core
 
         public string IconUpk { get; set; }
 
+        public List<string> ConditionUpks { get; set; } = new List<string>();
+
         public string FxPackToken { get; set; }
 
         public JsonObject Entry { get; set; }
@@ -629,6 +631,8 @@ namespace CostumeManager.Core
         public const int Format = 1;
 
         public const string IconUpkEntry = "icons/package.upk";
+
+        public const string ConditionDir = "conditions/";
 
         public static string WriteJson(CostumePackInfo i)
         {
@@ -654,6 +658,10 @@ namespace CostumeManager.Core
                 ["tfcAliasPairs"] = pairs,
                 ["iconArt"]       = icons,
                 ["fxPackToken"]   = i.FxPackToken,
+
+                ["conditionUpks"] = new JsonArray(
+                    (i.ConditionUpks ?? new List<string>())
+                        .Select(x => (JsonNode)JsonValue.Create(x)).ToArray()),
                 ["entry"]         = i.Entry?.DeepClone(),
             };
             return root.ToJsonString(CostumeLibrary.JsonOpts);
@@ -691,6 +699,11 @@ namespace CostumeManager.Core
                     if (n is JsonObject p && (string)p["from"] != null && (string)p["to"] != null)
                         info.TfcAliasPairs.Add(new AliasPair((string)p["from"], (string)p["to"]));
 
+                foreach (var n in (o["conditionUpks"] as JsonArray) ?? new JsonArray())
+                {
+                    string cu = (string)n;
+                    if (!string.IsNullOrWhiteSpace(cu)) info.ConditionUpks.Add(cu);
+                }
                 foreach (var n in (o["iconArt"] as JsonArray) ?? new JsonArray())
                     if (n is JsonObject a && System.Enum.TryParse((string)a["role"], out IconRole role)
                         && (string)a["file"] != null)
@@ -1056,6 +1069,27 @@ namespace CostumeManager.Core
                     log?.Invoke("[2/4] no custom icons - the donor's are used");
                 }
 
+                var condInstalled = new List<FxRecord>();
+                foreach (string cz in info.ConditionUpks)
+                {
+                    ZipArchiveEntry ce = zip.GetEntry(cz);
+                    if (ce == null)
+                    {
+                        res.Warnings.Add($"pack lists condition effect \"{cz}\" but does not contain "
+                                       + "it - that effect will render the donor's art");
+                        continue;
+                    }
+                    string cOut = Path.Combine(cooked, Path.GetFileName(cz));
+                    ce.ExtractToFile(cOut, true);
+                    res.Steps.Add("wrote " + Path.GetFileName(cz));
+                    condInstalled.Add(new FxRecord
+                    {
+                        UpkPath = cOut,
+
+                        Package = Path.GetFileNameWithoutExtension(cz).ToLowerInvariant(),
+                    });
+                }
+
                 var pairs = new List<AliasPair>(info.TfcAliasPairs);
                 if (iconUpkPath != null)
                     pairs.Add(new AliasPair(IconPackBuilder.DonorPackageName,
@@ -1113,6 +1147,8 @@ namespace CostumeManager.Core
                         TfcAliasPairs = new List<AliasPair>(info.TfcAliasPairs),
                         IconUpkPath = iconUpkPath,
                         IconPackage = (string)info.Entry["iconPackage"],
+
+                        ConditionPackages = condInstalled,
                     });
                     res.Steps.Add("ledger: recorded");
                 }
@@ -1171,6 +1207,19 @@ namespace CostumeManager.Core
                     res.Steps.Add("deleted costume UPK");
                 }
                 else Say("[1/4] costume UPK already absent");
+
+                foreach (FxRecord cr in rec?.ConditionPackages ?? new List<FxRecord>())
+                {
+                    string cp = cr.UpkPath;
+                    if (string.IsNullOrWhiteSpace(cp) || !IsInside(cp, cooked))
+                        cp = string.IsNullOrWhiteSpace(cr.Package)
+                                ? null : Path.Combine(cooked, cr.Package + ".upk");
+                    if (!string.IsNullOrWhiteSpace(cp) && File.Exists(cp))
+                    {
+                        try { File.Delete(cp); res.Steps.Add("deleted " + Path.GetFileName(cp)); }
+                        catch (Exception ex) { res.Warnings.Add($"could not delete {Path.GetFileName(cp)}: {ex.Message}"); }
+                    }
+                }
 
                 string iconUpk = rec?.IconUpkPath;
                 if (!string.IsNullOrWhiteSpace(iconUpk) && !IsInside(iconUpk, cooked)) iconUpk = null;

@@ -59,6 +59,12 @@ namespace CostumeManager.Core
             return EnumBase + (costumeEnum - CustomEnumBase) * (uint)MaxHotspotsPerCostume + (uint)index;
         }
 
+        public static ulong CostumeAssetIdFor(uint costumeEnum)
+        {
+            if (costumeEnum < CustomEnumBase) return 0;
+            return (0xC057UL << 48) | ((ulong)(costumeEnum - CustomEnumBase) << 24) | 0x1299UL;
+        }
+
         static readonly (string Path, ulong Id)[] Controls =
         {
             (@"Entity\PowerEntities\PrototypesHotspot\GambitStreetSweepTrailArea.prototype",

@@ -266,6 +266,12 @@ namespace CostumeManager.Core
                     .Select(c => "UC__" + c.StockStem + "_SF.upk")
                     .ToList();
 
+                if (!FxRefDb.Available)
+                    log?.Invoke("⚠ effect_reference.db not found - shared-class refusals fall "
+                              + "back to a hardcoded prefix, so renames that are normally "
+                              + "REFUSED may be applied. Build it with fxrefbuilder before "
+                              + "installing effects for a new hero.");
+
                 var built = new List<FxEffect>();
                 var parents = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 foreach (FxCandidate c in selected)

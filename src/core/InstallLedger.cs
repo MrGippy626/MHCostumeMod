@@ -33,6 +33,8 @@ namespace CostumeManager.Core
         public List<TfcAlias.Core.AliasPair> TfcAliasPairs { get; set; } = new List<TfcAlias.Core.AliasPair>();
 
         public List<FxRecord> FxPackages { get; set; } = new List<FxRecord>();
+
+        public List<FxRecord> ConditionPackages { get; set; } = new List<FxRecord>();
     }
 
     public sealed class FxRecord
@@ -109,6 +111,20 @@ namespace CostumeManager.Core
                             })
                             .Where(p => p.Package != null).ToList()
                             ?? new List<FxRecord>(),
+
+                        ConditionPackages = (o["conditionPackages"] as JsonArray)?
+                            .OfType<JsonObject>()
+                            .Select(p => new FxRecord
+                            {
+                                UpkPath = (string)p["upkPath"],
+                                Package = (string)p["package"],
+                                ClassPath = (string)p["class"],
+                                FromAsset = (string)p["from"],
+                                EffectName = (string)p["effectName"],
+                                SourceCrc = (string)p["sourceCrc"],
+                            })
+                            .Where(p => p.Package != null).ToList()
+                            ?? new List<FxRecord>(),
                     });
                 }
                 return list;
@@ -144,12 +160,26 @@ namespace CostumeManager.Core
                             ["sourceCrc"] = f.SourceCrc,
                         });
 
+                var cond = new JsonArray();
+                foreach (var f in r.ConditionPackages ?? new List<FxRecord>())
+                    if (f != null && f.Package != null)
+                        cond.Add(new JsonObject
+                        {
+                            ["upkPath"] = f.UpkPath,
+                            ["package"] = f.Package,
+                            ["class"] = f.ClassPath,
+                            ["from"] = f.FromAsset,
+                            ["effectName"] = f.EffectName,
+                            ["sourceCrc"] = f.SourceCrc,
+                        });
+
                 arr.Add(new JsonObject
                 {
                     ["iconUpkPath"] = r.IconUpkPath,
                     ["iconPackage"] = r.IconPackage,
                     ["tfcAliasPairs"] = pairs,
                     ["fxPackages"] = fx,
+                    ["conditionPackages"] = cond,
                     ["name"] = r.Name,
                     ["displayName"] = r.DisplayName,
                     ["enum"] = r.Enum,

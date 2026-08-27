@@ -28,6 +28,8 @@
                 <Button x:Name="BtnExportCancel"   Content="Cancel" Visibility="Collapsed"
                         Click="ExportCancel_Click" />
 
+                <Button x:Name="BtnImportPack" Content="Import…" Click="ImportPack_Click" />
+
                 <Button x:Name="BtnRefresh"     Content="Refresh" Click="Refresh_Click" />
             </StackPanel>
         </Grid>
