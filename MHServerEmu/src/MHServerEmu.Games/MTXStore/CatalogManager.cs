@@ -64,6 +64,22 @@ namespace MHServerEmu.Games.MTXStore
                 AddCustomCostumeEntries();
 
                 Logger.Info($"Loaded {_catalog.Count} store catalog entries");
+
+#if (GAME_VERSION_1_52 || GAME_VERSION_1_53) && (PLATFORM_TYPE_PS4 || PLATFORM_TYPE_XBOXONE)
+                // Generate dummy entries for all starting costumes because on consoles hero/costume selection is integrated with the store.
+                List<CatalogEntry> startingCostumeEntries = new();
+                long currentSkuId = _catalog.HighestSkuId;
+
+                foreach (PrototypeId avatarProtoRef in DataDirectory.Instance.IteratePrototypesInHierarchy<AvatarPrototype>(PrototypeIterateFlags.NoAbstractApprovedOnly))
+                {
+                    AvatarPrototype avatarProto = avatarProtoRef.As<AvatarPrototype>();
+                    PrototypeId costumeProtoRef = avatarProto.GetStartingCostumeForPlatform(Game.PlatformType);
+                    CatalogEntry entry = new(++currentSkuId, costumeProtoRef, 0);
+                    startingCostumeEntries.Add(entry);
+                }
+
+                _catalog.AddEntries(startingCostumeEntries);
+#endif
             }
         }
 
@@ -77,7 +93,15 @@ namespace MHServerEmu.Games.MTXStore
             for (int i = 0; i < storeEntries.Count; i++)
             {
                 var storeEntry = storeEntries[i];
-                entries[i] = new CatalogEntry(storeEntry.SkuId, storeEntry.CustomId, storeEntry.DisplayName, storeEntry.Price);
+
+                entries[i] = new CatalogEntry(storeEntry.SkuId,
+                    [new(0, storeEntry.CustomId, 1)],
+                    Array.Empty<CatalogGuidEntry>(),
+                    [new("en_us", storeEntry.DisplayName, storeEntry.DisplayName, "", storeEntry.Price)],
+                    Array.Empty<LocalizedCatalogEntryUrlOrData>(),
+                    Array.Empty<LocalizedCatalogEntryUrlOrData>(),
+                    new("Costume", 1),
+                    [new("Giftable", 1)]);
             }
 
             _catalog.AddEntries(entries);
@@ -111,10 +135,19 @@ namespace MHServerEmu.Games.MTXStore
 
         public bool OnBuyItemFromCatalog(Player player, NetMessageBuyItemFromCatalog buyItemFromCatalog)
         {
+#if (GAME_VERSION_1_52 || GAME_VERSION_1_53) && (PLATFORM_TYPE_PS4 || PLATFORM_TYPE_XBOXONE)
+            if (!Verify.IsTrue(buyItemFromCatalog.HasSo, $"No sellable object received from player [{player}]"))
+                return false;
+
+            if (!Verify.IsTrue(long.TryParse(buyItemFromCatalog.So, out long skuId)))
+                return false;
+#else
             if (!Verify.IsTrue(buyItemFromCatalog.HasSkuId, $"No SkuId received from player [{player}]"))
                 return false;
 
             long skuId = buyItemFromCatalog.SkuId;
+#endif
+
             long clientPrice = buyItemFromCatalog.ItemUnitPrice;
 
             // In normal non-gift purchases the buyer is the recipient
@@ -463,8 +496,11 @@ namespace MHServerEmu.Games.MTXStore
                 return BuyItemResultErrorCodes.BUY_RESULT_ERROR_SUCCESS;
             }
 
-            // V53_TODO: consoles?
+#if PLATFORM_TYPE_PC
             PrototypeId duplicateItemProtoRef = costumeProto.FulfillmentDuplicateItemPC;
+#else
+            PrototypeId duplicateItemProtoRef = costumeProto.FulfillmentDuplicateItem;
+#endif
             if (!Verify.IsTrue(duplicateItemProtoRef != PrototypeId.Invalid)) return BuyItemResultErrorCodes.BUY_RESULT_ERROR_UNKNOWN;
 
             ItemPrototype duplicateItemProto = duplicateItemProtoRef.As<ItemPrototype>();
@@ -502,7 +538,7 @@ namespace MHServerEmu.Games.MTXStore
                 if (tokenProto == null)
                     return BuyItemResultErrorCodes.BUY_RESULT_ERROR_ALREADY_HAVE_AVATAR;
 
-                CostumePrototype costumeProto = avatarProto.GetStartingCostumeForPlatform(Platforms.PC).As<CostumePrototype>();
+                CostumePrototype costumeProto = avatarProto.GetStartingCostumeForPlatform(Game.PlatformType).As<CostumePrototype>();
                 if (costumeProto == null)
                     return BuyItemResultErrorCodes.BUY_RESULT_ERROR_ALREADY_HAVE_AVATAR;
 

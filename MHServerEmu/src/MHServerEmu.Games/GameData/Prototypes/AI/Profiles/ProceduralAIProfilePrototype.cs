@@ -636,7 +636,8 @@ namespace MHServerEmu.Games.GameData.Prototypes
                     if (Verify.IsNotNull(spawnGroup) && alliance != null)
                     {
                         SpawnGroupEntityQueryFilterFlags filterFlags = SpawnGroupEntityQueryFilterFlags.Allies | SpawnGroupEntityQueryFilterFlags.NotDeadDestroyedControlled;
-                        if (spawnGroup.GetEntities(out List <WorldEntity> allies, filterFlags, agent.Alliance))
+                        using var alliesHandle = ListPool<WorldEntity>.Get(out List<WorldEntity> allies);
+                        if (spawnGroup.GetEntities(allies, filterFlags, agent.Alliance))
                         {
                             foreach (WorldEntity ally in allies)
                             {
@@ -1007,7 +1008,7 @@ namespace MHServerEmu.Games.GameData.Prototypes
             }
 
             GRandom random = game.Random;
-            Picker<ProceduralUsePowerContextPrototype> powerPicker = new(random);
+            using var powerPickerHandle = PickerPool<ProceduralUsePowerContextPrototype>.Get(random, out Picker<ProceduralUsePowerContextPrototype> powerPicker);
             PopulatePowerPicker(ownerController, powerPicker);
             if (HandleProceduralPower(ownerController, proceduralAI, random, currentTime, powerPicker, true) == StaticBehaviorReturnType.Running) return;
 
@@ -1253,7 +1254,7 @@ namespace MHServerEmu.Games.GameData.Prototypes
             }
 
             GRandom random = game.Random;
-            Picker<ProceduralUsePowerContextPrototype> powerPicker = new(random);
+            using var powerPickerHandle = PickerPool<ProceduralUsePowerContextPrototype>.Get(random, out Picker<ProceduralUsePowerContextPrototype> powerPicker);
             PopulatePowerPicker(ownerController, powerPicker);
             if (HandleProceduralPower(ownerController, proceduralAI, random, currentTime, powerPicker, true) == StaticBehaviorReturnType.Running) return;
 
@@ -1388,7 +1389,7 @@ namespace MHServerEmu.Games.GameData.Prototypes
                 && proceduralAI.PartialOverrideBehavior == null) return;
 
             GRandom random = game.Random;
-            Picker<ProceduralUsePowerContextPrototype> powerPicker = new(random);
+            using var powerPickerHandle = PickerPool<ProceduralUsePowerContextPrototype>.Get(random, out Picker<ProceduralUsePowerContextPrototype> powerPicker);
             PopulatePowerPicker(ownerController, powerPicker);
             if (HandleProceduralPower(ownerController, proceduralAI, random, currentTime, powerPicker, true) == StaticBehaviorReturnType.Running) return;
 
@@ -1425,6 +1426,9 @@ namespace MHServerEmu.Games.GameData.Prototypes
             BehaviorBlackboard ownerBlackboard = ownerController.Blackboard;
 
             int syncAttackIndex = GetRandomSyncAttackIndex(ownerBlackboard, game);
+            if (syncAttackIndex == -1)
+                return;
+
             if (!Verify.IsTrue(syncAttackIndex >= 0 && syncAttackIndex < IDPropertiesLength)) return;
 
             ulong targetId = ownerBlackboard.PropertyCollection[IDProperties[syncAttackIndex]];            
@@ -1715,8 +1719,8 @@ namespace MHServerEmu.Games.GameData.Prototypes
             Game game = ownerController.Game;
             if (!Verify.IsNotNull(game)) return;
 
-            Picker<Agent> targetPicker = new(game.Random);
-            Sphere volume = new (agent.RegionLocation.Position, SpikeDanceMobSearchRadius);
+            using var targetPickerHandle = PickerPool<Agent>.Get(game.Random, out Picker<Agent> targetPicker);
+            Sphere volume = new(agent.RegionLocation.Position, SpikeDanceMobSearchRadius);
             foreach (WorldEntity entity in region.IterateEntitiesInVolume(volume, new(EntityRegionSPContextFlags.UnrestrictedPartitions)))
             {
                 if (entity is not Agent entityAgent)
@@ -1758,7 +1762,7 @@ namespace MHServerEmu.Games.GameData.Prototypes
         }
     }
 
-#if GAME_VERSION_1_53
+#if GAME_VERSION_1_53 && PLATFORM_TYPE_PC
     public class ProfLavaWaveRaidControllerPrototype : ProcProfileSpikeDanceControllerPrototype
     {
         //---

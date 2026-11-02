@@ -176,6 +176,7 @@ namespace MHServerEmu.Games.Entities.Persistence
                 settings.DbGuid = (ulong)dbEntity.DbGuid;
                 settings.InventoryLocation = new(containerEntityId, inventoryProtoRef, dbEntity.Slot);
                 settings.EntityRef = entityProtoRef;
+                settings.OptionFlags &= ~EntitySettingsOptionFlags.PopulateInventories;
                 settings.ArchiveSerializeType = ArchiveSerializeType.Database;
                 settings.ArchiveData = dbEntity.ArchiveData;
 

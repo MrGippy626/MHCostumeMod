@@ -67,8 +67,6 @@ namespace MHServerEmu.Games.Network
         public ulong PlayerDbId { get => (ulong)_dbAccount.Id; }
         public long GazillioniteBalance { get => _dbAccount.Player.GazillioniteBalance; set => _dbAccount.Player.GazillioniteBalance = value; }
 
-        /// <summary>
-        /// </summary>
         public bool CustomCostumesEnabled
         {
             get => ((DBPlayerFlags)_dbAccount.Player.Flags).HasFlag(DBPlayerFlags.CustomCostumesEnabled);
@@ -81,14 +79,6 @@ namespace MHServerEmu.Games.Network
             }
         }
 
-        /// <summary>
-        /// </summary>
-        /// <remarks>
-        /// </remarks>
-        /// <summary>
-        /// </summary>
-        /// <remarks>
-        /// </remarks>
         public ulong SessionId => _frontendClient?.Session?.Id ?? 0;
 
         public bool CanDecodeForgedRef(PrototypeId forgedRef)
@@ -104,8 +94,6 @@ namespace MHServerEmu.Games.Network
             return _requireRegistration == false;
         }
 
-        /// <summary>
-        /// </summary>
         public bool HasRegisteredForgedRefs
         {
             get
@@ -115,8 +103,6 @@ namespace MHServerEmu.Games.Network
             }
         }
 
-        /// <summary>
-        /// </summary>
         private static readonly bool _requireRegistration =
             ConfigManager.Instance.GetConfig<CustomGameOptionsConfig>().RequireCustomCostumeRegistration;
 
@@ -217,11 +203,14 @@ namespace MHServerEmu.Games.Network
             {
                 playerSettings.DbGuid = (ulong)_dbAccount.Id;
                 playerSettings.EntityRef = GameDatabase.GlobalsPrototype.DefaultPlayer;
-                playerSettings.OptionFlags = EntitySettingsOptionFlags.PopulateInventories;
+                playerSettings.OptionFlags = EntitySettingsOptionFlags.None;
                 playerSettings.PlayerConnection = this;
                 playerSettings.PlayerName = _dbAccount.PlayerName;
                 playerSettings.ArchiveSerializeType = ArchiveSerializeType.Database;
                 playerSettings.ArchiveData = _dbAccount.Player.ArchiveData;
+
+                if (playerSettings.ArchiveData.IsNullOrEmpty())
+                    playerSettings.OptionFlags |= EntitySettingsOptionFlags.PopulateInventories;
 
                 Player = entityManager.CreateEntity(playerSettings) as Player;
             }
@@ -693,6 +682,9 @@ namespace MHServerEmu.Games.Network
                 case ClientToGameServerMessage.NetMessageVendorRequestBuyItemFrom:          OnVendorRequestBuyItemFrom(message); break;
                 case ClientToGameServerMessage.NetMessageVendorRequestSellItemTo:           OnVendorRequestSellItemTo(message); break;
                 case ClientToGameServerMessage.NetMessageVendorRequestDonateItemTo:         OnVendorRequestDonateItemTo(message); break;
+#if GAME_VERSION_1_53
+                case ClientToGameServerMessage.NetMessageVendorRequestDonateItemsTo:        OnVendorRequestDonateItemsTo(message); break;
+#endif
                 case ClientToGameServerMessage.NetMessageVendorRequestRefresh:              OnVendorRequestRefresh(message); break;
                 case ClientToGameServerMessage.NetMessageTryModifyCommunityMemberCircle:    OnTryModifyCommunityMemberCircle(message); break;
                 case ClientToGameServerMessage.NetMessagePullCommunityStatus:               OnPullCommunityStatus(message); break;
@@ -700,7 +692,9 @@ namespace MHServerEmu.Games.Network
                 case ClientToGameServerMessage.NetMessageAkEvent:                           OnAkEvent(message); break;
                 case ClientToGameServerMessage.NetMessageSetTipSeen:                        OnSetTipSeen(message); break;
                 case ClientToGameServerMessage.NetMessageHUDTutorialDismissed:              OnHUDTutorialDismissed(message); break;
-#if !GAME_VERSION_1_53
+#if GAME_VERSION_1_53
+                case ClientToGameServerMessage.NetMessageTryMoveItemsToInventory:           OnTryMoveItemsToInventory(message); break;
+#else
                 case ClientToGameServerMessage.NetMessageTryMoveInventoryContentsToGeneral: OnTryMoveInventoryContentsToGeneral(message); break;
 #endif
                 case ClientToGameServerMessage.NetMessageSetPlayerGameplayOptions:          OnSetPlayerGameplayOptions(message); break;
@@ -747,6 +741,8 @@ namespace MHServerEmu.Games.Network
                 case ClientToGameServerMessage.NetMessageUISystemLockState:                 OnUISystemLockState(message); break;
 #if GAME_VERSION_1_52 || GAME_VERSION_1_53
                 case ClientToGameServerMessage.NetMessageEnableTalentPower:                 OnEnableTalentPower(message); break;
+#else
+                case ClientToGameServerMessage.NetMessageEnableSpecializationPower:         OnEnableSpecializationPower(message); break;
 #endif
                 case ClientToGameServerMessage.NetMessageStashInventoryViewed:              OnStashInventoryViewed(message); break;
                 case ClientToGameServerMessage.NetMessageStashCurrentlyOpen:                OnStashCurrentlyOpen(message); break;
@@ -768,6 +764,9 @@ namespace MHServerEmu.Games.Network
                 // case ClientToGameServerMessage.NetMessageBillingRoutedClientMessage:     OnBillingRoutedClientMessage(message); break;
                 // case ClientToGameServerMessage.NetMessagePlayerLookupByNameClientRequest:OnPlayerLookupByNameClientRequest(message); break;
                 case ClientToGameServerMessage.NetMessageCostumeChange:                     OnCostumeChange(message); break;
+#if GAME_VERSION_1_53
+                case ClientToGameServerMessage.NetMessageInactiveAvatarCostumeChange:       OnInactiveAvatarCostumeChange(message); break;
+#endif
                 // case ClientToGameServerMessage.NetMessageLookForParty:                   OnLookForParty(message); break;
 #endif
 
@@ -950,7 +949,29 @@ namespace MHServerEmu.Games.Network
             PrototypeId powerProtoRef = (PrototypeId)tryActivatePower.PowerPrototypeId;
 
             PowerActivationSettings settings = new(avatar.RegionLocation.Position);
-            settings.ApplyProtobuf(tryActivatePower);
+
+            if (tryActivatePower.HasIdTargetEntity)
+                settings.TargetEntityId = tryActivatePower.IdTargetEntity;
+
+            if (tryActivatePower.HasTargetPosition)
+                settings.TargetPosition = new(tryActivatePower.TargetPosition);
+
+            if (tryActivatePower.HasMovementSpeed)
+                settings.MovementSpeed = tryActivatePower.MovementSpeed;
+
+            if (tryActivatePower.HasMovementTimeMS)
+                settings.MovementTime = TimeSpan.FromMilliseconds(tryActivatePower.MovementTimeMS);
+
+            if (tryActivatePower.HasPowerRandomSeed)
+                settings.PowerRandomSeed = (int)tryActivatePower.PowerRandomSeed;
+
+            if (tryActivatePower.HasItemSourceId)
+                settings.ItemSourceId = tryActivatePower.ItemSourceId;
+
+            settings.FXRandomSeed = (int)tryActivatePower.FxRandomSeed;
+
+            if (tryActivatePower.HasTriggeringPowerPrototypeId)
+                settings.TriggeringPowerRef = (PrototypeId)tryActivatePower.TriggeringPowerPrototypeId;
 
             avatar.ActivatePower(powerProtoRef, ref settings);
         }
@@ -1847,6 +1868,33 @@ namespace MHServerEmu.Games.Network
             Player.DonateItemToVendor(avatarIndex, vendorRequestDonateItemTo.ItemId, vendorRequestDonateItemTo.VendorId);
         }
 
+#if GAME_VERSION_1_53
+        private void OnVendorRequestDonateItemsTo(in MailboxMessage message)
+        {
+            var vendorRequestDonateItemsTo = message.As<NetMessageVendorRequestDonateItemsTo>();
+            if (!Verify.IsNotNull(vendorRequestDonateItemsTo)) return;
+
+            // This is used on consoles for the "Donate All" option.
+
+            int avatarIndex = vendorRequestDonateItemsTo.AvatarIndex;
+            ulong vendorId = vendorRequestDonateItemsTo.VendorId;
+
+            for (int i = 0; i < vendorRequestDonateItemsTo.ItemIdsCount; i++)
+            {
+                ulong itemId = vendorRequestDonateItemsTo.ItemIdsList[i];
+
+                Item item = Game.EntityManager.GetEntity<Item>(itemId);
+                if (item == null)   // Multiple request may arrive due to lag
+                    continue;
+
+                if (!Verify.IsTrue(item.GetOwnerOfType<Player>() == Player, $"Player [{this}] is attempting to donate item [{item}] that does not belong to them!"))
+                    return;
+
+                Player.DonateItemToVendor(avatarIndex, itemId, vendorId);
+            }
+        }
+#endif
+
         private void OnVendorRequestRefresh(in MailboxMessage message)
         {
             var vendorRequestRefresh = message.As<NetMessageVendorRequestRefresh>();
@@ -1938,7 +1986,43 @@ namespace MHServerEmu.Games.Network
                 Player.ShowHUDTutorial(null);
         }
 
-#if !GAME_VERSION_1_53
+#if GAME_VERSION_1_53
+        private void OnTryMoveItemsToInventory(in MailboxMessage message)
+        {
+            var tryMoveItemsToInventory = message.As<NetMessageTryMoveItemsToInventory>();
+            if (!Verify.IsNotNull(tryMoveItemsToInventory)) return;
+
+            PrototypeId destInventoryProtoRef = (PrototypeId)tryMoveItemsToInventory.DestInventoryPrototype;
+
+            Inventory destInventory = Player.GetInventoryByRef(destInventoryProtoRef);
+            if (!Verify.IsNotNull(destInventory)) return;
+
+            EntityManager entityManager = Game.EntityManager;
+            for (int i = 0; i < tryMoveItemsToInventory.ItemIdsCount; i++)
+            {
+                ulong itemId = tryMoveItemsToInventory.ItemIdsList[i];
+                Item item = entityManager.GetEntity<Item>(itemId);
+                if (item == null)
+                    continue;
+
+                if (!Verify.IsTrue(item.GetOwnerOfType<Player>() == Player, $"Player [{Player}] is attempting to bulk move item [{item}] that belongs to another player"))
+                    return;
+
+                uint freeSlot = destInventory.GetFreeSlot(item, true);
+
+                // we are full
+                if (freeSlot == Inventory.InvalidSlot)
+                {
+                    Player.SendInventoryFullMessage(item.Id, destInventory.PrototypeDataRef);
+                    return;
+                }
+
+                InventoryResult result = item.ChangeInventoryLocation(destInventory, freeSlot);
+                if (!Verify.IsTrue(result == InventoryResult.Success, $"Failed to change inventory location ({result})"))
+                    return;
+            }
+        }
+#else
         private void OnTryMoveInventoryContentsToGeneral(in MailboxMessage message)
         {
             var tryMoveInventoryContentsToGeneral = message.As<NetMessageTryMoveInventoryContentsToGeneral>();
@@ -2480,7 +2564,6 @@ namespace MHServerEmu.Games.Network
         }
 
 #if GAME_VERSION_1_52 || GAME_VERSION_1_53
-        // V48_FIXME (Specialization power)
         private void OnEnableTalentPower(in MailboxMessage message)
         {
             var enableTalentPower = message.As<NetMessageEnableTalentPower>();
@@ -2500,6 +2583,27 @@ namespace MHServerEmu.Games.Network
                 return;
 
             avatar.EnableTalentPower(talentPowerRef, specIndex, enable);
+        }
+#else
+        private void OnEnableSpecializationPower(in MailboxMessage message)
+        {
+            var enableSpecializationPower = message.As<NetMessageEnableSpecializationPower>();
+            if (!Verify.IsNotNull(enableSpecializationPower)) return;
+
+            Avatar avatar = Game.EntityManager.GetEntity<Avatar>(enableSpecializationPower.AvatarId);
+            if (!Verify.IsNotNull(avatar)) return;
+
+            if (!Verify.IsTrue(avatar.GetOwnerOfType<Player>() == Player, $"Player [{Player}] is attempting to enable specialization power for avatar [{avatar}] that belongs to another player"))
+                return;
+
+            PrototypeId specializationPowerRef = (PrototypeId)enableSpecializationPower.PrototypeId;
+            int specIndex = (int)enableSpecializationPower.Spec;
+            bool enable = enableSpecializationPower.Enable;
+
+            if (!Verify.IsTrue(avatar.CanToggleSpecializationPower(specializationPowerRef, specIndex, false, enable) == CanToggleSpecializationPowerResult.Success))
+                return;
+
+            avatar.EnableSpecializationPower(specializationPowerRef, specIndex, enable);
         }
 #endif
 
@@ -2620,6 +2724,27 @@ namespace MHServerEmu.Games.Network
             if (!Verify.IsNotNull(avatar)) return;
 
             avatar.ChangeCostume((PrototypeId)costumeChange.CostumePrototypeId, true);
+        }
+#endif
+
+#if GAME_VERSION_1_53
+        private void OnInactiveAvatarCostumeChange(in MailboxMessage message)
+        {
+            var inactiveAvatarCostumeChange = message.As<NetMessageInactiveAvatarCostumeChange>();
+            if (!Verify.IsNotNull(inactiveAvatarCostumeChange)) return;
+
+            // This is used on consoles for the integrated hero+costume selection in the roster.
+
+            PrototypeId avatarProtoRef = (PrototypeId)inactiveAvatarCostumeChange.AvatarPrototypeId;
+            AvatarMode avatarMode = (AvatarMode)inactiveAvatarCostumeChange.AvatarModeEnum;
+            PrototypeId costumeProtoRef = (PrototypeId)inactiveAvatarCostumeChange.CostumePrototypeId;
+
+            Avatar avatar = Player.GetAvatar(avatarProtoRef, avatarMode);
+            if (!Verify.IsNotNull(avatar)) return;
+
+            Verify.IsTrue(avatar != Player.CurrentAvatar);
+
+            avatar.ChangeCostume(costumeProtoRef, true);
         }
 #endif
 

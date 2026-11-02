@@ -25,7 +25,7 @@ namespace MHServerEmu.Games.Properties
         private readonly PropertyList _baseList = new();
         private readonly PropertyList _aggregateList = new();
         private readonly Dictionary<PropertyId, CurveProperty> _curveList = new();
-        private static readonly Logger Logger = LogManager.CreateLogger();
+
         // Many PropertyCollections don't use parent/child relationships and watchers, so we allocate HashSets for these on demand.
 
         // Parent and child collections
@@ -850,8 +850,7 @@ namespace MHServerEmu.Games.Properties
                 case PropertyDataType.Curve:        return BitConverter.SingleToUInt32Bits(value.RawFloat);
                 case PropertyDataType.Integer:      return MathHelper.SwizzleSignBit(value.RawLong);
                 case PropertyDataType.Time:         return MathHelper.SwizzleSignBit(value.RawLong - (long)Game.StartTime.TotalMilliseconds);
-                case PropertyDataType.Prototype:
-                    return (ulong)GameDatabase.DataDirectory.GetPrototypeEnumValue<Prototype>((PrototypeId)value.RawLong);
+                case PropertyDataType.Prototype:    return (ulong)GameDatabase.DataDirectory.GetPrototypeEnumValue<Prototype>((PrototypeId)value.RawLong);
                 default:                            return (ulong)value.RawLong;
             }
         }

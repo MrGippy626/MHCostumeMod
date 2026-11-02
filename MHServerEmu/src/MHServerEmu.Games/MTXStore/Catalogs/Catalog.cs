@@ -1,4 +1,5 @@
 ﻿using Gazillion;
+using Google.ProtocolBuffers;
 using MHServerEmu.Core.Config;
 using MHServerEmu.Core.Extensions;
 using MHServerEmu.Core.Logging;
@@ -10,14 +11,33 @@ namespace MHServerEmu.Games.MTXStore.Catalogs
     {
         private static readonly Logger Logger = LogManager.CreateLogger();
 
+#if (GAME_VERSION_1_52 || GAME_VERSION_1_53) && (PLATFORM_TYPE_PS4 || PLATFORM_TYPE_XBOXONE)
+        private static readonly ConsoleCatalogCategory[] ConsoleCategories = [
+            new("heroes",             true,  "Heroes",             0),
+            new("team-ups",           false, "Team-Ups",           1),
+            new("costumes",           true,  "Costumes",           2),
+            new("bundles",            false, "Bundles",            3),
+            new("consumables",        true,  "Consumables",        4),
+            new("chance-packs",       true,  "Chance Packs",       5),
+            new("upgrades",           false, "Upgrades",           6),
+            new("inventory_upgrades", false, "Inventory Upgrades", 7),
+            new("stash_upgrades",     false, "Stash Upgrades",     8),
+            new("prestige",           false, "Prestige",           9),
+        ];
+#endif
+
         private readonly Dictionary<long, CatalogEntry> _entries = new();
         private readonly LocalizedCatalogUrls _urls = new();    // Make this a collection if we ever implement locales other than en_us
 
-        private NetMessageCatalogItems _cachedProtobuf;
+        private IMessage _cachedProtobuf;
 
         // Dumped timestamp: 1508422929 544000 (Thu Oct 19 2017 14:22:09 GMT+0000)
         public TimeSpan Timestamp { get; private set; }
-        
+
+#if (GAME_VERSION_1_52 || GAME_VERSION_1_53) && (PLATFORM_TYPE_PS4 || PLATFORM_TYPE_XBOXONE)
+        public long HighestSkuId { get; private set; }
+#endif
+
         public int Count { get => _entries.Count; }
 
         public Catalog() { }
@@ -45,9 +65,9 @@ namespace MHServerEmu.Games.MTXStore.Catalogs
             return entry;
         }
 
-        public void AddEntries(CatalogEntry[] newEntries)
+        public void AddEntries(IReadOnlyList<CatalogEntry> newEntries)
         {
-            if (newEntries.IsNullOrEmpty())
+            if (newEntries == null || newEntries.Count == 0)
                 return;
 
             // HACK: Rewrite bundle URLs if needed
@@ -57,8 +77,9 @@ namespace MHServerEmu.Games.MTXStore.Catalogs
             {
                 const string GazillionCdnUrl = "marvelheroes.com";
 
-                foreach (CatalogEntry entry in newEntries)
+                for (int i = 0; i < newEntries.Count; i++)
                 {
+                    CatalogEntry entry = newEntries[i];
                     if (entry.InfoUrls.HasValue())
                     {
                         foreach (LocalizedCatalogEntryUrlOrData infoUrl in entry.InfoUrls)
@@ -79,15 +100,20 @@ namespace MHServerEmu.Games.MTXStore.Catalogs
                 }
             }
 
-            // Overwrite entries with the same skuId
-            foreach (CatalogEntry entry in newEntries)
+            for (int i = 0; i < newEntries.Count; i++)
             {
+                CatalogEntry entry = newEntries[i];
                 long skuId = entry.SkuId;
 
                 if (_entries.ContainsKey(skuId))
                     Logger.Trace($"Overriding SKU {skuId}");
 
+                // Replace entries with the same skuId
                 _entries[skuId] = entry;
+
+#if (GAME_VERSION_1_52 || GAME_VERSION_1_53) && (PLATFORM_TYPE_PS4 || PLATFORM_TYPE_XBOXONE)
+                HighestSkuId = Math.Max(skuId, HighestSkuId);
+#endif
             }
 
             FlagDirty();
@@ -100,10 +126,17 @@ namespace MHServerEmu.Games.MTXStore.Catalogs
             FlagDirty();
         }
 
-        public NetMessageCatalogItems ToProtobuf()
+        public IMessage ToProtobuf()
         {
             if (_cachedProtobuf == null)
             {
+#if (GAME_VERSION_1_52 || GAME_VERSION_1_53) && (PLATFORM_TYPE_PS4 || PLATFORM_TYPE_XBOXONE)
+                _cachedProtobuf = NetMessageConsoleCatalogItems.CreateBuilder()
+                    .SetCatalogVersion(((long)Timestamp.TotalMicroseconds).ToString())
+                    .AddRangeEntries(_entries.Values.Where(entry => entry.IsVisible()).Select(entry => entry.ToNetStruct()))
+                    .AddRangeCategories(ConsoleCategories.Select(category => category.ToNetStruct()))
+                    .Build();
+#else
                 _cachedProtobuf = NetMessageCatalogItems.CreateBuilder()
                     .SetTimestampSeconds((long)Timestamp.TotalSeconds)
                     .SetTimestampMicroseconds(Timestamp.Milliseconds * 1000)
@@ -111,6 +144,7 @@ namespace MHServerEmu.Games.MTXStore.Catalogs
                     .AddUrls(_urls.ToNetStruct())
                     .SetClientmustdownloadimages(true)
                     .Build();
+#endif
             }
 
             return _cachedProtobuf;

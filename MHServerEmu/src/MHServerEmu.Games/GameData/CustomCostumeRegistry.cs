@@ -85,7 +85,7 @@ namespace MHServerEmu.Games.GameData
                 return false;
 
             if (IsExpired(entry))
-                return false;       // known stays false, so the flag decides
+                return false;
 
             known = true;
             return entry.Refs.Contains(forgedRef);

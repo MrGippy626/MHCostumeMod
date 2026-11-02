@@ -51,9 +51,21 @@ namespace MHServerEmu.Games
 #elif GAME_VERSION_1_52
         public const string Version = "1.52.0.1700";
 #elif GAME_VERSION_1_53
+#if PLATFORM_TYPE_PC
         public const string Version = "1.53.0.203";
 #else
+        public const string Version = "1.4.0.26";
+#endif
+#else
         public const string Version = "0.0.0.0";
+#endif
+
+#if PLATFORM_TYPE_PS4
+        public const Platforms PlatformType = Platforms.PS4;
+#elif PLATFORM_TYPE_XBOXONE
+        public const Platforms PlatformType = Platforms.XboxOne;
+#else
+        public const Platforms PlatformType = Platforms.PC;
 #endif
 
         [ThreadStatic]
@@ -61,6 +73,7 @@ namespace MHServerEmu.Games
 
         private const int TargetFrameRate = 20;
         public static readonly TimeSpan StartTime = TimeSpan.FromMilliseconds(1);
+        public readonly NetMessageServerVersion ServerVersion;
         public readonly NetStructGameOptions GameOptions;
         public readonly CustomGameOptionsConfig CustomGameOptions;
 
@@ -131,6 +144,9 @@ namespace MHServerEmu.Games
 
             // Small lags are fine, and logging all of them creates too much noise
             _fixedTimeUpdateProcessTimeLogThreshold = FixedTimeBetweenUpdates * 5;
+
+            // Cache server version message (it's always the same)
+            ServerVersion = NetMessageServerVersion.CreateBuilder().SetVersion(Version).Build();
 
             // Initialize game options
             var config = ConfigManager.Instance.GetConfig<GameOptionsConfig>();

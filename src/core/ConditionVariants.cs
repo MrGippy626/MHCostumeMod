@@ -83,8 +83,11 @@ namespace CostumeManager.Core
                 {
 
                     v.SkipReason = HasAnySuffix(stem)
-                        ? "keyed on another costume - it would never resolve for this one"
-                        : "not costume-keyed - this belongs in an FX pack, not the costume";
+                        ? $"keyed on another costume. This one's donor is {donorClass}, so the "
+                          + $"file has to end in \"_{token}_SF.upk\" - rename it and reinstall."
+                        : $"not costume-keyed - a costume-owned effect has to end in "
+                          + $"\"_{token}_SF.upk\" to match this costume's donor. As named, this "
+                          + "belongs in an FX pack rather than the costume.";
                     found.Add(v);
                     continue;
                 }

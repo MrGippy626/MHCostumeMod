@@ -1773,8 +1773,8 @@ namespace MHServerEmu.Games.Entities
 
             if (showXPAwardedText && owner.InterestedInEntity(this, AOINetworkPolicyValues.AOIChannelOwner))
             {
-                owner.SendMessage(NetMessageShowXPAwardedText.CreateBuilder()
-                    .SetXpAwarded(awardedAmount)
+                using var builderHandle = ProtobufBuilderPool<NetMessageShowXPAwardedText.Builder>.Get(out var builder);
+                owner.SendMessage(builder.SetXpAwarded(awardedAmount)
                     .SetAgentId(Id)
                     .Build());
             }
@@ -3009,6 +3009,7 @@ namespace MHServerEmu.Games.Entities
                 var avatar = Game.EntityManager.GetEntityByDbGuid<Avatar>(masterGuid);
                 if (avatar == null) return;
 
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
                 if (avatar.HasControlPowerEquipped())
                 {
                     SetAsPersistent(avatar, false);
@@ -3018,6 +3019,9 @@ namespace MHServerEmu.Games.Entities
                     KillSummonedOnOwnerDeath();
                     ExitWorld();
                 }
+#else
+                SetAsPersistent(avatar, false);
+#endif
             }
             else
             {

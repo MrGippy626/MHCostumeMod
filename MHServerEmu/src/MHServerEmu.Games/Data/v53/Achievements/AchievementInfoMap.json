@@ -70153,23 +70153,7 @@
     "DependentAchievementId": 0,
     "UIProgressDisplayOption": 0,
     "PublishedDateUS": 14001553790000000,
-    "PartyVisible": false,
-    "Context": {
-      "RewardPrototype": 0,
-      "EventData": [
-        {
-          "Prototype": 1484058156268596004,
-          "IncludeChildren": false
-        }
-      ],
-      "EventContext": [
-        {
-          "ContextType": 0,
-          "Prototype": 1484058156268596004,
-          "IncludeChildren": false
-        }
-      ]
-    }
+    "PartyVisible": false
   },
   {
     "Id": 2198,

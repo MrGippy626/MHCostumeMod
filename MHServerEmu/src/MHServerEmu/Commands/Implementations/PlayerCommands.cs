@@ -100,7 +100,7 @@ namespace MHServerEmu.Commands.Implementations
             if (isCustom || wasCustom)
             {
                 if (isCustom == false)
-                    avatar.ClearClientCustomCostume();   // we are re-realizing out of it now
+                    avatar.ClearClientCustomCostume();
                 player.RefreshCurrentAvatar();
             }
 

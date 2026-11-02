@@ -137,6 +137,13 @@ namespace MHServerEmu
                 if (_state != State.Running)
                     break;
 
+                // Running the server in a non-interactive container without an stdin can spam the console with null inputs.
+                if (input == null)
+                {
+                    Thread.Sleep(1);
+                    continue;
+                }
+
                 CommandManager.Instance.TryParse(input);
             }
 
@@ -266,9 +273,6 @@ namespace MHServerEmu
 
             CustomCostumeLoader.ProcessPendingPurges();
 
-            // Queued purges first: a costume uninstalled this session is removed from the
-            // costume set by that pass, so the orphan sweep below then agrees with it rather
-            // than racing it.
             CustomCostumeLoader.PurgeOrphanedCostumes();
 
             return true;

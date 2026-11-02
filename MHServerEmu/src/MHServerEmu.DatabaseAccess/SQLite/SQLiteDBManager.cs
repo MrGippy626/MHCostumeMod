@@ -340,14 +340,6 @@ namespace MHServerEmu.DatabaseAccess.SQLite
             }
         }
 
-        /// <summary>
-        /// Every custom costume id referenced anywhere in the Player table.
-        /// </summary>
-        /// <remarks>
-        /// Used to find ORPHANS - ids no installed costume claims any more. The column is a
-        /// semicolon-separated list where "avatarProtoId:customId" is a per-avatar override and
-        /// "I&lt;itemGuid&gt;:&lt;customId&gt;" is an item stamp; both end in the id, so one rule reads both.
-        /// </remarks>
         public HashSet<ulong> GetReferencedCustomCostumeIds()
         {
             var ids = new HashSet<ulong>();
@@ -373,9 +365,6 @@ namespace MHServerEmu.DatabaseAccess.SQLite
             }
             catch (Exception e)
             {
-                // ⛔ RETURN EMPTY ON FAILURE, AND THE CALLER MUST TREAT EMPTY AS "COULD NOT
-                // ANSWER". Reporting no ids as though the table were clean would let an orphan
-                // sweep conclude there is nothing to keep - and delete everything.
                 Logger.ErrorException(e, "GetReferencedCustomCostumeIds(): failed");
                 return new HashSet<ulong>();
             }
@@ -425,8 +414,6 @@ namespace MHServerEmu.DatabaseAccess.SQLite
                 return false;
             }
         }
-
-        /// <summary>
 
         /// <summary>
         /// Creates and opens a new <see cref="SQLiteConnection"/>.

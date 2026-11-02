@@ -47,18 +47,58 @@ namespace MHServerEmu.Games.MTXStore.Catalogs
         /// <param name="skuId">Catalog entry SKU id.</param>
         /// <param name="prototypeId">Costume prototype id.</param>
         /// <param name="text">Text to use for title and description.</param>
-        public CatalogEntry(long skuId, PrototypeId prototypeId, string text, long price)
+        public CatalogEntry(long skuId, PrototypeId prototypeId, long price)
         {
             SkuId = skuId;
-            GuidItems = new CatalogGuidEntry[] { new(0, prototypeId, 1) };
+            GuidItems = [new(0, prototypeId, 1)];
             AdditionalGuidItems = Array.Empty<CatalogGuidEntry>();
-            LocalizedEntries = new LocalizedCatalogEntry[] { new("en_us", text, text, "", price) };
+            LocalizedEntries = [new("en_us", prototypeId.GetNameFormatted(), prototypeId.GetNameFormatted(), "", price)];
             InfoUrls = Array.Empty<LocalizedCatalogEntryUrlOrData>();
             ContentData = Array.Empty<LocalizedCatalogEntryUrlOrData>();
             Type = new("Costume", 1);
-            TypeModifiers = new CatalogEntryTypeModifier[] { new("Giftable", 1) };
+            TypeModifiers = [new("Giftable", 1)];
         }
 
+#if (GAME_VERSION_1_52 || GAME_VERSION_1_53) && (PLATFORM_TYPE_PS4 || PLATFORM_TYPE_XBOXONE)
+        public bool IsVisible()
+        {
+            foreach (CatalogEntryTypeModifier typeModifier in TypeModifiers)
+            {
+                if (typeModifier.Name == "NoDisplay")
+                    return false;
+
+                if (typeModifier.Name == "NoDisplayStore")
+                    return false;
+            }
+
+            return true;
+        }
+#endif
+
+#if (GAME_VERSION_1_52 || GAME_VERSION_1_53) && (PLATFORM_TYPE_PS4 || PLATFORM_TYPE_XBOXONE)
+        public MarvelHeroesConsoleCatalogEntry ToNetStruct()
+        {
+            var entry = MarvelHeroesConsoleCatalogEntry.CreateBuilder()
+                .SetDeliverableObject(SkuId.ToString())
+                .AddRangeGuidItems(GuidItems.Select(guidItem => guidItem.ToNetStruct()))
+                .SetItemPrice(MHConsoleItemPrice.CreateBuilder()
+                    .SetPriceG(LocalizedEntries[0].ItemPrice))
+                .AddPresentations(GetConsolePresentation())
+                .SetSellableObject(SkuId.ToString());
+
+            /* disabling this for now because it causes verify spam with PC catalog data
+            WorldEntityPrototype worldEntityProto = GuidItems[0].ItemPrototypeRuntimeIdForClient.As<WorldEntityPrototype>();
+            if (worldEntityProto != null)
+                entry.SetModelGuid((long)worldEntityProto.DataRefRecord.PrototypeGuid);
+            */
+
+            string category = GetConsoleCategory();
+            if (category != null)
+                entry.AddCategories(category);
+
+            return entry.Build();
+        }
+#else
         public MarvelHeroesCatalogEntry ToNetStruct()
         {
             return MarvelHeroesCatalogEntry.CreateBuilder()
@@ -72,5 +112,54 @@ namespace MHServerEmu.Games.MTXStore.Catalogs
                 .AddRangeTypeModifier(TypeModifiers.Select(typeModifier => typeModifier.ToNetStruct()))
                 .Build();
         }
+#endif
+
+#if (GAME_VERSION_1_52 || GAME_VERSION_1_53) && (PLATFORM_TYPE_PS4 || PLATFORM_TYPE_XBOXONE)
+        private MHConsolePresentationEntry GetConsolePresentation()
+        {
+            string presentationType = Type.Name switch
+            {
+                "Hero"      => "avatar",
+                "Costume"   => "costume",
+                "Bundle"    => "bundle",
+                _           => string.Empty,
+            };
+
+            string st = LocalizedEntries[0].Title;
+            string lt = LocalizedEntries[0].Title;
+            string d = LocalizedEntries[0].Description;
+            string icon = string.Empty; // png url
+            string img = string.Empty;  // png url
+
+            return MHConsolePresentationEntry.CreateBuilder()
+                .SetType(presentationType)
+                .SetTypeOrder(0)
+                .AddLocalizedEntries(MHLocalizedStringCollection.CreateBuilder()
+                    .SetLanguageId("en_us")
+                    .AddTranslations(MHStringValue.CreateBuilder().SetKey("st").SetText(st))
+                    .AddTranslations(MHStringValue.CreateBuilder().SetKey("lt").SetText(lt))
+                    .AddTranslations(MHStringValue.CreateBuilder().SetKey("d").SetText(d))
+                    .AddTranslations(MHStringValue.CreateBuilder().SetKey("icon").SetText(icon))
+                    .AddTranslations(MHStringValue.CreateBuilder().SetKey("img").SetText(img)))
+                .Build();
+        }
+#endif
+
+#if (GAME_VERSION_1_52 || GAME_VERSION_1_53) && (PLATFORM_TYPE_PS4 || PLATFORM_TYPE_XBOXONE)
+        private string GetConsoleCategory()
+        {
+            return Type.Name switch
+            {
+                "Hero"      => "heroes",
+                "TeamUp"    => "team-ups",
+                "Costume"   => "costumes",
+                "Bundle"    => "bundles",
+                "Boost"     => "consumables",
+                "Chest"     => "chance-packs",
+                "Service"   => "upgrades",
+                _           => null,
+            };
+        }
+#endif
     }
 }

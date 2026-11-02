@@ -49,16 +49,17 @@ namespace MHServerEmu.Games.GameData.Prototypes
 
         public virtual bool CanApplyState()
         {
-            DesignWorkflowState designState = DesignState;
-
-            /*
-            if (GameDatabase.Settings.TargetingPS4Data)
-                designState = DesignStatePS4;
-            else if (GameDatabase.Settings.TargetingXboxOneData)
-                designState = DesignStateXboxOne;
-            */
-
-            return GameDatabase.DesignStateOk(designState);
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+    #if PLATFORM_TYPE_PS4
+            return GameDatabase.DesignStateOk(DesignStatePS4);
+    #elif PLATFORM_TYPE_XBOXONE
+            return GameDatabase.DesignStateOk(DesignStateXboxOne);
+    #else
+            return GameDatabase.DesignStateOk(DesignState);
+    #endif
+#else
+            return GameDatabase.DesignStateOk(DesignState);
+#endif
         }
 
         public virtual MetaState AllocateState(MetaGame metaGame)
@@ -218,7 +219,7 @@ namespace MHServerEmu.Games.GameData.Prototypes
         public PrototypeId DeathLimitUINotification { get; protected set; }
         public bool StayInModeOnFail { get; protected set; }
         public bool UseRegionDeathCount { get; protected set; }
-#if GAME_VERSION_1_53
+#if GAME_VERSION_1_53 && PLATFORM_TYPE_PC
         public bool FailOnAllPlayersDeadAndNoLives { get; protected set; }
 #endif
 

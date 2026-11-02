@@ -16,7 +16,7 @@ namespace MHServerEmu.Games.Properties
         private IArchiveMessageDispatcher _messageDispatcher = null;
         private AOINetworkPolicyValues _interestPolicies;
         private ulong _replicationId = IArchiveMessageDispatcher.InvalidReplicationId;
-        private static readonly Logger Logger = LogManager.CreateLogger();
+
         public ulong ReplicationId { get => _replicationId; }
         public bool IsBound { get => _replicationId != IArchiveMessageDispatcher.InvalidReplicationId && _messageDispatcher != null; }
 
@@ -144,14 +144,11 @@ namespace MHServerEmu.Games.Properties
             using var interestedClientListHandle = ListPool<PlayerConnection>.Get(out List<PlayerConnection> interestedClientList);
             if (_messageDispatcher.GetInterestedClients(interestedClientList, interestFilter))
             {
-
-                ulong value1 = ConvertValueToBits(value, propertyInfo.DataType);
-
                 // Send update to interested
-                var setPropertyMessage = NetMessageSetProperty.CreateBuilder()
-                    .SetReplicationId(ReplicationId)
+                using var builderHandle = ProtobufBuilderPool<NetMessageSetProperty.Builder>.Get(out var builder);
+                var setPropertyMessage = builder.SetReplicationId(ReplicationId)
                     .SetPropertyId(id.Raw.ReverseBits())    // In NetMessageSetProperty all bits are reversed rather than bytes
-                    .SetValueBits(value1)
+                    .SetValueBits(ConvertValueToBits(value, propertyInfo.DataType))
                     .Build();
 
                 _messageDispatcher.Game.NetworkManager.SendMessageToMultiple(interestedClientList, setPropertyMessage);
@@ -172,8 +169,8 @@ namespace MHServerEmu.Games.Properties
             if (_messageDispatcher.GetInterestedClients(interestedClientList, interestFilter))
             {
                 // Send update to interested
-                var removePropertyMessage = NetMessageRemoveProperty.CreateBuilder()
-                    .SetReplicationId(ReplicationId)
+                using var builderHandle = ProtobufBuilderPool<NetMessageRemoveProperty.Builder>.Get(out var builder);
+                var removePropertyMessage = builder.SetReplicationId(ReplicationId)
                     .SetPropertyId(id.Raw.ReverseBits())    // In NetMessageRemoveProperty all bits are reversed rather than bytes
                     .Build();
 

@@ -369,8 +369,17 @@ namespace MHServerEmu.Games.GameData.Prototypes
 
         public override bool ApprovedForUse()
         {
-            // Add settings for using DesignStatePS4 or DesignStateXboxOne here if we end up supporting console clients
+#if GAME_VERSION_1_52 || GAME_VERSION_1_53
+    #if PLATFORM_TYPE_PS4
+            return GameDatabase.DesignStateOk(DesignStatePS4);
+    #elif PLATFORM_TYPE_XBOXONE
+            return GameDatabase.DesignStateOk(DesignStateXboxOne);
+    #else
             return GameDatabase.DesignStateOk(DesignState);
+    #endif
+#else
+            return GameDatabase.DesignStateOk(DesignState);
+#endif
         }
 
         public virtual bool IsLiveTuningEnabled()
@@ -628,7 +637,7 @@ namespace MHServerEmu.Games.GameData.Prototypes
             if (OverheadTexts.IsNullOrEmpty() && OverheadTextsList.IsNullOrEmpty())
                 return null;
 
-            Picker<EntityActionOverheadTextPrototype> picker = new(random);
+            using var pickerHandle = PickerPool<EntityActionOverheadTextPrototype>.Get(random, out Picker<EntityActionOverheadTextPrototype> picker);
 
             if (OverheadTexts.HasValue())
             {
@@ -655,7 +664,7 @@ namespace MHServerEmu.Games.GameData.Prototypes
             if (AIOverrides.IsNullOrEmpty() && AIOverridesList.IsNullOrEmpty())
                 return null;
 
-            Picker<EntityActionAIOverridePrototype> picker = new(random);
+            using var pickerHandle = PickerPool<EntityActionAIOverridePrototype>.Get(random, out Picker<EntityActionAIOverridePrototype> picker);
 
             if (AIOverrides.HasValue())
             {

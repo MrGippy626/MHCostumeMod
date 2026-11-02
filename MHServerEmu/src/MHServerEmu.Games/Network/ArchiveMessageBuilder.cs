@@ -36,7 +36,7 @@ namespace MHServerEmu.Games.Network
         IsClientEntityHidden        = 1 << 12,
         Flag13                      = 1 << 13,  // Unused
         HasAttachedEntities         = 1 << 14,
-        IgnoreNavi                  = 1 << 15
+        IgnoreNavi                  = 1 << 15,
     }
 
     [Flags]
@@ -50,7 +50,7 @@ namespace MHServerEmu.Games.Network
         HasMovementTime                 = 1 << 4,
         HasVariableActivationTime       = 1 << 5,
         HasPowerRandomSeed              = 1 << 6,
-        HasFXRandomSeed                 = 1 << 7
+        HasFXRandomSeed                 = 1 << 7,
     }
 
     [Flags]
@@ -68,7 +68,7 @@ namespace MHServerEmu.Games.Network
         HasDamageMental             = 1 << 8,
         HasHealing                  = 1 << 9,
         HasPowerAssetRefOverride    = 1 << 10,
-        HasTransferToEntityId       = 1 << 11
+        HasTransferToEntityId       = 1 << 11,
     }
 
     [Flags]
@@ -91,8 +91,6 @@ namespace MHServerEmu.Games.Network
     /// </summary>
     public static class ArchiveMessageBuilder
     {
-        /// <summary>
-        /// </summary>
         private static PrototypeId ResolveEntityProtoRefForRecipient(PrototypeId entityProtoRef, PlayerConnection recipient)
         {
             if (CustomCostumeLoader.HasForgedHotspots == false)
@@ -100,10 +98,10 @@ namespace MHServerEmu.Games.Network
 
             PrototypeId stockRef = CustomCostumeLoader.GetStockForForged(entityProtoRef);
             if (stockRef == PrototypeId.Invalid)
-                return entityProtoRef;                  // not a forged id - the overwhelming majority
+                return entityProtoRef;
 
             if (recipient != null && recipient.CanDecodeForgedRef(entityProtoRef))
-                return entityProtoRef;                  // this client has the mod: give it the custom FX
+                return entityProtoRef;
 
             CustomCostumeLoader.ReportForgedRefSubstituted(entityProtoRef, stockRef,
                                                            recipient != null && recipient.HasRegisteredForgedRefs,
@@ -300,10 +298,8 @@ namespace MHServerEmu.Games.Network
                 archiveData = archive.ToByteString();
             }
 
-            return NetMessageEntityCreate.CreateBuilder()
-                .SetBaseData(baseData)
-                .SetArchiveData(archiveData)
-                .Build();
+            using var builderHandle = ProtobufBuilderPool<NetMessageEntityCreate.Builder>.Get(out var builder);
+            return builder.SetBaseData(baseData).SetArchiveData(archiveData).Build();
         }
 
         /// <summary>
@@ -346,7 +342,8 @@ namespace MHServerEmu.Games.Network
 
             LocomotionState.SerializeTo(archive, ref newLocomotionState, fieldFlags);
 
-            return NetMessageLocomotionStateUpdate.CreateBuilder().SetArchiveData(archive.ToByteString()).Build();
+            using var builderHandle = ProtobufBuilderPool<NetMessageLocomotionStateUpdate.Builder>.Get(out var builder);
+            return builder.SetArchiveData(archive.ToByteString()).Build();
         }
 
         /// <summary>
@@ -439,7 +436,8 @@ namespace MHServerEmu.Games.Network
             if (flags.HasFlag(ActivatePowerMessageFlags.HasFXRandomSeed))
                 Serializer.Transfer(archive, ref fxRandomSeed);
 
-            return NetMessageActivatePower.CreateBuilder().SetArchiveData(archive.ToByteString()).Build();
+            using var builderHandle = ProtobufBuilderPool<NetMessageActivatePower.Builder>.Get(out var builder);
+            return builder.SetArchiveData(archive.ToByteString()).Build();
         }
 
         /// <summary>
@@ -546,7 +544,8 @@ namespace MHServerEmu.Games.Network
             if (messageFlags.HasFlag(PowerResultMessageFlags.HasTransferToEntityId))
                 Serializer.Transfer(archive, ref transferToEntityId);
 
-            return NetMessagePowerResult.CreateBuilder().SetArchiveData(archive.ToByteString()).Build();
+            using var builderHandle = ProtobufBuilderPool<NetMessagePowerResult.Builder>.Get(out var builder);
+            return builder.SetArchiveData(archive.ToByteString()).Build();
         }
 
         /// <summary>
@@ -645,7 +644,8 @@ namespace MHServerEmu.Games.Network
                 Serializer.Transfer(archive, ref attachedEntityList);
             }
 
-            return NetMessageEntityEnterGameWorld.CreateBuilder().SetArchiveData(archive.ToByteString()).Build();
+            using var builderHandle = ProtobufBuilderPool<NetMessageEntityEnterGameWorld.Builder>.Get(out var builder);
+            return builder.SetArchiveData(archive.ToByteString()).Build();
         }
 
         /// <summary>
@@ -662,7 +662,8 @@ namespace MHServerEmu.Games.Network
 
             condition.Serialize(archive, owner);
 
-            return NetMessageAddCondition.CreateBuilder().SetArchiveData(archive.ToByteString()).Build();
+            using var builderHandle = ProtobufBuilderPool<NetMessageAddCondition.Builder>.Get(out var builder);
+            return builder.SetArchiveData(archive.ToByteString()).Build();
         }
 
         /// <summary>
@@ -675,7 +676,8 @@ namespace MHServerEmu.Games.Network
 
             Serializer.Transfer(archive, ref lowResMap);
 
-            return NetMessageUpdateMiniMap.CreateBuilder().SetArchiveData(archive.ToByteString()).Build();
+            using var builderHandle = ProtobufBuilderPool<NetMessageUpdateMiniMap.Builder>.Get(out var builder);
+            return builder.SetArchiveData(archive.ToByteString()).Build();
         }
     }
 }

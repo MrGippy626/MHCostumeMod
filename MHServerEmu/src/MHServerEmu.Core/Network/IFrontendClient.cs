@@ -15,8 +15,6 @@ namespace MHServerEmu.Core.Network
         public IFrontendSession Session { get; }
         public ulong DbId { get; }
 
-        /// <summary>
-        /// </summary>
         public string RemoteAddress { get; }
 
         /// <summary>

@@ -11,7 +11,7 @@ The assembly is now **MHLauncher.exe** - it was `MHLauncherInstaller.exe`.
 
 ## The launcher half
 
-Replaces `src/native/launcher/launcher.cpp`, which does the right thing with **four hardcoded
+Replaces `archive/native-launcher/launcher/launcher.cpp` (retired), which did the right thing with **four hardcoded
 absolute paths compiled in**. Everything it hardcoded is now editable, which is the entire point:
 a server owner hands this to a friend, who sets the server address once and presses Play.
 
@@ -115,7 +115,7 @@ for text, and 3 MB is not worth finding that out the hard way.
 ⚠ **VERIFY BY RUNNING, NOT BY BUILDING.** A missing WindowsAppSDK component does not fail the
 build — it takes the process down with `0xC000027B`, no managed stack, before any window appears.
 ```powershell
-$p = Start-Process .\MHLauncherInstaller.exe -PassThru; Start-Sleep 8; $p.HasExited
+$p = Start-Process .\MHLauncher.exe -PassThru; Start-Sleep 8; $p.HasExited
 ```
 (Bash exit codes lie for GUI apps — `timeout 12 ./app.exe` once returned 127 for an exe that
 exists.)

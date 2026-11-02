@@ -130,8 +130,6 @@ namespace MHServerEmu.WebFrontend.Network
             _accountOperationTaskManager.CompleteTask(response.RequestId, response);
         }
 
-        /// <summary>
-        /// </summary>
         public async Task<ServiceMessage.CustomCostumeRegisterResponse> RegisterCustomCostumesAsync(ulong sessionId, ulong[] forgedRefs)
         {
             var registerTask = _customCostumeRegisterTaskManager.CreateTask();
@@ -147,8 +145,6 @@ namespace MHServerEmu.WebFrontend.Network
             return response.Value;
         }
 
-        /// <summary>
-        /// </summary>
         public void OnCustomCostumeRegisterResponse(in ServiceMessage.CustomCostumeRegisterResponse response)
         {
             _customCostumeRegisterTaskManager.CompleteTask(response.RequestId, response);

@@ -60,8 +60,6 @@ namespace MHServerEmu.Games.GameData
 
         private const ulong CustomCostumeGuidSalt = 0xC057_11E5_C057_11E5;
 
-        /// <summary>
-        /// </summary>
         public static ulong ForgeCustomCostumeGuid(ulong customId) => customId ^ CustomCostumeGuidSalt;
 
         private readonly Dictionary<Type, PrototypeEnumValueNode> _prototypeEnumValueLookupByClassType = new(GameDatabase.PrototypeClassManager.ClassCount);
@@ -319,8 +317,6 @@ namespace MHServerEmu.Games.GameData
 
         #region Data Access
 
-        /// <summary>
-        /// </summary>
         public void EnsureGlobalEnumCapacity(int requiredSize)
         {
             if (_prototypeEnumValueLookupByClassType.TryGetValue(typeof(Prototype), out var globalLookup) == false)
@@ -342,8 +338,6 @@ namespace MHServerEmu.Games.GameData
             }
         }
 
-        /// <summary>
-        /// </summary>
         public void InjectGlobalEnum(PrototypeId customId, int targetEnum)
         {
             if (_prototypeEnumValueLookupByClassType.TryGetValue(typeof(Prototype), out var globalLookup) == false)
@@ -374,8 +368,6 @@ namespace MHServerEmu.Games.GameData
                         $"(global enum count was {existingLength})");
         }
 
-        /// <summary>
-        /// </summary>
         public bool InjectClassEnum<T>(PrototypeId customId, int targetEnum) where T : Prototype
         {
             if (_prototypeEnumValueLookupByClassType.TryGetValue(typeof(T), out var lookup) == false)
@@ -408,8 +400,6 @@ namespace MHServerEmu.Games.GameData
             return true;
         }
 
-        /// <summary>
-        /// </summary>
         private void InjectBlueprintEnumRecursive(BlueprintId blueprintId, PrototypeId customId, int targetEnum,
                                                   HashSet<BlueprintId> visited = null)
         {
@@ -431,12 +421,6 @@ namespace MHServerEmu.Games.GameData
                 InjectBlueprintEnumRecursive(parent, customId, targetEnum, visited);
         }
 
-        /// <summary>
-        /// </summary>
-        /// <summary>
-        /// </summary>
-        /// <remarks>
-        /// </remarks>
         public bool InjectCustomHotspot(PrototypeId forgedId, PrototypeId stockId, int targetEnum)
         {
             if (forgedId == PrototypeId.Invalid || stockId == PrototypeId.Invalid)

@@ -274,8 +274,6 @@ namespace MHServerEmu.Games.GameData.Calligraphy
             return enumValue;
         }
 
-        /// <summary>
-        /// </summary>
         public bool InjectCustomEnum(PrototypeId customId, int enumValue)
         {
             if (_prototypeToEnumValueLookup == null || enumValue <= 0)
@@ -292,7 +290,7 @@ namespace MHServerEmu.Games.GameData.Calligraphy
             }
             else if (_enumValueToPrototypeLookup[enumValue] != PrototypeId.Invalid)
             {
-                return false;   // slot belongs to real content - caller logs and skips
+                return false;
             }
 
             _enumValueToPrototypeLookup[enumValue] = customId;

@@ -867,10 +867,6 @@ namespace MHServerEmu.Core.Network
 
         #region Custom Costumes
 
-        /// <summary>
-        /// </summary>
-        /// <remarks>
-        /// </remarks>
         public readonly struct CustomCostumeRegisterRequest(ulong requestId, ulong sessionId, ulong[] forgedRefs)
             : IGameServiceMessage
         {
@@ -879,8 +875,6 @@ namespace MHServerEmu.Core.Network
             public readonly ulong[] ForgedRefs = forgedRefs;
         }
 
-        /// <summary>
-        /// </summary>
         public readonly struct CustomCostumeRegisterResponse(ulong requestId, int statusCode, int refCount)
             : IGameServiceMessage
         {
