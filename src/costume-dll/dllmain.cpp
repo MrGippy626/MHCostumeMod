@@ -1947,7 +1947,7 @@ static SetAuthTicket_t OrigSetAuthTicket = nullptr;
 
 static volatile long g_AuthTicketSeen = 0;
 
-static unsigned __int64 g_SessionId = 0;
+static volatile unsigned __int64 g_SessionId = 0;
 
 static void __fastcall MySetAuthTicket(void* loginMgr, void* incoming, void* p3, void* p4)
 {
@@ -1955,7 +1955,17 @@ static void __fastcall MySetAuthTicket(void* loginMgr, void* incoming, void* p3,
     if (OrigSetAuthTicket) OrigSetAuthTicket(loginMgr, incoming, p3, p4);
 
     long n = InterlockedIncrement(&g_AuthTicketSeen);
-    if (n > 4) return;
+
+    if (n > 4)
+    {
+        void* laterTicket = loginMgr ? *(void**)((unsigned char*)loginMgr + LOGINMGR_AUTHTICKET_OFF) : nullptr;
+        if (laterTicket)
+        {
+            unsigned __int64 laterId = *(unsigned __int64*)((unsigned char*)laterTicket + AUTHTICKET_SESSIONID_OFF);
+            if (laterId != 0) g_SessionId = laterId;
+        }
+        return;
+    }
 
     if (!loginMgr)
     {
@@ -3277,11 +3287,11 @@ static bool ResolveRegisterEndpoint(HttpEndpoint& out, std::vector<int>& ports)
     return true;
 }
 
-static std::string BuildRegisterBody()
+static std::string BuildRegisterBody(unsigned __int64 session)
 {
 
     char sid[40];
-    sprintf_s(sid, sizeof(sid), "\"0x%016llX\",", (unsigned long long)g_SessionId);
+    sprintf_s(sid, sizeof(sid), "\"0x%016llX\",", (unsigned long long)session);
 
     std::string body = "{\"sessionId\":";
     body += sid;
@@ -3311,29 +3321,12 @@ static const char* RegisterStatusMeaning(DWORD status)
     return "unexpected status";
 }
 
-static DWORD WINAPI RegisterThread(LPVOID)
+static void RegisterSession(HttpEndpoint& ep, std::vector<int>& ports, unsigned __int64 session)
 {
-    HttpEndpoint ep;
-    std::vector<int> ports;
-
-    if (!ResolveRegisterEndpoint(ep, ports) || ports.empty())
-        return 0;
-
-    for (int waited = 0; g_SessionId == 0 && waited < REGISTER_SESSION_WAIT_MS;
-         waited += REGISTER_SESSION_POLL_MS)
-        Sleep(REGISTER_SESSION_POLL_MS);
-
-    if (g_SessionId == 0) {
-        WriteLogF("[REG-FX] no session after %d s - NOT registering. The server falls back to "
-                  "the per-account flag, which is the pre-registration behaviour.\r\n",
-                  REGISTER_SESSION_WAIT_MS / 1000);
-        return 0;
-    }
-
     WriteLogF("[REG-FX] session 0x%016llX - registering %zu decodable forged id(s)\r\n",
-              (unsigned long long)g_SessionId, g_ByForgedHotspot.size());
+              (unsigned long long)session, g_ByForgedHotspot.size());
 
-    std::string body = BuildRegisterBody();
+    std::string body = BuildRegisterBody(session);
 
     static const int kBackoffMs[] = { 5000, 10000, 20000, 30000, 30000, 30000,
                                       30000, 30000, 30000, 30000, 30000 };
@@ -3341,6 +3334,8 @@ static DWORD WINAPI RegisterThread(LPVOID)
     DWORD lastStatus = 0;
 
     for (int attempt = 1; attempt <= kAttempts; ++attempt) {
+        if (g_SessionId != session)
+            return;
 
         for (size_t i = 0; i < ports.size(); ++i) {
             ep.Port = ports[i];
@@ -3354,7 +3349,7 @@ static DWORD WINAPI RegisterThread(LPVOID)
                           ep.Path.c_str(), attempt);
 
                 ports.assign(1, ep.Port);
-                return 0;
+                return;
             }
 
             if (ports.size() > 1)
@@ -3371,7 +3366,10 @@ static DWORD WINAPI RegisterThread(LPVOID)
                           "retrying in %ds\r\n",
                           attempt, kAttempts, ep.Host.c_str(), ep.Path.c_str(),
                           (unsigned long)lastStatus, waitMs / 1000);
-            Sleep(waitMs);
+
+            for (int slept = 0; slept < waitMs && g_SessionId == session;
+                 slept += REGISTER_SESSION_POLL_MS)
+                Sleep(REGISTER_SESSION_POLL_MS);
         }
         else {
             WriteLogF("[REG-FX] GAVE UP after %d attempts to %S%S - last status %lu (%s). "
@@ -3382,8 +3380,41 @@ static DWORD WINAPI RegisterThread(LPVOID)
                       (unsigned long)lastStatus, RegisterStatusMeaning(lastStatus));
         }
     }
+}
 
-    return 0;
+static DWORD WINAPI RegisterThread(LPVOID)
+{
+    HttpEndpoint ep;
+    std::vector<int> ports;
+
+    if (!ResolveRegisterEndpoint(ep, ports) || ports.empty())
+        return 0;
+
+    unsigned __int64 lastSession = 0;
+    int waited = 0;
+    bool announcedNoSession = false;
+
+    for (;;) {
+        unsigned __int64 session = g_SessionId;
+
+        if (session == 0 || session == lastSession) {
+            Sleep(REGISTER_SESSION_POLL_MS);
+
+            if (session == 0 && !announcedNoSession) {
+                waited += REGISTER_SESSION_POLL_MS;
+                if (waited >= REGISTER_SESSION_WAIT_MS) {
+                    WriteLogF("[REG-FX] no session after %d s - still waiting. Until a login "
+                              "happens nothing is registered.\r\n",
+                              REGISTER_SESSION_WAIT_MS / 1000);
+                    announcedNoSession = true;
+                }
+            }
+            continue;
+        }
+
+        lastSession = session;
+        RegisterSession(ep, ports, session);
+    }
 }
 
 static DWORD WINAPI MainThread(LPVOID) {
